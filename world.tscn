@@ -1,0 +1,48 @@
+[gd_scene load_steps=9 format=3 uid="uid://c27q8e03myywt"]
+
+[ext_resource type="PackedScene" uid="uid://dyd3ciauf5x3x" path="res://inertiaplayer.tscn" id="1_f3sb7"]
+[ext_resource type="Texture2D" uid="uid://bfwpr0uf7nmu5" path="res://PrototypeTextures/Vector/texture_08.svg" id="1_tlwt5"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_fj7yv"]
+size = Vector3(20, 1, 20)
+
+[sub_resource type="BoxMesh" id="BoxMesh_tlwt5"]
+size = Vector3(20, 1, 20)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_aqk2v"]
+albedo_texture = ExtResource("1_tlwt5")
+uv1_triplanar = true
+uv1_world_triplanar = true
+uv2_triplanar = true
+uv2_world_triplanar = true
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_f3sb7"]
+energy_multiplier = 1.5
+
+[sub_resource type="Sky" id="Sky_fj7yv"]
+sky_material = SubResource("ProceduralSkyMaterial_f3sb7")
+
+[sub_resource type="Environment" id="Environment_f3sb7"]
+background_mode = 2
+sky = SubResource("Sky_fj7yv")
+ambient_light_source = 3
+reflected_light_source = 2
+
+[node name="World" type="Node3D"]
+
+[node name="Plane" type="Node3D" parent="."]
+
+[node name="StaticBody3D" type="StaticBody3D" parent="Plane"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Plane/StaticBody3D"]
+shape = SubResource("BoxShape3D_fj7yv")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Plane/StaticBody3D/CollisionShape3D"]
+mesh = SubResource("BoxMesh_tlwt5")
+skeleton = NodePath("")
+surface_material_override/0 = SubResource("StandardMaterial3D_aqk2v")
+
+[node name="Player" parent="." instance=ExtResource("1_f3sb7")]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_f3sb7")
