@@ -1,0 +1,47 @@
+# ------------------------------
+# Godot engine generated files
+# ------------------------------
+.godot/
+/android/
+
+# Import cache
+.import/
+*.import
+
+# Exported builds
+export/
+exports/
+
+# ------------------------------
+# Logs and temp files
+# ------------------------------
+*.log
+*.tmp
+*.bak
+*.swp
+
+# ------------------------------
+# OS / Editor junk
+# ------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ------------------------------
+# Mono / C#
+# ------------------------------
+.mono/
+data_*/
+*.csproj
+*.sln
+
+# ------------------------------
+# IDEs
+# ------------------------------
+.vscode/
+.idea/
+
+# ------------------------------
+# Godot crash reports
+# ------------------------------
+crash_log.txt
