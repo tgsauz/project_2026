@@ -4,33 +4,42 @@ extends CharacterBody3D
 #  MOVEMENT CONFIGURATION
 # ============================================================
 
-@export_category("Movement Speeds")
-@export var walk_speed: float = 2.5
-@export var fast_walk_speed: float = 4.0
+@export_category("Base Speeds")
+@export var move_speed: float = 4.0
 @export var sprint_speed: float = 6.5
 
 @export_category("Acceleration")
-@export var walk_accel: float = 8.0
-@export var sprint_accel: float = 5.0
-@export var deceleration: float = 6.0
+@export var base_accel: float = 10.0
+@export var base_decel: float = 8.0
 
 @export_category("Rotation")
-@export var max_turn_speed: float = 6.0          # radians/sec
+@export var base_turn_speed: float = 6.0
 @export var turn_acceleration: float = 10.0
 
-@export_category("Sprint System")
+@export_category("Sprint")
 @export var stamina_max: float = 100.0
 @export var stamina_drain_rate: float = 20.0
 @export var stamina_regen_rate: float = 15.0
-@export var sprint_commit_time: float = 0.75     # minimum sprint duration
 
 # ============================================================
-#  ANIMATION CONFIGURATION
+#  LOAD / WEIGHT SYSTEM (FUTURE READY)
 # ============================================================
 
-@export_category("Animation")
+@export_category("Load System")
+@export var load_factor: float = 0.0  # 0 = light, 1 = heavy+
+
+@export var accel_weight_penalty: float = 0.5
+@export var turn_weight_penalty: float = 0.5
+
+# ============================================================
+#  REFERENCES
+# ============================================================
+
+@export_category("References")
+@export var visuals_component_path: NodePath
 @export var animation_tree_path: NodePath
 
+var visuals_component
 var animation_tree: AnimationTree
 
 # ============================================================
@@ -39,84 +48,55 @@ var animation_tree: AnimationTree
 
 var gravity = ProjectSettings.get_setting("physics/3d/default_gravity")
 
-# Input
+# INPUT / INTENT
 var input_vector: Vector2 = Vector2.ZERO
-var move_direction: Vector3 = Vector3.ZERO
+var intent_direction: Vector3 = Vector3.ZERO
 
-# Sprint
+# MOTOR
+var target_velocity: Vector3 = Vector3.ZERO
+
+# SPRINT
 var is_sprinting: bool = false
-var sprint_timer: float = 0.0
 var stamina: float = 100.0
 
-# Rotation inertia
+# ROTATION
 var target_yaw: float = 0.0
-var current_turn_speed: float = 0.0 #Upgrade or remove?
 
 # ============================================================
-#  READY HANDLING
+#  READY
 # ============================================================
 
 func _ready():
+	visuals_component = get_node(visuals_component_path)
 	animation_tree = get_node(animation_tree_path)
-	print("AnimationTree is: ", animation_tree)
-	
-	assert(animation_tree != null, "Animation Tree not Assigned!")
-	
+
+	assert(visuals_component != null)
+	assert(animation_tree != null)
+
 	animation_tree.active = true
-	
+
 # ============================================================
-#  INPUT HANDLING
+#  INPUT
 # ============================================================
 
 func _unhandled_input(event):
-	
+
 	if event is InputEventMouseButton and event.is_pressed():
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
-	
+
 	if event.is_action_pressed("ui_cancel"):
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-	
-	# Toggle Sprint
+
 	if event.is_action_pressed("sprint_toggle"):
-		_attempt_toggle_sprint()
-
-
-func _attempt_toggle_sprint():
-	# Only allow sprint if stamina is available
-	if stamina > 10.0:
-		is_sprinting = !is_sprinting
-
-		# If enabling sprint, start commitment timer
-		if is_sprinting:
-			sprint_timer = sprint_commit_time
+		if stamina > 10.0:
+			is_sprinting = !is_sprinting
 
 # ============================================================
-#  EXTERNAL ROTATION API (Camera → Motor)
+#  EXTERNAL ROTATION
 # ============================================================
 
 func set_target_yaw(new_yaw: float) -> void:
 	target_yaw = new_yaw
-
-#Debug
-func _update_animation_parameters():
-
-	var horizontal_velocity = Vector3(velocity.x, 0, velocity.z)
-	
-	# Speed magnitude
-	var speed_value = horizontal_velocity.length()
-	
-	#Direction relative to character facing
-	var local_velocity = global_transform.basis.inverse() * horizontal_velocity
-	
-	var direction_value = 0.0
-	
-	if speed_value > 0.01:
-		direction_value = local_velocity.x / sprint_speed
-	animation_tree.set("parameters/Locomotion/BlendSpace2D/blend_position",Vector2(direction_value, speed_value))
-	
-	#print("SpeedValue: ", speed_value, "Direction Value: ", direction_value)
-	print("Animation Tree parameters: ", animation_tree.get("parameters/Locomotion/BlendSpace2D/blend_position"))
-
 
 # ============================================================
 #  PHYSICS LOOP
@@ -124,117 +104,149 @@ func _update_animation_parameters():
 
 func _physics_process(delta):
 
-	# ---------------------------
-	# INPUT COLLECTION
-	# ---------------------------
+	_collect_input()
+	_update_sprint(delta)
+
+	_update_rotation(delta)
+
+	_compute_motor(delta)
+
+	_apply_gravity(delta)
+	move_and_slide()
+
+	_update_animation()
+	_update_visuals(delta)
+
+# ============================================================
+#  INPUT → INTENT
+# ============================================================
+
+func _collect_input():
+
 	input_vector = Input.get_vector("right", "left", "backward", "forward")
 
 	var cam_basis = Basis(Vector3.UP, rotation.y)
-	move_direction = cam_basis * Vector3(input_vector.x, 0, input_vector.y)
-	move_direction.y = 0
-	move_direction = move_direction.normalized()
 
-	# ---------------------------
-	# SPRINT + STAMINA LOGIC
-	# ---------------------------
-	_update_sprint_system(delta)
-
-	# ---------------------------
-	# ROTATION SYSTEM
-	# ---------------------------
-	_update_rotation(delta)
-
-	# ---------------------------
-	# MOVEMENT CALCULATION
-	# ---------------------------
-	_apply_movement(delta)
-	
-
-	# ---------------------------
-	# GRAVITY
-	# ---------------------------
-	if not is_on_floor():
-		velocity.y -= gravity * delta
-	else:
-		velocity.y = 0.0
-	move_and_slide()
-	
-	# ---------------------------
-	# ANIMATION CALCULATION
-	# ---------------------------
-	_update_animation_parameters()
-
+	intent_direction = cam_basis * Vector3(input_vector.x, 0, input_vector.y)
+	intent_direction.y = 0
+	intent_direction = intent_direction.normalized()
 
 # ============================================================
-#  MOVEMENT SYSTEM
+#  MOTOR (CORE SYSTEM)
 # ============================================================
 
-func _apply_movement(delta):
+func _compute_motor(delta):
 
-	var target_speed: float
-	var accel: float
+	var speed := sprint_speed if is_sprinting else move_speed
+
+	# --- WEIGHT MODIFIERS ---
+	var accel_mult = lerp(1.0, 1.0 - accel_weight_penalty, load_factor)
+	var turn_mult = lerp(1.0, 1.0 - turn_weight_penalty, load_factor)
+
+	var accel = base_accel * accel_mult
+	var decel = base_decel * accel_mult
+
+	# --- SOFT SPRINT CONSTRAINT ---
+	var adjusted_direction = intent_direction
 
 	if is_sprinting:
-		target_speed = sprint_speed
-		accel = sprint_accel
+		var local_dir = global_transform.basis.inverse() * intent_direction
+		local_dir.x *= 0.4
+		adjusted_direction = (global_transform.basis * local_dir).normalized()
+
+	# --- TARGET VELOCITY ---
+	target_velocity = adjusted_direction * speed
+
+	# --- APPLY ACCELERATION ---
+	var horizontal_velocity = Vector3(velocity.x, 0, velocity.z)
+
+	if intent_direction != Vector3.ZERO:
+		horizontal_velocity = horizontal_velocity.move_toward(target_velocity, accel * delta)
 	else:
-		target_speed = fast_walk_speed
-		accel = walk_accel
+		horizontal_velocity = horizontal_velocity.move_toward(Vector3.ZERO, decel * delta)
 
-	var target_velocity = move_direction * target_speed
-
-	# Apply acceleration toward target velocity
-	velocity.x = move_toward(velocity.x, target_velocity.x, accel * delta)
-	velocity.z = move_toward(velocity.z, target_velocity.z, accel * delta)
-
-	# Apply deceleration when no input
-	if move_direction == Vector3.ZERO:
-		velocity.x = move_toward(velocity.x, 0.0, deceleration * delta)
-		velocity.z = move_toward(velocity.z, 0.0, deceleration * delta)
+	velocity.x = horizontal_velocity.x
+	velocity.z = horizontal_velocity.z
 
 # ============================================================
-#  ROTATION SYSTEM (Angular Inertia)
+#  ROTATION
 # ============================================================
 
 func _update_rotation(delta):
 
+	var turn_mult = lerp(1.0, 1.0 - turn_weight_penalty, load_factor)
+
+	var max_turn = base_turn_speed * turn_mult
+
 	var current_yaw = rotation.y
-	
-	# Smooth interpolation
 	var new_yaw = lerp_angle(current_yaw, target_yaw, turn_acceleration * delta)
 
-	# Clamp turning speed
 	var angle_diff = wrapf(new_yaw - current_yaw, -PI, PI)
-	var max_step = max_turn_speed * delta
-	angle_diff = clamp(angle_diff, -max_step, max_step)
+	angle_diff = clamp(angle_diff, -max_turn * delta, max_turn * delta)
 
-	rotation.y = current_yaw + angle_diff
+	rotation.y += angle_diff
 
 # ============================================================
-#  SPRINT + STAMINA SYSTEM
+#  GRAVITY
 # ============================================================
 
-func _update_sprint_system(delta):
+func _apply_gravity(delta):
+
+	if not is_on_floor():
+		velocity.y -= gravity * delta
+	else:
+		velocity.y = 0.0
+
+# ============================================================
+#  SPRINT SYSTEM
+# ============================================================
+
+func _update_sprint(delta):
 
 	if is_sprinting:
-
-		# Commitment timer
-		if sprint_timer > 0.0:
-			sprint_timer -= delta
-
-		# Drain stamina
 		stamina -= stamina_drain_rate * delta
-		stamina = max(stamina, 0.0)
-
-		# Force stop sprint if stamina depleted
 		if stamina <= 0.0:
 			is_sprinting = false
-
 	else:
-		# Regenerate stamina when not sprinting
 		stamina += stamina_regen_rate * delta
-		stamina = min(stamina, stamina_max)
 
-	# Prevent cancelling sprint during commitment
-	if sprint_timer > 0.0:
-		is_sprinting = true
+	stamina = clamp(stamina, 0.0, stamina_max)
+
+# ============================================================
+#  ANIMATION
+# ============================================================
+
+func _update_animation():
+
+	var horizontal_velocity = Vector3(velocity.x, 0, velocity.z)
+	var local_velocity = global_transform.basis.inverse() * horizontal_velocity
+
+	var max_speed = sprint_speed if is_sprinting else move_speed
+
+	var lateral := 0.0
+	var forward := 0.0
+
+	if horizontal_velocity.length() > 0.01:
+		lateral = local_velocity.x / max_speed
+		forward = -local_velocity.z / max_speed
+
+	lateral = clamp(lateral, -1.0, 1.0)
+	forward = clamp(forward, -1.0, 1.0)
+
+	animation_tree.set(
+		"parameters/Locomotion/BlendSpace2D/blend_position",
+		Vector2(lateral, forward)
+	)
+
+# ============================================================
+#  VISUALS
+# ============================================================
+
+func _update_visuals(delta):
+
+	visuals_component.update_tilt(
+		delta,
+		velocity,
+		target_velocity,
+		global_transform.basis
+	)

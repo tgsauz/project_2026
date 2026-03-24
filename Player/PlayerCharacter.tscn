@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://m62ijxeuosdk"]
+
+[ext_resource type="Script" uid="uid://dkue2j3r6w56m" path="res://CharacterController.gd" id="1_k87gr"]
+[ext_resource type="PackedScene" uid="uid://wqrih7e0got5" path="res://Player/rig.tscn" id="2_1gtpu"]
+[ext_resource type="Script" uid="uid://cugcfuh4swrqi" path="res://VisualsComponent.gd" id="2_jdwmw"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_jdwmw"]
+radius = 0.33154297
+height = 1.8227539
+
+[node name="CharacterBody3D" type="CharacterBody3D" unique_id=1321391257 groups=["Player"]]
+script = ExtResource("1_k87gr")
+visuals_component_path = NodePath("Visuals")
+animation_tree_path = NodePath("Visuals/Rig/AnimationTree")
+
+[node name="Visuals" type="Node3D" parent="." unique_id=1722711644]
+script = ExtResource("2_jdwmw")
+skeleton_path = NodePath("Rig/Armature/Skeleton3D")
+bone_name = "spine_01"
+
+[node name="Rig" parent="Visuals" unique_id=2009837787 instance=ExtResource("2_1gtpu")]
+
+[node name="Skeleton3D" parent="Visuals/Rig/Armature" parent_id_path=PackedInt32Array(2009837787, 433468030) index="0" unique_id=1990901886]
+bones/7/rotation = Quaternion(-0.009809257, -1.2975515e-09, -6.5791916e-10, 0.99995196)
+bones/9/rotation = Quaternion(0.151358, 0.2028297, -0.4615009, 0.8502751)
+bones/25/rotation = Quaternion(0.15740184, -0.19797245, 0.46497273, 0.84842914)
+bones/26/rotation = Quaternion(0.1901988, -0.001080447, -0.056611918, 0.9801115)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=2018647733]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.88413084, 0)
+shape = SubResource("CapsuleShape3D_jdwmw")
+
+[editable path="Visuals/Rig"]

@@ -1,0 +1,41 @@
+[gd_scene format=3 uid="uid://bx0l1wlkpjer5"]
+
+[ext_resource type="PackedScene" uid="uid://m62ijxeuosdk" path="res://Player/PlayerCharacter.tscn" id="1_7qfgn"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_gpduo"]
+size = Vector3(25, 0.5, 25)
+
+[sub_resource type="BoxMesh" id="BoxMesh_7qfgn"]
+size = Vector3(25, 0.5, 25)
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_7qfgn"]
+sky_top_color = Color(0.23638466, 0.4741372, 0.63555753, 1)
+energy_multiplier = 1.5
+
+[sub_resource type="Sky" id="Sky_7qfgn"]
+sky_material = SubResource("ProceduralSkyMaterial_7qfgn")
+
+[sub_resource type="Environment" id="Environment_7qfgn"]
+background_mode = 2
+background_color = Color(0.09571245, 0.1937368, 0.27542377, 0.6156863)
+background_energy_multiplier = 1.5
+sky = SubResource("Sky_7qfgn")
+ambient_light_color = Color(1, 1, 1, 1)
+
+[node name="TestingWorld" type="Node3D" unique_id=1497402206]
+
+[node name="CharacterBody3D" parent="." unique_id=1321391257 instance=ExtResource("1_7qfgn")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4648862, 0)
+
+[node name="Plane" type="Node3D" parent="." unique_id=1080476547]
+
+[node name="StaticBody3D" type="StaticBody3D" parent="Plane" unique_id=1148840861]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Plane/StaticBody3D" unique_id=2052306801]
+shape = SubResource("BoxShape3D_gpduo")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Plane/StaticBody3D/CollisionShape3D" unique_id=1715481229]
+mesh = SubResource("BoxMesh_7qfgn")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=976082212]
+environment = SubResource("Environment_7qfgn")
