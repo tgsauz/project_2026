@@ -1,8 +1,9 @@
 [gd_scene format=3 uid="uid://m62ijxeuosdk"]
 
-[ext_resource type="Script" uid="uid://dkue2j3r6w56m" path="res://CharacterController.gd" id="1_k87gr"]
+[ext_resource type="Script" uid="uid://dkue2j3r6w56m" path="res://Player/Scripts/CharacterController.gd" id="1_k87gr"]
 [ext_resource type="PackedScene" uid="uid://wqrih7e0got5" path="res://Player/rig.tscn" id="2_1gtpu"]
-[ext_resource type="Script" uid="uid://cugcfuh4swrqi" path="res://VisualsComponent.gd" id="2_jdwmw"]
+[ext_resource type="Script" uid="uid://cugcfuh4swrqi" path="res://Player/Scripts/VisualsComponent.gd" id="2_jdwmw"]
+[ext_resource type="Script" uid="uid://ckaet3rbw2rrp" path="res://World/Items/Scripts/InventoryComponent.gd" id="4_jdwmw"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_jdwmw"]
 radius = 0.33154297
@@ -12,6 +13,7 @@ height = 1.8227539
 script = ExtResource("1_k87gr")
 visuals_component_path = NodePath("Visuals")
 animation_tree_path = NodePath("Visuals/Rig/AnimationTree")
+inventory_path = NodePath("InventoryComponent")
 
 [node name="Visuals" type="Node3D" parent="." unique_id=1722711644]
 script = ExtResource("2_jdwmw")
@@ -21,13 +23,17 @@ bone_name = "spine_01"
 [node name="Rig" parent="Visuals" unique_id=2009837787 instance=ExtResource("2_1gtpu")]
 
 [node name="Skeleton3D" parent="Visuals/Rig/Armature" parent_id_path=PackedInt32Array(2009837787, 433468030) index="0" unique_id=1990901886]
-bones/7/rotation = Quaternion(-0.009809257, -1.2975515e-09, -6.5791916e-10, 0.99995196)
-bones/9/rotation = Quaternion(0.151358, 0.2028297, -0.4615009, 0.8502751)
-bones/25/rotation = Quaternion(0.15740184, -0.19797245, 0.46497273, 0.84842914)
-bones/26/rotation = Quaternion(0.1901988, -0.001080447, -0.056611918, 0.9801115)
+bones/7/rotation = Quaternion(-0.009455053, -1.2977843e-09, -6.574594e-10, 0.99995536)
+bones/9/rotation = Quaternion(0.15166345, 0.20266391, -0.46157378, 0.8502207)
+bones/25/rotation = Quaternion(0.15772812, -0.19779357, 0.4650488, 0.8483686)
+bones/26/rotation = Quaternion(0.19022594, -0.0010796046, -0.056621324, 0.98010564)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=2018647733]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.88413084, 0)
 shape = SubResource("CapsuleShape3D_jdwmw")
+
+[node name="InventoryComponent" type="Node" parent="." unique_id=446658261]
+script = ExtResource("4_jdwmw")
+metadata/_custom_type_script = "uid://ckaet3rbw2rrp"
 
 [editable path="Visuals/Rig"]

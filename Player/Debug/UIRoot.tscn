@@ -1,0 +1,134 @@
+[gd_scene format=3 uid="uid://chkk4laksuify"]
+
+[ext_resource type="Script" uid="uid://b41go6yfp3pd4" path="res://Player/Debug/Scripts/DebugStatsUI.gd" id="1_aei66"]
+[ext_resource type="Script" uid="uid://ib6tgshf1dmu" path="res://Player/Debug/UIRoot.gd" id="1_mgb65"]
+[ext_resource type="Shader" uid="uid://dgq8wiu7ulhfi" path="res://Textures/Crosshair.gdshader" id="2_acktk"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_7i8ja"]
+shader = ExtResource("2_acktk")
+
+[node name="UIRoot" type="CanvasLayer" unique_id=908704883]
+script = ExtResource("1_mgb65")
+
+[node name="GameplayLayer" type="Control" parent="." unique_id=1793630363]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="HUD" type="Control" parent="GameplayLayer" unique_id=62627019]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Crosshair" type="Control" parent="GameplayLayer/HUD" unique_id=1219082072]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -8.0
+offset_top = -8.0
+offset_right = 8.0
+offset_bottom = 8.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ColorRect" type="ColorRect" parent="GameplayLayer/HUD/Crosshair" unique_id=293026410]
+material = SubResource("ShaderMaterial_7i8ja")
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="InteractPrompt" type="Control" parent="GameplayLayer/HUD" unique_id=135847907]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="NameLabel" type="Label" parent="GameplayLayer/HUD/InteractPrompt" unique_id=333012379]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+
+[node name="TooltipLabel" type="Label" parent="GameplayLayer/HUD/InteractPrompt" unique_id=1614879955]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+
+[node name="Line2D" type="Line2D" parent="GameplayLayer/HUD/InteractPrompt" unique_id=487682417]
+
+[node name="StatusContainer" type="VBoxContainer" parent="GameplayLayer/HUD" unique_id=1237071445]
+custom_minimum_size = Vector2(30, 0)
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="ProgressBar" type="ProgressBar" parent="GameplayLayer/HUD/StatusContainer" unique_id=1540715607]
+layout_mode = 2
+
+[node name="MenuLayer" type="Control" parent="." unique_id=1237053139]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+
+[node name="MenuRoot" type="Control" parent="MenuLayer" unique_id=2087012693]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="DebugLayer" type="Control" parent="." unique_id=1324122574]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+
+[node name="DebugStatsUI" type="Control" parent="DebugLayer" unique_id=868507804]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("1_aei66")
+
+[node name="Panel" type="Panel" parent="DebugLayer/DebugStatsUI" unique_id=1293253077]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="DebugLayer/DebugStatsUI/Panel" unique_id=847533748]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="SpeedLabel" type="Label" parent="DebugLayer/DebugStatsUI/Panel/VBoxContainer" unique_id=973229664]
+layout_mode = 2
+
+[node name="VelocityLabel" type="Label" parent="DebugLayer/DebugStatsUI/Panel/VBoxContainer" unique_id=55932846]
+layout_mode = 2
+
+[node name="LoadLabel" type="Label" parent="DebugLayer/DebugStatsUI/Panel/VBoxContainer" unique_id=769822503]
+layout_mode = 2
+
+[node name="WeightLabel" type="Label" parent="DebugLayer/DebugStatsUI/Panel/VBoxContainer" unique_id=1921352424]
+layout_mode = 2

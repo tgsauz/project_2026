@@ -1,6 +1,6 @@
 [gd_scene format=4 uid="uid://wqrih7e0got5"]
 
-[ext_resource type="Script" uid="uid://brjbff4dvpvw8" path="res://CameraController.gd" id="1_ydo8n"]
+[ext_resource type="Script" uid="uid://brjbff4dvpvw8" path="res://Player/Scripts/CameraController.gd" id="1_ydo8n"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lf3il"]
 resource_name = "M_Char"

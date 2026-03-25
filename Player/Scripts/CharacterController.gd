@@ -4,29 +4,24 @@ extends CharacterBody3D
 #  MOVEMENT CONFIGURATION
 # ============================================================
 
-@export_category("Base Speeds")
 @export var move_speed: float = 4.0
 @export var sprint_speed: float = 6.5
 
-@export_category("Acceleration")
 @export var base_accel: float = 10.0
 @export var base_decel: float = 8.0
 
-@export_category("Rotation")
 @export var base_turn_speed: float = 6.0
 @export var turn_acceleration: float = 10.0
 
-@export_category("Sprint")
 @export var stamina_max: float = 100.0
 @export var stamina_drain_rate: float = 20.0
 @export var stamina_regen_rate: float = 15.0
 
 # ============================================================
-#  LOAD / WEIGHT SYSTEM (FUTURE READY)
+#  INVENTORY SYSTEM (WIP)
 # ============================================================
 
-@export_category("Load System")
-@export var load_factor: float = 0.0  # 0 = light, 1 = heavy+
+var load_factor: float = 0.0  # 0 = light, 1 = heavy+
 
 @export var accel_weight_penalty: float = 0.5
 @export var turn_weight_penalty: float = 0.5
@@ -36,10 +31,14 @@ extends CharacterBody3D
 # ============================================================
 
 @export_category("References")
+@export var inventory_path: NodePath
+@export var interaction_path: NodePath
 @export var visuals_component_path: NodePath
 @export var animation_tree_path: NodePath
 
-var visuals_component
+var inventory : Node
+var interaction: Node
+var visuals_component : Node
 var animation_tree: AnimationTree
 
 # ============================================================
@@ -67,13 +66,21 @@ var target_yaw: float = 0.0
 # ============================================================
 
 func _ready():
+	inventory = get_node(inventory_path)
+	interaction = get_node(interaction_path)
 	visuals_component = get_node(visuals_component_path)
 	animation_tree = get_node(animation_tree_path)
 
+	assert(inventory != null)
+	assert(interaction != null)
 	assert(visuals_component != null)
 	assert(animation_tree != null)
 
+	inventory.connect("weight_changed", _on_weight_changed)
 	animation_tree.active = true
+	
+	var test_item = preload("res://World/Items/SquareItem.tres")
+	inventory.add_item(test_item, 1)
 
 # ============================================================
 #  INPUT
@@ -86,6 +93,9 @@ func _unhandled_input(event):
 
 	if event.is_action_pressed("ui_cancel"):
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+
+	if event.is_action_pressed("interact"):
+		interaction.try_interact()
 
 	if event.is_action_pressed("sprint_toggle"):
 		if stamina > 10.0:
@@ -250,3 +260,6 @@ func _update_visuals(delta):
 		target_velocity,
 		global_transform.basis
 	)
+
+func _on_weight_changed(new_weight: float, new_load_factor: float):
+	load_factor = new_load_factor
