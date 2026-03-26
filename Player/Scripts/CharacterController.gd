@@ -60,6 +60,8 @@ var stamina: float = 100.0
 
 # ROTATION
 var target_yaw: float = 0.0
+var camera_yaw: float = 0.0
+var is_first_person: bool = true
 
 # ============================================================
 #  READY
@@ -78,6 +80,8 @@ func _ready():
 
 	inventory.connect("weight_changed", _on_weight_changed)
 	animation_tree.active = true
+	target_yaw = rotation.y
+	camera_yaw = rotation.y
 	
 	var test_item = preload("res://World/Items/SquareItem.tres")
 	inventory.add_item(test_item, 1)
@@ -108,6 +112,12 @@ func _unhandled_input(event):
 func set_target_yaw(new_yaw: float) -> void:
 	target_yaw = new_yaw
 
+func set_camera_yaw(new_yaw: float) -> void:
+	camera_yaw = new_yaw
+
+func set_camera_mode(first_person: bool) -> void:
+	is_first_person = first_person
+
 # ============================================================
 #  PHYSICS LOOP
 # ============================================================
@@ -135,12 +145,16 @@ func _collect_input():
 
 	input_vector = Input.get_vector("right", "left", "backward", "forward")
 
-	var cam_basis = Basis(Vector3.UP, rotation.y)
+	var move_yaw = rotation.y if is_first_person else camera_yaw
+	var move_basis = Basis(Vector3.UP, move_yaw)
 
-	intent_direction = cam_basis * Vector3(input_vector.x, 0, input_vector.y)
+	intent_direction = move_basis * Vector3(input_vector.x, 0, input_vector.y)
 	intent_direction.y = 0
 	intent_direction = intent_direction.normalized()
-
+	
+	if not is_first_person and intent_direction.length_squared() > 0.0:
+		target_yaw = atan2(intent_direction.x, intent_direction.z)
+		
 # ============================================================
 #  MOTOR (CORE SYSTEM)
 # ============================================================
@@ -151,7 +165,7 @@ func _compute_motor(delta):
 
 	# --- WEIGHT MODIFIERS ---
 	var accel_mult = lerp(1.0, 1.0 - accel_weight_penalty, load_factor)
-	var turn_mult = lerp(1.0, 1.0 - turn_weight_penalty, load_factor)
+	var _turn_mult = lerp(1.0, 1.0 - turn_weight_penalty, load_factor)
 
 	var accel = base_accel * accel_mult
 	var decel = base_decel * accel_mult
@@ -183,9 +197,11 @@ func _compute_motor(delta):
 # ============================================================
 
 func _update_rotation(delta):
-
+	if is_first_person:
+		rotation.y = target_yaw
+		return
+	
 	var turn_mult = lerp(1.0, 1.0 - turn_weight_penalty, load_factor)
-
 	var max_turn = base_turn_speed * turn_mult
 
 	var current_yaw = rotation.y
@@ -195,7 +211,6 @@ func _update_rotation(delta):
 	angle_diff = clamp(angle_diff, -max_turn * delta, max_turn * delta)
 
 	rotation.y += angle_diff
-
 # ============================================================
 #  GRAVITY
 # ============================================================
@@ -261,5 +276,5 @@ func _update_visuals(delta):
 		global_transform.basis
 	)
 
-func _on_weight_changed(new_weight: float, new_load_factor: float):
+func _on_weight_changed(_new_weight: float, new_load_factor: float):
 	load_factor = new_load_factor
