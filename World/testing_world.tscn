@@ -27,11 +27,19 @@ ambient_light_color = Color(1, 1, 1, 1)
 
 [node name="CharacterBody3D" parent="." unique_id=1321391257 instance=ExtResource("1_7qfgn")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4648862, 0)
-interaction_path = NodePath("UIRoot/GameplayLayer/HUD/InteractPrompt")
+
+[node name="Skeleton3D" parent="CharacterBody3D/Visuals/Rig/Armature" parent_id_path=PackedInt32Array(1321391257, 2009837787, 433468030) index="0" unique_id=1990901886]
+bones/7/rotation = Quaternion(-0.008859628, -1.2981758e-09, -6.566866e-10, 0.99996084)
+bones/9/rotation = Quaternion(0.15217908, 0.20238389, -0.4616966, 0.85012853)
+bones/25/rotation = Quaternion(0.15825382, -0.19750538, 0.46517134, 0.84827065)
+bones/26/rotation = Quaternion(0.18989359, -0.0010817295, -0.05652945, 0.9801754)
+
+[node name="CAMERARIG" parent="CharacterBody3D/Visuals/Rig" parent_id_path=PackedInt32Array(1321391257, 2009837787) index="3" unique_id=999810615]
+tps_orbit_distance = 3.0
+tps_shoulder_offset = 0.0
+tps_height_offset = 0.0
 
 [node name="UIRoot" parent="CharacterBody3D" unique_id=1321403690 instance=ExtResource("2_uay7f")]
-gameplay_layer_path = NodePath("GameplayLayer")
-debug_layer_path = NodePath("DebugLayer")
 
 [node name="HUD" parent="CharacterBody3D/UIRoot/GameplayLayer" parent_id_path=PackedInt32Array(1321403690, 1793630363) index="0" unique_id=62627019]
 mouse_filter = 2
@@ -55,11 +63,6 @@ mouse_filter = 2
 mouse_filter = 2
 
 [node name="DebugStatsUI" parent="CharacterBody3D/UIRoot/DebugLayer" parent_id_path=PackedInt32Array(1321403690, 1324122574) index="0" unique_id=868507804]
-character_path = NodePath("../../..")
-speed_label_path = NodePath("Panel/VBoxContainer/SpeedLabel")
-velocity_label_path = NodePath("Panel/VBoxContainer/VelocityLabel")
-load_label_path = NodePath("Panel/VBoxContainer/LoadLabel")
-weight_label_path = NodePath("Panel/VBoxContainer/WeightLabel")
 
 [node name="Panel" parent="CharacterBody3D/UIRoot/DebugLayer/DebugStatsUI" index="0" unique_id=1293253077]
 mouse_filter = 2
@@ -80,4 +83,6 @@ mesh = SubResource("BoxMesh_7qfgn")
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=976082212]
 environment = SubResource("Environment_7qfgn")
 
+[editable path="CharacterBody3D"]
+[editable path="CharacterBody3D/Visuals/Rig"]
 [editable path="CharacterBody3D/UIRoot"]

@@ -15,14 +15,8 @@ extends Node3D
 
 @export_category("TPS Orbit Settings")
 @export var tps_orbit_distance: float = 3.0
-@export var tps_shoulder_offset: float = 0.35
+@export var tps_shoulder_offset: float = 0.2
 @export var tps_height_offset: float = 0.25
-
-@export_category("Camera References")
-@export var fps_pivot_path: NodePath
-@export var tps_pivot_path: NodePath
-@export var fps_camera_path: NodePath
-@export var tps_camera_path: NodePath
 
 var fps_pivot: Node3D
 var tps_pivot: Node3D
@@ -44,31 +38,76 @@ var using_fps: bool = true
 # READY
 # ============================================================
 func _ready():
-	fps_pivot = get_node(fps_pivot_path)
-	tps_pivot = get_node(tps_pivot_path)
-	fps_camera = get_node(fps_camera_path)
-	tps_camera = get_node(tps_camera_path)
-	motor = get_tree().get_first_node_in_group("Player")
-	
-	_assert_nodes()
+	fps_pivot = get_node_or_null("FPSPIVOT") as Node3D
+	tps_pivot = get_node_or_null("TPSPIVOT") as Node3D
+	fps_camera = get_node_or_null("FPSPIVOT/FPSCAMERA") as Camera3D
+	tps_camera = get_node_or_null("TPSPIVOT/TPSCAMERA") as Camera3D
+	motor = _resolve_motor()
+
+	if not _validate_required_nodes():
+		set_process(false)
+		return
 	
 	fps_pitch = fps_pivot.rotation.x
 	tps_pitch = tps_pivot.rotation.x
-	fps_yaw = motor.rotation.y
-	tps_yaw = motor.rotation.y
+	if _is_valid_motor(motor):
+		fps_yaw = motor.rotation.y
+		tps_yaw = motor.rotation.y
 
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	_set_camera_mode(true)
 	
 func _process(_delta):
+	if not _is_valid_motor(motor):
+		motor = _resolve_motor()
+		if not _is_valid_motor(motor):
+			return
+	
 	_apply_active_look()
 
-func _assert_nodes():
-	assert(fps_pivot != null, "FPS Pivot not assigned!")
-	assert(tps_pivot != null, "TPS Pivot not assigned!")
-	assert(fps_camera != null, "FPS Camera not assigned!")
-	assert(tps_camera != null, "TPS Camera not assigned!")
-	assert(motor != null, "No node in group 'Player' found!")
+func set_motor(new_motor: CharacterBody3D) -> void:
+	if not _is_valid_motor(new_motor):
+		push_warning("CameraController.set_motor received an invalid motor reference.")
+		return
+		
+	motor = new_motor
+	fps_yaw = motor.rotation.y
+	tps_yaw = motor.rotation.y
+	_apply_active_look()
+
+func _resolve_motor() -> CharacterBody3D:
+	var node: Node = self
+	while node != null:
+		if _is_valid_motor(node):
+			return node as CharacterBody3D
+		node = node.get_parent()
+
+	return null
+
+func _is_valid_motor(node: Node) -> bool:
+	if not (node is CharacterBody3D):
+		return false
+	return node.has_method("set_target_yaw") and node.has_method("set_camera_yaw") and node.has_method("set_camera_mode")
+
+func _validate_required_nodes() -> bool:
+	var valid = true
+	if fps_pivot == null:
+		push_error("CameraController could not resolve FPSPIVOT.")
+		valid = false
+	if tps_pivot == null:
+		push_error("CameraController could not resolve TPSPIVOT.")
+		valid = false
+	if fps_camera == null:
+		push_error("CameraController could not resolve FPSPIVOT/FPSCAMERA.")
+		valid = false
+	if tps_camera == null:
+		push_error("CameraController could not resolve TPSPIVOT/TPSCAMERA.")
+		valid = false
+	
+	if not _is_valid_motor(motor):
+		push_warning("No valid motor found at startup. CameraController will retry via parent traversal.")
+
+	return valid
 
 # ============================================================
 # INPUT
@@ -101,6 +140,9 @@ func _handle_mouse_motion(event: InputEventMouseMotion):
 	_apply_active_look()
 
 func _apply_active_look():
+	if not _is_valid_motor(motor):
+		return
+
 	fps_pivot.rotation.x = fps_pitch
 	
 	# Keep TPS orbit independent from character yaw by compensating parent rotation.

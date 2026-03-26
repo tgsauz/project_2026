@@ -5,8 +5,6 @@ extends Node
 @export var tilt_smoothing: float = 6.0
 @export var max_tilt_angle: float = 0.35
 
-@export_category("References")
-@export var skeleton_path: NodePath
 @export var bone_name: String = "Spine"
 
 var skeleton: Skeleton3D
@@ -16,8 +14,14 @@ var previous_velocity: Vector3 = Vector3.ZERO
 var tilt: Vector2 = Vector2.ZERO
 
 func _ready():
-	skeleton = get_node(skeleton_path)
+	skeleton = get_node_or_null("Rig/Armature/Skeleton3D") as Skeleton3D
+	if skeleton == null:
+		push_error("VisualsComponent could not resolve Rig/Armature/Skeleton3D.")
+		return
+
 	bone_idx = skeleton.find_bone(bone_name)
+	if bone_idx == -1:
+		push_warning("VisualsComponent could not find bone '%s'." % bone_name)
 
 func update_tilt(delta: float, velocity: Vector3, target_velocity: Vector3, global_basis: Basis):
 
@@ -39,7 +43,7 @@ func update_tilt(delta: float, velocity: Vector3, target_velocity: Vector3, glob
 
 func _apply():
 
-	if bone_idx == -1:
+	if skeleton == null or bone_idx == -1:
 		return
 
 	var pose = skeleton.get_bone_global_pose(bone_idx)

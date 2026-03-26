@@ -1,4 +1,5 @@
 extends CharacterBody3D
+class_name CharacterController
 
 # ============================================================
 #  MOVEMENT CONFIGURATION
@@ -30,16 +31,11 @@ var load_factor: float = 0.0  # 0 = light, 1 = heavy+
 #  REFERENCES
 # ============================================================
 
-@export_category("References")
-@export var inventory_path: NodePath
-@export var interaction_path: NodePath
-@export var visuals_component_path: NodePath
-@export var animation_tree_path: NodePath
-
-var inventory : Node
-var interaction: Node
-var visuals_component : Node
+var inventory: InventoryComponent
+var interaction: InteractionComponent
+var visuals_component: Node
 var animation_tree: AnimationTree
+var camera_controller: Node
 
 # ============================================================
 #  INTERNAL STATE
@@ -68,20 +64,21 @@ var is_first_person: bool = true
 # ============================================================
 
 func _ready():
-	inventory = get_node(inventory_path)
-	interaction = get_node(interaction_path)
-	visuals_component = get_node(visuals_component_path)
-	animation_tree = get_node(animation_tree_path)
+	if not _resolve_dependencies():
+		set_physics_process(false)
+		set_process(false)
+		return
+	
+	if camera_controller.has_method("set_motor"):
+		camera_controller.set_motor(self)
 
-	assert(inventory != null)
-	assert(interaction != null)
-	assert(visuals_component != null)
-	assert(animation_tree != null)
-
-	inventory.connect("weight_changed", _on_weight_changed)
+	if not inventory.weight_changed.is_connected(_on_weight_changed):
+		inventory.weight_changed.connect(_on_weight_changed)
 	animation_tree.active = true
 	target_yaw = rotation.y
 	camera_yaw = rotation.y
+
+	_bind_ui()
 	
 	var test_item = preload("res://World/Items/SquareItem.tres")
 	inventory.add_item(test_item, 1)
@@ -117,6 +114,9 @@ func set_camera_yaw(new_yaw: float) -> void:
 
 func set_camera_mode(first_person: bool) -> void:
 	is_first_person = first_person
+
+func get_inventory_component() -> InventoryComponent:
+	return inventory
 
 # ============================================================
 #  PHYSICS LOOP
@@ -278,3 +278,48 @@ func _update_visuals(delta):
 
 func _on_weight_changed(_new_weight: float, new_load_factor: float):
 	load_factor = new_load_factor
+
+# ============================================================
+#  DEPENDENCY RESOLUTION
+# ============================================================
+
+func _resolve_dependencies() -> bool:
+	inventory = get_node_or_null("InventoryComponent") as InventoryComponent
+	interaction = get_node_or_null("InteractionComponent") as InteractionComponent
+	visuals_component = get_node_or_null("Visuals")
+
+	if visuals_component != null:
+		animation_tree = visuals_component.get_node_or_null("Rig/AnimationTree") as AnimationTree
+		camera_controller = visuals_component.get_node_or_null("Rig/CAMERARIG")
+	else:
+		animation_tree = null
+		camera_controller = null
+
+	var valid := true
+
+	if inventory == null:
+		push_error("CharacterController requires a child InventoryComponent node.")
+		valid = false
+
+	if interaction == null:
+		push_error("CharacterController requires a child InteractionComponent node.")
+		valid = false
+
+	if visuals_component == null:
+		push_error("CharacterController requires a child Visuals node.")
+		valid = false
+
+	if animation_tree == null:
+		push_error("CharacterController could not resolve Visuals/Rig/AnimationTree.")
+		valid = false
+
+	if camera_controller == null:
+		push_error("CharacterController could not resolve Visuals/Rig/CAMERARIG.")
+		valid = false
+
+	return valid
+
+func _bind_ui() -> void:
+	var ui_root := get_node_or_null("UIRoot")
+	if ui_root != null and ui_root.has_method("bind_character"):
+		ui_root.bind_character(self)
