@@ -45,3 +45,9 @@ data_*/
 # Godot crash reports
 # ------------------------------
 crash_log.txt
+
+# ------------------------------
+# Misc Models and Textures
+# ------------------------------
+./3DModularProps Assets/
+./PrototypeTextures/
