@@ -51,3 +51,8 @@ crash_log.txt
 # ------------------------------
 ./3DModularProps Assets/
 ./PrototypeTextures/
+
+# ------------------------------
+# Obsidian vault config
+# ------------------------------
+.obsidian/

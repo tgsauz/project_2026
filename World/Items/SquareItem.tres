@@ -4,6 +4,21 @@
 
 [resource]
 script = ExtResource("1_sh0kd")
+id = "square_test_item"
+display_name = "Secured Container"
+tooltip_text = "Prototype lower-back container used to validate physical storage and mounted visuals."
+category = "equipment"
+interaction_verb = "Pick up"
+interaction_key_hint = "E"
 stackable = true
 max_stack = 10
+allowed_slots = PackedStringArray("lower_back", "belt", "left_pocket", "right_pocket")
+visible_when_equipped = true
+preferred_slot = "lower_back"
+is_container = true
+container_capacity = 4
+container_allowed_categories = PackedStringArray("ammo", "medical", "equipment")
+placeholder_visual_shape = "box"
+placeholder_visual_size = Vector3(0.32, 0.18, 0.12)
+placeholder_visual_color = Color(0.202, 0.278, 0.35, 1)
 metadata/_custom_type_script = "uid://cgvv34qt43vdl"

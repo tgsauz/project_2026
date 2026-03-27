@@ -98,6 +98,25 @@ anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 
+[node name="QuickActionPanel" type="Panel" parent="MenuLayer/MenuRoot"]
+visible = false
+offset_left = 24.0
+offset_top = 160.0
+offset_right = 224.0
+offset_bottom = 284.0
+
+[node name="TitleLabel" type="Label" parent="MenuLayer/MenuRoot/QuickActionPanel"]
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 180.0
+offset_bottom = 30.0
+
+[node name="ActionsLabel" type="Label" parent="MenuLayer/MenuRoot/QuickActionPanel"]
+offset_left = 10.0
+offset_top = 36.0
+offset_right = 180.0
+offset_bottom = 110.0
+
 [node name="DebugLayer" type="Control" parent="." unique_id=1324122574]
 layout_mode = 3
 anchors_preset = 0

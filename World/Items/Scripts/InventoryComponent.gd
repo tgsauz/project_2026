@@ -2,87 +2,429 @@ extends Node
 class_name InventoryComponent
 
 # ============================================================
-#  CONFIG
+#  CONFIGURATION
 # ============================================================
 
 @export_category("Capacity")
-@export var base_capacity: float = 20.0  # kg equivalent
+@export var base_capacity: float = 20.0
+@export var slot_names: PackedStringArray = PackedStringArray([
+	"left_hand",
+	"right_hand",
+	"torso",
+	"lower_back",
+	"belt",
+	"left_pocket",
+	"right_pocket",
+	"back_mount",
+	"shoulder_mount"
+])
 
 # ============================================================
 #  INTERNAL
 # ============================================================
 
-var items: Array = []  # Array of dictionaries {resource, quantity}
+var slot_configs: Dictionary = {}
+var slot_state: Dictionary = {}
+var item_instances: Dictionary = {}
 
 var total_weight: float = 0.0
 var load_factor: float = 0.0
 
 # ============================================================
-#  SIGNALS (CRITICAL FOR MODULARITY)
+#  SIGNALS
 # ============================================================
 
 signal inventory_updated
 signal weight_changed(new_weight: float, load_factor: float)
+signal item_visuals_changed(visible_items: Array)
 
 # ============================================================
-#  PUBLIC API
+#  LIFECYCLE
+# ============================================================
+
+func _ready() -> void:
+	slot_configs = _build_slot_configs()
+	_initialize_slots()
+
+# ============================================================
+#  COMPATIBILITY API
 # ============================================================
 
 func add_item(item: ItemResource, quantity: int = 1) -> void:
-	
 	if item == null:
 		return
-	
-	items.append({
-		"resource": item,
-		"quantity": quantity
-	})
-	
+
+	var instance = ItemInstance.create_from_definition(item, quantity)
+	store_item_instance_best_effort(instance)
+
+func clear() -> void:
+	slot_state.clear()
+	item_instances.clear()
+	_initialize_slots()
 	_recalculate()
 
-func remove_item(index: int) -> void:
-	
-	if index < 0 or index >= items.size():
-		return
-	
-	items.remove_at(index)
-	_recalculate()
+func get_items() -> Array:
+	var items: Array = []
+	for item_id in item_instances.keys():
+		var item = item_instances[item_id]
+		if item == null:
+			continue
 
-func clear():
-	items.clear()
-	_recalculate()
+		items.append({
+			"resource": item.definition,
+			"quantity": item.stack_count,
+			"instance_id": item.instance_id,
+			"slot": item.owning_slot,
+			"container_id": item.parent_instance_id
+		})
+	return items
 
 # ============================================================
-#  CORE LOGIC
+#  STORAGE API
 # ============================================================
 
-func _recalculate():
-	
-	var new_weight := 0.0
-	
-	for entry in items:
-		var item: ItemResource = entry["resource"]
-		var quantity: int = entry["quantity"]
-		
-		new_weight += item.weight * quantity
-	
-	total_weight = new_weight
-	
-	load_factor = total_weight / base_capacity
-	load_factor = max(load_factor, 0.0)  # no upper clamp (important!)
-	
-	emit_signal("inventory_updated")
-	emit_signal("weight_changed", total_weight, load_factor)
+func can_store_item(item, target_slot: String) -> bool:
+	if item == null or item.definition == null:
+		return false
+	if not slot_state.has(target_slot):
+		return false
+	if not str(slot_state[target_slot].get("item_id", "")).is_empty():
+		return false
+
+	var config: Dictionary = slot_configs.get(target_slot, {})
+	var accepted_categories: PackedStringArray = config.get("accepted_categories", PackedStringArray())
+	if not accepted_categories.is_empty() and not accepted_categories.has(str(item.definition.category)):
+		return false
+
+	if not item.definition.allowed_slots.is_empty() and not item.definition.allowed_slots.has(target_slot):
+		return false
+
+	return true
+
+func store_item_in_slot(item, target_slot: String) -> bool:
+	if not can_store_item(item, target_slot):
+		return false
+
+	if str(item.instance_id).is_empty():
+		item.instance_id = ItemInstance.create_from_definition(item.definition, item.stack_count).instance_id
+
+	item_instances[item.instance_id] = item
+	_detach_item(item.instance_id)
+	item.owning_slot = target_slot
+	item.parent_instance_id = ""
+	slot_state[target_slot]["item_id"] = item.instance_id
+	_restore_embedded_contents(item)
+	_recalculate()
+	return true
+
+func store_item_in_container(item, target_container_id: String) -> bool:
+	if item == null or item.definition == null:
+		return false
+	if target_container_id.is_empty() or not item_instances.has(target_container_id):
+		return false
+
+	var container = item_instances[target_container_id]
+	if not _can_container_accept_item(container, item):
+		return false
+
+	if str(item.instance_id).is_empty():
+		item.instance_id = ItemInstance.create_from_definition(item.definition, item.stack_count).instance_id
+
+	item_instances[item.instance_id] = item
+	_detach_item(item.instance_id)
+	item.owning_slot = ""
+	item.parent_instance_id = target_container_id
+
+	var contents := Array(container.contained_item_ids)
+	contents.append(item.instance_id)
+	container.contained_item_ids = PackedStringArray(contents)
+	_restore_embedded_contents(item)
+	_recalculate()
+	return true
+
+func store_item_instance_best_effort(item) -> bool:
+	if item == null or item.definition == null:
+		return false
+	if str(item.instance_id).is_empty():
+		item.instance_id = ItemInstance.create_from_definition(item.definition, item.stack_count).instance_id
+
+	for slot_name in _get_preferred_slots(item.definition):
+		if store_item_in_slot(item, slot_name):
+			return true
+
+	for item_id in item_instances.keys():
+		if store_item_in_container(item, str(item_id)):
+			return true
+
+	return false
+
+func move_item(item_id: String, target_slot: String = "", target_container_id: String = "") -> bool:
+	var item = get_item_instance(item_id)
+	if item == null:
+		return false
+	if not target_slot.is_empty():
+		return store_item_in_slot(item, target_slot)
+	if not target_container_id.is_empty():
+		return store_item_in_container(item, target_container_id)
+	return false
+
+func equip_item(item_id: String, target_slot: String) -> bool:
+	return move_item(item_id, target_slot, "")
+
+func unequip_item(item_id: String) -> bool:
+	var item = get_item_instance(item_id)
+	if item == null:
+		return false
+
+	for slot_name in ["left_pocket", "right_pocket", "belt", "left_hand", "right_hand"]:
+		if can_store_item(item, slot_name):
+			return store_item_in_slot(item, slot_name)
+
+	for container_id in item_instances.keys():
+		if store_item_in_container(item, str(container_id)):
+			return true
+
+	return false
+
+func move_item_to_hand(item_id: String) -> bool:
+	var item = get_item_instance(item_id)
+	if item == null:
+		return false
+
+	for slot_name in ["right_hand", "left_hand"]:
+		if can_store_item(item, slot_name):
+			return store_item_in_slot(item, slot_name)
+
+	return false
+
+func drop_item(item_id: String):
+	var item = get_item_instance(item_id)
+	if item == null:
+		return null
+
+	var nested_items: Array = _collect_nested_items(item)
+	if not nested_items.is_empty():
+		item.custom_state["contained_instances"] = nested_items
+		item.contained_item_ids = PackedStringArray()
+
+	_detach_item(item_id)
+	item_instances.erase(item_id)
+	for nested_item in nested_items:
+		item_instances.erase(str(nested_item.instance_id))
+	item.owning_slot = ""
+	item.parent_instance_id = ""
+	_recalculate()
+	return item
+
+func get_item_actions(item_id: String) -> Array[Dictionary]:
+	var item = get_item_instance(item_id)
+	if item == null:
+		return []
+
+	var actions: Array[Dictionary] = []
+	if item.owning_slot != "right_hand" and item.owning_slot != "left_hand":
+		actions.append({"id": "move_to_hand", "label": "Move To Hand"})
+	if not str(item.owning_slot).is_empty() and item.owning_slot != "left_pocket" and item.owning_slot != "right_pocket":
+		actions.append({"id": "unequip", "label": "Stow"})
+	actions.append({"id": "drop", "label": "Drop"})
+	actions.append({"id": "inspect", "label": "Inspect"})
+	return actions
 
 # ============================================================
 #  GETTERS
 # ============================================================
 
-func get_items() -> Array:
-	return items
+func get_item_instance(item_id: String):
+	if not item_instances.has(item_id):
+		return null
+	return item_instances[item_id]
 
 func get_total_weight() -> float:
 	return total_weight
 
 func get_load_factor() -> float:
 	return load_factor
+
+func get_slot_state(target_slot: String) -> Dictionary:
+	if not slot_state.has(target_slot):
+		return {}
+
+	var state: Dictionary = slot_state[target_slot].duplicate(true)
+	var item_id: String = str(state.get("item_id", ""))
+	if not item_id.is_empty() and item_instances.has(item_id):
+		var item = item_instances[item_id]
+		state["item"] = item
+		state["definition"] = item.definition
+	return state
+
+func get_visible_equipment() -> Array:
+	var visible_items: Array = []
+	for slot_name in slot_names:
+		var state: Dictionary = get_slot_state(slot_name)
+		var item = state.get("item", null)
+		if item == null or item.definition == null:
+			continue
+		if not item.definition.visible_when_equipped:
+			continue
+		var config: Dictionary = slot_configs.get(slot_name, {})
+		if not bool(config.get("visible", false)):
+			continue
+
+		visible_items.append({
+			"slot_name": slot_name,
+			"item_id": item.instance_id,
+			"definition": item.definition,
+			"display_name": item.get_display_name()
+		})
+	return visible_items
+
+# ============================================================
+#  CORE
+# ============================================================
+
+func _initialize_slots() -> void:
+	for slot_name in slot_names:
+		slot_state[slot_name] = {
+			"item_id": "",
+			"display_name": slot_configs.get(slot_name, {}).get("display_name", slot_name)
+		}
+
+func _recalculate() -> void:
+	var new_weight := 0.0
+	for item_id in item_instances.keys():
+		var item = item_instances[item_id]
+		if item == null:
+			continue
+		new_weight += float(item.get_total_weight())
+
+	total_weight = new_weight
+	load_factor = total_weight / base_capacity
+	load_factor = max(load_factor, 0.0)
+
+	emit_signal("inventory_updated")
+	emit_signal("weight_changed", total_weight, load_factor)
+	emit_signal("item_visuals_changed", get_visible_equipment())
+
+# ============================================================
+#  HELPERS
+# ============================================================
+
+func _build_slot_configs() -> Dictionary:
+	return {
+		"left_hand": {
+			"display_name": "Left Hand",
+			"accepted_categories": PackedStringArray(["weapon", "ammo", "medical", "equipment", "clothing"]),
+			"visible": true
+		},
+		"right_hand": {
+			"display_name": "Right Hand",
+			"accepted_categories": PackedStringArray(["weapon", "ammo", "medical", "equipment", "clothing"]),
+			"visible": true
+		},
+		"torso": {
+			"display_name": "Torso",
+			"accepted_categories": PackedStringArray(["equipment", "clothing", "medical"]),
+			"visible": true
+		},
+		"lower_back": {
+			"display_name": "Lower Back",
+			"accepted_categories": PackedStringArray(["equipment", "weapon"]),
+			"visible": true
+		},
+		"belt": {
+			"display_name": "Belt",
+			"accepted_categories": PackedStringArray(["equipment", "medical", "ammo"]),
+			"visible": true
+		},
+		"left_pocket": {
+			"display_name": "Left Pocket",
+			"accepted_categories": PackedStringArray(["ammo", "medical", "equipment"]),
+			"visible": false
+		},
+		"right_pocket": {
+			"display_name": "Right Pocket",
+			"accepted_categories": PackedStringArray(["ammo", "medical", "equipment"]),
+			"visible": false
+		},
+		"back_mount": {
+			"display_name": "Back Mount",
+			"accepted_categories": PackedStringArray(["equipment", "weapon"]),
+			"visible": true
+		},
+		"shoulder_mount": {
+			"display_name": "Shoulder Mount",
+			"accepted_categories": PackedStringArray(["equipment", "weapon"]),
+			"visible": true
+		}
+	}
+
+func _detach_item(item_id: String) -> void:
+	for slot_name in slot_names:
+		if str(slot_state[slot_name].get("item_id", "")) == item_id:
+			slot_state[slot_name]["item_id"] = ""
+
+	for existing_id in item_instances.keys():
+		var existing = item_instances[existing_id]
+		if existing == null or existing.contained_item_ids.is_empty():
+			continue
+
+		var contents := Array(existing.contained_item_ids)
+		if contents.has(item_id):
+			contents.erase(item_id)
+			existing.contained_item_ids = PackedStringArray(contents)
+
+func _can_container_accept_item(container, item) -> bool:
+	if container == null or item == null:
+		return false
+	if not container.is_container():
+		return false
+	if container.instance_id == item.instance_id:
+		return false
+	if container.definition.container_capacity > 0 and container.contained_item_ids.size() >= container.definition.container_capacity:
+		return false
+	if container.definition.container_max_weight > 0.0 and _get_container_contents_weight(container) + float(item.get_total_weight()) > container.definition.container_max_weight:
+		return false
+	return container.definition.can_store_category(str(item.definition.category))
+
+func _get_container_contents_weight(container) -> float:
+	var total := 0.0
+	for item_id in container.contained_item_ids:
+		var item = get_item_instance(str(item_id))
+		if item != null:
+			total += float(item.get_total_weight())
+	return total
+
+func _get_preferred_slots(definition) -> PackedStringArray:
+	if definition == null:
+		return PackedStringArray()
+
+	if not str(definition.preferred_slot).is_empty():
+		var preferred := PackedStringArray([definition.preferred_slot])
+		for slot_name in definition.allowed_slots:
+			if slot_name != definition.preferred_slot:
+				preferred.append(slot_name)
+		return preferred
+
+	return definition.allowed_slots
+
+func _collect_nested_items(container) -> Array:
+	var nested_items: Array = []
+	for nested_id in container.contained_item_ids:
+		var nested_item = get_item_instance(str(nested_id))
+		if nested_item == null:
+			continue
+		nested_items.append(nested_item)
+		nested_items.append_array(_collect_nested_items(nested_item))
+	return nested_items
+
+func _restore_embedded_contents(container) -> void:
+	if container == null or not container.is_container():
+		return
+	if not container.custom_state.has("contained_instances"):
+		return
+
+	var embedded_items: Array = container.custom_state.get("contained_instances", [])
+	container.custom_state.erase("contained_instances")
+	for embedded_item in embedded_items:
+		if embedded_item != null:
+			store_item_in_container(embedded_item, str(container.instance_id))

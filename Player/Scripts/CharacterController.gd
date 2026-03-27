@@ -33,9 +33,11 @@ var load_factor: float = 0.0  # 0 = light, 1 = heavy+
 
 var inventory: InventoryComponent
 var interaction: InteractionComponent
-var visuals_component: Node
+var visuals_component: VisualsComponent
 var animation_tree: AnimationTree
 var camera_controller: Node
+
+signal quick_action_menu_changed(prompt_data: Dictionary, actions: Array, selected_index: int, is_open: bool)
 
 # ============================================================
 #  INTERNAL STATE
@@ -58,6 +60,11 @@ var stamina: float = 100.0
 var target_yaw: float = 0.0
 var camera_yaw: float = 0.0
 var is_first_person: bool = true
+var quick_action_menu_open: bool = false
+var quick_action_target: Node = null
+var quick_action_prompt_data: Dictionary = {}
+var quick_action_entries: Array[Dictionary] = []
+var quick_action_selected_index: int = 0
 
 # ============================================================
 #  READY
@@ -74,14 +81,13 @@ func _ready():
 
 	if not inventory.weight_changed.is_connected(_on_weight_changed):
 		inventory.weight_changed.connect(_on_weight_changed)
+	if visuals_component != null:
+		visuals_component.bind_inventory(inventory)
 	animation_tree.active = true
 	target_yaw = rotation.y
 	camera_yaw = rotation.y
 
 	_bind_ui()
-	
-	var test_item = preload("res://World/Items/SquareItem.tres")
-	inventory.add_item(test_item, 1)
 
 # ============================================================
 #  INPUT
@@ -93,14 +99,31 @@ func _unhandled_input(event):
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 	if event.is_action_pressed("ui_cancel"):
+		if quick_action_menu_open:
+			_close_quick_action_menu()
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
 	if event.is_action_pressed("interact"):
+		if quick_action_menu_open:
+			_execute_selected_quick_action()
+			return
 		interaction.try_interact()
 
 	if event.is_action_pressed("sprint_toggle"):
 		if stamina > 10.0:
 			is_sprinting = !is_sprinting
+
+	if event.is_action_pressed("quick_actions"):
+		if quick_action_menu_open:
+			_close_quick_action_menu()
+		else:
+			open_quick_actions_for_target(interaction.current_target)
+
+	if quick_action_menu_open and event.is_action_pressed("ui_down"):
+		_select_next_quick_action(1)
+
+	if quick_action_menu_open and event.is_action_pressed("ui_up"):
+		_select_next_quick_action(-1)
 
 # ============================================================
 #  EXTERNAL ROTATION
@@ -280,13 +303,100 @@ func _on_weight_changed(_new_weight: float, new_load_factor: float):
 	load_factor = new_load_factor
 
 # ============================================================
+#  QUICK ACTIONS
+# ============================================================
+
+func open_quick_actions_for_target(target: Node) -> void:
+	if target == null:
+		return
+	if not target.has_method("get_interaction_actions"):
+		return
+
+	var actions: Array[Dictionary] = target.get_interaction_actions(self)
+	if actions.is_empty():
+		return
+
+	quick_action_target = target
+	quick_action_entries = actions
+	quick_action_selected_index = 0
+	quick_action_menu_open = true
+	if target.has_method("get_interaction_prompt_data"):
+		quick_action_prompt_data = target.get_interaction_prompt_data()
+	else:
+		quick_action_prompt_data = {}
+
+	emit_signal("quick_action_menu_changed", quick_action_prompt_data, quick_action_entries, quick_action_selected_index, true)
+
+func perform_physical_inventory_action(item_id: String, action_id: String) -> void:
+	if inventory == null:
+		return
+
+	match action_id:
+		"move_to_hand":
+			inventory.move_item_to_hand(item_id)
+		"unequip":
+			inventory.unequip_item(item_id)
+		"drop":
+			var dropped_item: ItemInstance = inventory.drop_item(item_id) as ItemInstance
+			if dropped_item != null:
+				_spawn_dropped_world_item(dropped_item)
+		"inspect":
+			pass
+
+	_close_quick_action_menu()
+
+func _execute_selected_quick_action() -> void:
+	if quick_action_target == null:
+		return
+	if quick_action_selected_index < 0 or quick_action_selected_index >= quick_action_entries.size():
+		return
+
+	var action_id: String = quick_action_entries[quick_action_selected_index].get("id", "")
+	if action_id.is_empty():
+		return
+
+	if quick_action_target.has_method("perform_interaction_action"):
+		quick_action_target.perform_interaction_action(self, action_id)
+
+	_close_quick_action_menu()
+
+func _select_next_quick_action(direction: int) -> void:
+	if quick_action_entries.is_empty():
+		return
+	quick_action_selected_index = wrapi(quick_action_selected_index + direction, 0, quick_action_entries.size())
+	emit_signal("quick_action_menu_changed", quick_action_prompt_data, quick_action_entries, quick_action_selected_index, true)
+
+func _close_quick_action_menu() -> void:
+	quick_action_menu_open = false
+	quick_action_target = null
+	quick_action_entries.clear()
+	quick_action_prompt_data = {}
+	quick_action_selected_index = 0
+	emit_signal("quick_action_menu_changed", {}, [], 0, false)
+
+func _spawn_dropped_world_item(item: ItemInstance) -> void:
+	var world_item := WorldItem.new()
+	world_item.item_definition = item.definition
+	world_item.item_instance = item
+	world_item.freeze = true
+
+	var collision_shape := CollisionShape3D.new()
+	var box_shape := BoxShape3D.new()
+	box_shape.size = Vector3(0.35, 0.25, 0.2)
+	collision_shape.shape = box_shape
+	world_item.add_child(collision_shape)
+
+	get_parent().add_child(world_item)
+	world_item.global_position = global_position + (-global_basis.z * 0.8) + Vector3.UP * 1.0
+
+# ============================================================
 #  DEPENDENCY RESOLUTION
 # ============================================================
 
 func _resolve_dependencies() -> bool:
 	inventory = get_node_or_null("InventoryComponent") as InventoryComponent
 	interaction = get_node_or_null("InteractionComponent") as InteractionComponent
-	visuals_component = get_node_or_null("Visuals")
+	visuals_component = get_node_or_null("Visuals") as VisualsComponent
 
 	if visuals_component != null:
 		animation_tree = visuals_component.get_node_or_null("Rig/AnimationTree") as AnimationTree

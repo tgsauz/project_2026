@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3]
+
+[ext_resource type="Script" path="res://World/Items/Scripts/ItemResource.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "medical_bandage"
+display_name = "Bandage"
+tooltip_text = "Compact medical supply for storage and transfer tests."
+category = "medical"
+interaction_verb = "Pick up"
+interaction_key_hint = "E"
+weight = 0.2
+allowed_slots = PackedStringArray("belt", "left_pocket", "right_pocket", "torso")
+preferred_slot = "left_pocket"
+placeholder_visual_shape = "pouch"
+placeholder_visual_size = Vector3(0.18, 0.14, 0.06)
+placeholder_visual_color = Color(0.76, 0.8, 0.82, 1)

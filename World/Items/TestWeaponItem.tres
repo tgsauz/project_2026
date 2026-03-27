@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3]
+
+[ext_resource type="Script" path="res://World/Items/Scripts/ItemResource.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "prototype_rifle"
+display_name = "Prototype Rifle"
+tooltip_text = "Long-form weapon item used to validate hand and mount transitions."
+category = "weapon"
+interaction_verb = "Pick up"
+interaction_key_hint = "E"
+weight = 3.5
+allowed_slots = PackedStringArray("right_hand", "left_hand", "back_mount", "shoulder_mount", "lower_back")
+preferred_slot = "right_hand"
+visible_when_equipped = true
+placeholder_visual_shape = "long_box"
+placeholder_visual_size = Vector3(0.14, 0.65, 0.1)
+placeholder_visual_color = Color(0.26, 0.24, 0.22, 1)
