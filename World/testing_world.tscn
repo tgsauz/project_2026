@@ -2,6 +2,10 @@
 
 [ext_resource type="PackedScene" uid="uid://m62ijxeuosdk" path="res://Player/PlayerCharacter.tscn" id="1_7qfgn"]
 [ext_resource type="PackedScene" uid="uid://chkk4laksuify" path="res://Player/Debug/UIRoot.tscn" id="2_uay7f"]
+[ext_resource type="Script" uid="uid://5yq8nk5vvg62" path="res://World/Items/Scripts/WorldItem.gd" id="3_3umvx"]
+[ext_resource type="Resource" uid="uid://cbg4cqfn7gxe2" path="res://World/Items/TestMedicalItem.tres" id="4_1cs7u"]
+[ext_resource type="Resource" uid="uid://12ggde6tffjy" path="res://World/Items/TestWeaponItem.tres" id="4_fisen"]
+[ext_resource type="PackedScene" uid="uid://deoryykdwr3xr" path="res://World/Items/Bandage.fbx" id="5_ubkvh"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_gpduo"]
 size = Vector3(25, 0.5, 25)
@@ -23,21 +27,43 @@ background_energy_multiplier = 1.5
 sky = SubResource("Sky_7qfgn")
 ambient_light_color = Color(1, 1, 1, 1)
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_umbgo"]
+size = Vector3(0.15, 0.15, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_e3p3y"]
+size = Vector3(0.15, 0.15, 1)
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_fisen"]
+radius = 0.022460938
+height = 0.1099987
+
 [node name="TestingWorld" type="Node3D" unique_id=1497402206]
 
 [node name="CharacterBody3D" parent="." unique_id=1321391257 instance=ExtResource("1_7qfgn")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4648862, 0)
 
-[node name="Skeleton3D" parent="CharacterBody3D/Visuals/Rig/Armature" parent_id_path=PackedInt32Array(1321391257, 2009837787, 433468030) index="0" unique_id=1990901886]
-bones/7/rotation = Quaternion(-0.008859628, -1.2981758e-09, -6.566866e-10, 0.99996084)
-bones/9/rotation = Quaternion(0.15217908, 0.20238389, -0.4616966, 0.85012853)
-bones/25/rotation = Quaternion(0.15825382, -0.19750538, 0.46517134, 0.84827065)
-bones/26/rotation = Quaternion(0.18989359, -0.0010817295, -0.05652945, 0.9801754)
+[node name="Visuals" parent="CharacterBody3D" index="0" unique_id=1722711644]
+show_attachment_debug_gizmos = true
+
+[node name="Armature" parent="CharacterBody3D/Visuals/Rig" parent_id_path=PackedInt32Array(1321391257, 2009837787) index="0" unique_id=433468030]
+transform = Transform3D(100, 0, 0, 0, -2.3841858e-05, 99.99999, 0, -99.99999, -2.3841858e-05, 0, 0, 0)
+
+[node name="Skeleton3D" parent="CharacterBody3D/Visuals/Rig/Armature" index="0" unique_id=1990901886]
+bones/7/rotation = Quaternion(-0.009365965, -1.2978429e-09, -6.573438e-10, 0.9999562)
+bones/9/rotation = Quaternion(0.15174063, 0.20262201, -0.4615922, 0.8502069)
+bones/25/rotation = Quaternion(0.1578068, -0.19775048, 0.46506724, 0.84835386)
+bones/26/rotation = Quaternion(0.19017625, -0.001079924, -0.056607585, 0.98011607)
+
+[node name="CharacterMesh" parent="CharacterBody3D/Visuals/Rig/Armature/Skeleton3D" index="0" unique_id=1876716078]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 
 [node name="CAMERARIG" parent="CharacterBody3D/Visuals/Rig" parent_id_path=PackedInt32Array(1321391257, 2009837787) index="3" unique_id=999810615]
 tps_orbit_distance = 3.0
 tps_shoulder_offset = 0.0
 tps_height_offset = 0.0
+
+[node name="InventoryComponent" parent="CharacterBody3D" index="2" unique_id=446658261]
+slot_names = PackedStringArray("left_hand", "right_hand", "torso", "lower_back", "belt", "back_mount", "shoulder_mount")
 
 [node name="UIRoot" parent="CharacterBody3D" unique_id=1321403690 instance=ExtResource("2_uay7f")]
 
@@ -62,9 +88,28 @@ mouse_filter = 2
 [node name="MenuRoot" parent="CharacterBody3D/UIRoot/MenuLayer" parent_id_path=PackedInt32Array(1321403690, 1237053139) index="0" unique_id=2087012693]
 mouse_filter = 2
 
-[node name="DebugStatsUI" parent="CharacterBody3D/UIRoot/DebugLayer" parent_id_path=PackedInt32Array(1321403690, 1324122574) index="0" unique_id=868507804]
+[node name="QuickActionPanel" parent="CharacterBody3D/UIRoot/MenuLayer/MenuRoot" index="0"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 200.0
+offset_bottom = 124.0
 
-[node name="Panel" parent="CharacterBody3D/UIRoot/DebugLayer/DebugStatsUI" index="0" unique_id=1293253077]
+[node name="TitleLabel" parent="CharacterBody3D/UIRoot/MenuLayer/MenuRoot/QuickActionPanel" index="0"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 170.0
+offset_bottom = 23.0
+
+[node name="ActionsLabel" parent="CharacterBody3D/UIRoot/MenuLayer/MenuRoot/QuickActionPanel" index="1"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 170.0
+offset_bottom = 74.0
+
+[node name="Panel" parent="CharacterBody3D/UIRoot/DebugLayer/DebugStatsUI" parent_id_path=PackedInt32Array(1321403690, 868507804) index="0" unique_id=1293253077]
 mouse_filter = 2
 
 [node name="VBoxContainer" parent="CharacterBody3D/UIRoot/DebugLayer/DebugStatsUI/Panel" index="0" unique_id=847533748]
@@ -83,6 +128,37 @@ mesh = SubResource("BoxMesh_7qfgn")
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=976082212]
 environment = SubResource("Environment_7qfgn")
 
+[node name="Items" type="Node3D" parent="." unique_id=1201531693]
+
+[node name="Gun" type="RigidBody3D" parent="Items" unique_id=1694522457]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3657718, 1.4235078)
+script = ExtResource("3_3umvx")
+item_definition = ExtResource("4_fisen")
+metadata/_custom_type_script = "uid://5yq8nk5vvg62"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Items/Gun" unique_id=541443468]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.018737793, 0)
+shape = SubResource("BoxShape3D_umbgo")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Items/Gun" unique_id=1425352377]
+mesh = SubResource("BoxMesh_e3p3y")
+
+[node name="Bandage" type="RigidBody3D" parent="Items" unique_id=1190855316]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6851126, 2.9605255)
+script = ExtResource("3_3umvx")
+item_definition = ExtResource("4_1cs7u")
+metadata/_custom_type_script = "uid://5yq8nk5vvg62"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Items/Bandage" unique_id=631669213]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0010499954, 0)
+shape = SubResource("CapsuleShape3D_fisen")
+
+[node name="Bandage" parent="Items/Bandage" unique_id=1930216214 instance=ExtResource("5_ubkvh")]
+
+[node name="Bandage_LOD0" parent="Items/Bandage/Bandage" index="0" unique_id=284270595]
+transform = Transform3D(-42.62276, 90.46159, 3.954202e-06, 0, -4.371139e-06, 100, 90.461586, 42.622765, 1.8631001e-06, 0, 0, 0)
+
 [editable path="CharacterBody3D"]
 [editable path="CharacterBody3D/Visuals/Rig"]
 [editable path="CharacterBody3D/UIRoot"]
+[editable path="Items/Bandage/Bandage"]

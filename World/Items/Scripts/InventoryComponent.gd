@@ -37,6 +37,7 @@ var load_factor: float = 0.0
 signal inventory_updated
 signal weight_changed(new_weight: float, load_factor: float)
 signal item_visuals_changed(visible_items: Array)
+signal equipment_visuals_changed(visible_items: Array)
 
 # ============================================================
 #  LIFECYCLE
@@ -158,6 +159,18 @@ func store_item_instance_best_effort(item) -> bool:
 
 	return false
 
+func pickup_item_instance(item, prefer_equipment: bool = true, allow_fallback_storage: bool = true) -> bool:
+	if item == null or item.definition == null:
+		return false
+
+	if prefer_equipment and _pickup_to_preferred_equipment_slot(item):
+		return true
+
+	if allow_fallback_storage:
+		return store_item_instance_best_effort(item)
+
+	return false
+
 func move_item(item_id: String, target_slot: String = "", target_container_id: String = "") -> bool:
 	var item = get_item_instance(item_id)
 	if item == null:
@@ -191,8 +204,10 @@ func move_item_to_hand(item_id: String) -> bool:
 	if item == null:
 		return false
 
-	for slot_name in ["right_hand", "left_hand"]:
+	for slot_name in _get_hand_slot_order(item.definition):
 		if can_store_item(item, slot_name):
+			return store_item_in_slot(item, slot_name)
+		if _try_free_slot_for_item(item, slot_name):
 			return store_item_in_slot(item, slot_name)
 
 	return false
@@ -245,6 +260,10 @@ func get_total_weight() -> float:
 func get_load_factor() -> float:
 	return load_factor
 
+func get_main_hand_item():
+	var state := get_slot_state("right_hand")
+	return state.get("item", null)
+
 func get_slot_state(target_slot: String) -> Dictionary:
 	if not slot_state.has(target_slot):
 		return {}
@@ -258,23 +277,33 @@ func get_slot_state(target_slot: String) -> Dictionary:
 	return state
 
 func get_visible_equipment() -> Array:
+	return get_equipped_visuals()
+
+func get_equipped_visuals() -> Array:
 	var visible_items: Array = []
 	for slot_name in slot_names:
 		var state: Dictionary = get_slot_state(slot_name)
 		var item = state.get("item", null)
 		if item == null or item.definition == null:
 			continue
-		if not item.definition.visible_when_equipped:
+		if not item.definition.should_show_in_slot(slot_name):
 			continue
 		var config: Dictionary = slot_configs.get(slot_name, {})
 		if not bool(config.get("visible", false)):
 			continue
 
+		var profile: ItemVisualAttachmentProfile = item.definition.get_attachment_profile(slot_name)
+
 		visible_items.append({
 			"slot_name": slot_name,
 			"item_id": item.instance_id,
 			"definition": item.definition,
-			"display_name": item.get_display_name()
+			"display_name": item.get_display_name(),
+			"attachment_profile": profile,
+			"visual_state": item.definition.get_visual_state_for_slot(slot_name),
+			"secondary_slot_name": _get_secondary_slot_name(item, slot_name),
+			"equipped_visual_scene": item.definition.equipped_visual_scene,
+			"visual_profile_id": item.definition.visual_profile_id
 		})
 	return visible_items
 
@@ -303,7 +332,9 @@ func _recalculate() -> void:
 
 	emit_signal("inventory_updated")
 	emit_signal("weight_changed", total_weight, load_factor)
-	emit_signal("item_visuals_changed", get_visible_equipment())
+	var equipped_visuals := get_equipped_visuals()
+	emit_signal("item_visuals_changed", equipped_visuals)
+	emit_signal("equipment_visuals_changed", equipped_visuals)
 
 # ============================================================
 #  HELPERS
@@ -406,6 +437,100 @@ func _get_preferred_slots(definition) -> PackedStringArray:
 		return preferred
 
 	return definition.allowed_slots
+
+func _pickup_to_preferred_equipment_slot(item) -> bool:
+	if item == null or item.definition == null:
+		return false
+	if not item.definition.supports_hand_slot():
+		return false
+
+	for slot_name in _get_hand_slot_order(item.definition):
+		if can_store_item(item, slot_name):
+			return store_item_in_slot(item, slot_name)
+		if _try_free_slot_for_item(item, slot_name):
+			return store_item_in_slot(item, slot_name)
+
+	return false
+
+func _get_hand_slot_order(definition) -> PackedStringArray:
+	var ordered_slots := PackedStringArray()
+	if definition == null:
+		return ordered_slots
+
+	if definition.preferred_slot == "right_hand" or definition.preferred_slot == "left_hand":
+		ordered_slots.append(definition.preferred_slot)
+
+	for slot_name in ["right_hand", "left_hand"]:
+		if definition.allowed_slots.has(slot_name) and not ordered_slots.has(slot_name):
+			ordered_slots.append(slot_name)
+
+	return ordered_slots
+
+func _try_free_slot_for_item(_new_item, target_slot: String) -> bool:
+	if not slot_state.has(target_slot):
+		return false
+
+	var occupant_id := str(slot_state[target_slot].get("item_id", ""))
+	if occupant_id.is_empty():
+		return true
+
+	var occupant = get_item_instance(occupant_id)
+	if occupant == null or occupant.definition == null:
+		return false
+
+	for slot_name in _get_auto_stow_slots_for_item(occupant, target_slot):
+		if can_store_item(occupant, slot_name):
+			return store_item_in_slot(occupant, slot_name)
+
+	for container_id in item_instances.keys():
+		if str(container_id) == occupant.instance_id:
+			continue
+		if store_item_in_container(occupant, str(container_id)):
+			return true
+
+	return false
+
+func _get_auto_stow_slots_for_item(item, excluded_slot: String = "") -> PackedStringArray:
+	var ordered_slots := PackedStringArray()
+	if item == null or item.definition == null:
+		return ordered_slots
+
+	for slot_name in _get_preferred_slots(item.definition):
+		if slot_name != excluded_slot and not ordered_slots.has(slot_name):
+			ordered_slots.append(slot_name)
+
+	for slot_name in [
+		"lower_back",
+		"back_mount",
+		"shoulder_mount",
+		"belt",
+		"torso",
+		"left_pocket",
+		"right_pocket",
+		"left_hand",
+		"right_hand"
+	]:
+		if slot_name == excluded_slot:
+			continue
+		if ordered_slots.has(slot_name):
+			continue
+		if item.definition.allowed_slots.has(slot_name):
+			ordered_slots.append(slot_name)
+
+	return ordered_slots
+
+func _get_secondary_slot_name(item, slot_name: String) -> String:
+	if item == null or item.definition == null:
+		return ""
+
+	var profile: ItemVisualAttachmentProfile = item.definition.get_attachment_profile(slot_name)
+	if profile != null and not profile.secondary_slot_name.is_empty():
+		return profile.secondary_slot_name
+
+	if item.definition.reserve_secondary_hand:
+		return item.definition.secondary_hand_slot
+
+	return ""
 
 func _collect_nested_items(container) -> Array:
 	var nested_items: Array = []

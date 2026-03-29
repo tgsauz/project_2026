@@ -2,7 +2,7 @@
 type: guide
 status: active
 owned_by: gameplay
-updated: 2026-03-26
+updated: 2026-03-28
 ---
 
 # 08 - How To Add New Items
@@ -21,7 +21,10 @@ New items are added by authoring an `ItemDefinition` resource and then deciding 
 8. Set `allowed_slots`
 9. Set `preferred_slot`
 10. Set `visible_when_equipped` if it should appear on the body
-11. Set placeholder visual fields if it should be visible
+11. If it should appear while equipped, decide whether to assign:
+    - `equipped_visual_scene`
+    - `attachment_profiles`
+12. Set placeholder visual fields as fallback even if an equipped proxy scene exists
 
 ## Category Guidance
 ### Weapon
@@ -53,13 +56,32 @@ New items are added by authoring an `ItemDefinition` resource and then deciding 
 6. Set `allowed_slots` for where the container itself can mount or be stored
 7. Set `visible_when_equipped` if it should appear on the body
 
+## Checklist: Add A Hand-Held Item
+1. Make sure `allowed_slots` includes `right_hand`, `left_hand`, or both
+2. Set `preferred_slot`
+3. Decide whether pickup should usually land in hand
+   - if yes, make sure the item supports hand slots
+4. Create an `equipped_visual_scene` if you want authored hand visuals
+5. Create `ItemVisualAttachmentProfile` resources for any visible slots the item uses
+6. Keep placeholder visual fields configured so the item still renders if the proxy scene is missing
+7. If the item may become two-handed later, set:
+   - `reserve_secondary_hand = true`
+   - `secondary_hand_slot`
+
+## Checklist: Add Equipped Visual Authoring
+For a visible item:
+1. Create or choose a lightweight equipped proxy scene
+2. Create one profile resource per slot that needs different placement
+3. Assign those profiles in `attachment_profiles`
+4. Test the actual occupied slots, not just the preferred one
+
 ## Checklist: Spawn It In The World
 1. Add or instantiate a `WorldItem`
 2. Assign `item_definition`
 3. Add a collision shape
 4. Place it in the world
 
-On pickup, the `WorldItem` duplicates its runtime instance into inventory.
+On pickup, the `WorldItem` duplicates its runtime instance into inventory and lets inventory decide whether it should enter a hand slot first.
 
 ## Checklist: Add A New Item Category Instance
 If the category already exists and you only want a new item within it:
@@ -77,6 +99,16 @@ Only add code if the item needs behavior beyond storage and interaction metadata
 - custom runtime state transitions
 
 When that happens, keep the behavior layered on top of the current item/inventory structure rather than embedding it into inventory itself.
+
+## How To Test A New Item
+At minimum, validate:
+1. prompt text when looking at the world item
+2. tap pickup behavior
+3. hold `F` quick actions
+4. correct slot placement
+5. correct equipped visual or placeholder fallback
+6. stow and drop behavior
+7. re-pickup after drop
 
 ## Current Limitations
 - there is no deep category-specific action generation yet

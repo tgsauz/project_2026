@@ -33,6 +33,7 @@ func get_interaction_prompt_data() -> Dictionary:
 		"title": item.get_display_name(),
 		"tooltip": item.definition.tooltip_text,
 		"interact_label": "Actions [%s]" % item.definition.interaction_key_hint,
+		"quick_action_label": "",
 		"interact_key_hint": item.definition.interaction_key_hint,
 		"category": item.definition.category,
 		"actions": get_interaction_actions(null)

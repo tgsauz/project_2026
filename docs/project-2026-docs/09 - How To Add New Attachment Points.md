@@ -2,7 +2,7 @@
 type: guide
 status: active
 owned_by: gameplay
-updated: 2026-03-26
+updated: 2026-03-28
 ---
 
 # 09 - How To Add New Attachment Points
@@ -32,6 +32,8 @@ In the item definition:
 1. Add the new slot to `allowed_slots`
 2. Optionally set it as `preferred_slot`
 3. Set `visible_when_equipped = true` if it should appear on the body
+4. Add an `ItemVisualAttachmentProfile` for that slot if it needs custom placement
+5. Optionally assign an `equipped_visual_scene`
 
 ## Step 3: Add The Visual Anchor
 In `VisualsComponent`:
@@ -54,6 +56,16 @@ For each new visible slot, define:
 
 Right now these values are code-defined. Later they should move into authored data resources if the number of slots grows.
 
+## Preferred Modification Order
+When adding a new attachment point, work in this order:
+1. inventory slot definition
+2. item definition slot support
+3. visual anchor
+4. profile resources
+5. manual test pass
+
+This order reduces the chance of chasing visual bugs that are actually invalid slot configuration.
+
 ## Example: Add A Shoulder Radio Slot
 ### Inventory
 - add `left_shoulder`
@@ -69,13 +81,21 @@ Right now these values are code-defined. Later they should move into authored da
 ### Visuals
 - create shoulder attachment root
 - map `left_shoulder` to that root
-- tune offset so the placeholder sits correctly
+- create a profile resource for the radio in `left_shoulder`
+- tune the profile before changing anchor code
+
+## How To Test A New Attachment Point
+Validate:
+1. the item can legally enter the slot
+2. `get_equipped_visuals()` returns the slot occupant
+3. the equipped visual spawns on the correct anchor
+4. mounted interactables appear only when desired
+5. moving the item away removes the visual cleanly
 
 ## Current Limitations
-- only lower-back has an explicit anchor path today
 - slot-to-anchor mapping is hardcoded
-- placeholder visuals are generic meshes
 - collision/interactable shapes are not yet data-driven per slot
+- only a small set of anchors is currently implemented explicitly
 
 ## Future Refactor Target
 When multiple visible body slots are added, move toward a data-driven slot-anchor registry so adding a new slot does not require scattered code edits.

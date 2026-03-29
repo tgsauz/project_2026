@@ -5,6 +5,7 @@ class_name InteractionPromptData
 @export var title: String = ""
 @export var tooltip: String = ""
 @export var interact_label: String = ""
+@export var quick_action_label: String = ""
 @export var interact_key_hint: String = ""
 @export var category: String = ""
 @export var actions: Array[Dictionary] = []
@@ -15,6 +16,7 @@ func to_dictionary() -> Dictionary:
 		"title": title,
 		"tooltip": tooltip,
 		"interact_label": interact_label,
+		"quick_action_label": quick_action_label,
 		"interact_key_hint": interact_key_hint,
 		"category": category,
 		"actions": actions.duplicate(true)

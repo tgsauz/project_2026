@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://de3r82gtt48ul"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_body"]
+albedo_color = Color(0.24, 0.22, 0.2, 1)
+roughness = 0.78
+
+[sub_resource type="BoxMesh" id="BoxMesh_body"]
+size = Vector3(0.1, 0.62, 0.08)
+
+[node name="PrototypeRifleEquipped" type="Node3D" unique_id=210455607]
+
+[node name="Body" type="MeshInstance3D" parent="." unique_id=1818429024]
+material_override = SubResource("StandardMaterial3D_body")
+mesh = SubResource("BoxMesh_body")

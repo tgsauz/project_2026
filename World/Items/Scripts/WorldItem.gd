@@ -27,6 +27,7 @@ func get_interaction_prompt_data() -> Dictionary:
 		"title": get_display_title(),
 		"tooltip": item_instance.definition.tooltip_text,
 		"interact_label": item_instance.definition.get_interaction_label(),
+		"quick_action_label": "Hold [%s] Actions" % item_instance.definition.interaction_key_hint,
 		"interact_key_hint": item_instance.definition.interaction_key_hint,
 		"category": item_instance.definition.category,
 		"actions": get_interaction_actions(null)
@@ -56,7 +57,10 @@ func perform_interaction_action(actor: Node, action_id: String) -> void:
 		return
 
 	var instance_to_store := item_instance.duplicate_instance()
-	if not inventory.store_item_instance_best_effort(instance_to_store):
+	if not inventory.has_method("pickup_item_instance"):
+		return
+
+	if not inventory.pickup_item_instance(instance_to_store, true, true):
 		return
 
 	if consume_on_interact:

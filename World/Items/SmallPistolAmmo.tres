@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://b1s7bi7j2h0gp"]
+
+[ext_resource type="Script" uid="uid://cgvv34qt43vdl" path="res://World/Items/Scripts/ItemResource.gd" id="1_rgxlo"]
+
+[resource]
+script = ExtResource("1_rgxlo")
+id = "ammo_pistol_small"
+display_name = "Small C. Pistol Ammo"
+tooltip_text = "Tooltip for Small caliber pistol ammo."
+category = "ammo"
+weight = 0.5
+interaction_key_hint = "F"
+stackable = true
+max_stack = 80
+allowed_slots = PackedStringArray("left_pocket", "right_pocket")
+preferred_slot = "left_pocket"
+container_allowed_categories = null

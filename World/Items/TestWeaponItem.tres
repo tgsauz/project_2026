@@ -1,6 +1,10 @@
-[gd_resource type="Resource" script_class="ItemResource" format=3]
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://12ggde6tffjy"]
 
-[ext_resource type="Script" path="res://World/Items/Scripts/ItemResource.gd" id="1"]
+[ext_resource type="Script" uid="uid://cgvv34qt43vdl" path="res://World/Items/Scripts/ItemResource.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://de3r82gtt48ul" path="res://World/Items/Visuals/PrototypeRifleEquipped.tscn" id="2_scene"]
+[ext_resource type="Resource" path="res://World/Items/Visuals/PrototypeRifleRightHandProfile.tres" id="3_right"]
+[ext_resource type="Resource" path="res://World/Items/Visuals/PrototypeRifleLeftHandProfile.tres" id="4_left"]
+[ext_resource type="Resource" path="res://World/Items/Visuals/PrototypeRifleLowerBackProfile.tres" id="5_lower"]
 
 [resource]
 script = ExtResource("1")
@@ -8,12 +12,16 @@ id = "prototype_rifle"
 display_name = "Prototype Rifle"
 tooltip_text = "Long-form weapon item used to validate hand and mount transitions."
 category = "weapon"
-interaction_verb = "Pick up"
-interaction_key_hint = "E"
 weight = 3.5
 allowed_slots = PackedStringArray("right_hand", "left_hand", "back_mount", "shoulder_mount", "lower_back")
-preferred_slot = "right_hand"
 visible_when_equipped = true
+preferred_slot = "right_hand"
+equipped_visual_scene = ExtResource("2_scene")
+visual_profile_id = "rifle_long_gun"
+attachment_profiles = [ExtResource("3_right"), ExtResource("4_left"), ExtResource("5_lower")]
+reserve_secondary_hand = true
+secondary_hand_slot = "left_hand"
+container_allowed_categories = null
 placeholder_visual_shape = "long_box"
 placeholder_visual_size = Vector3(0.14, 0.65, 0.1)
 placeholder_visual_color = Color(0.26, 0.24, 0.22, 1)

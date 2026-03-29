@@ -34,6 +34,11 @@ const CATEGORY_CLOTHING := "clothing"
 @export var allowed_slots: PackedStringArray = PackedStringArray()
 @export var visible_when_equipped: bool = false
 @export var preferred_slot: String = ""
+@export var equipped_visual_scene: PackedScene
+@export var visual_profile_id: String = ""
+@export var attachment_profiles: Array = []
+@export var reserve_secondary_hand: bool = false
+@export var secondary_hand_slot: String = ""
 
 @export_category("Container")
 @export var is_container: bool = false
@@ -62,3 +67,31 @@ func can_store_category(target_category: String) -> bool:
 	if container_allowed_categories.is_empty():
 		return true
 	return container_allowed_categories.has(target_category)
+
+func supports_slot(target_slot: String) -> bool:
+	return allowed_slots.has(target_slot)
+
+func supports_hand_slot() -> bool:
+	return supports_slot("right_hand") or supports_slot("left_hand")
+
+func is_hand_slot(target_slot: String) -> bool:
+	return target_slot == "right_hand" or target_slot == "left_hand"
+
+func should_show_in_slot(target_slot: String) -> bool:
+	if is_hand_slot(target_slot):
+		return true
+	return visible_when_equipped
+
+func get_attachment_profile(target_slot: String) -> ItemVisualAttachmentProfile:
+	for profile in attachment_profiles:
+		if profile != null and profile.applies_to_slot(target_slot):
+			return profile
+	return null
+
+func get_visual_state_for_slot(target_slot: String) -> String:
+	var profile := get_attachment_profile(target_slot)
+	if profile != null:
+		return profile.visual_state
+	if is_hand_slot(target_slot):
+		return "held"
+	return "mounted"

@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ItemVisualAttachmentProfile" format=3]
+
+[ext_resource type="Script" path="res://World/Items/Scripts/ItemVisualAttachmentProfile.gd" id="1_profile"]
+
+[resource]
+script = ExtResource("1_profile")
+slot_name = "lower_back"
+visual_state = "mounted"
+position = Vector3(0, -0.02, 0.02)

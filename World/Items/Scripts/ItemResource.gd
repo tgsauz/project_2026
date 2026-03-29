@@ -1,2 +1,2 @@
-extends "res://World/Items/Scripts/ItemDefinition.gd"
+extends ItemDefinition
 class_name ItemResource

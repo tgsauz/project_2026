@@ -17,6 +17,7 @@ class_name CharacterController
 @export var stamina_max: float = 100.0
 @export var stamina_drain_rate: float = 20.0
 @export var stamina_regen_rate: float = 15.0
+@export var interact_hold_threshold: float = 0.28
 
 # ============================================================
 #  INVENTORY SYSTEM (WIP)
@@ -65,6 +66,9 @@ var quick_action_target: Node = null
 var quick_action_prompt_data: Dictionary = {}
 var quick_action_entries: Array[Dictionary] = []
 var quick_action_selected_index: int = 0
+var interact_pressed: bool = false
+var interact_press_time_ms: int = 0
+var interact_hold_consumed: bool = false
 
 # ============================================================
 #  READY
@@ -89,6 +93,9 @@ func _ready():
 
 	_bind_ui()
 
+func _process(_delta: float) -> void:
+	_check_interact_hold()
+
 # ============================================================
 #  INPUT
 # ============================================================
@@ -104,10 +111,10 @@ func _unhandled_input(event):
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
 	if event.is_action_pressed("interact"):
-		if quick_action_menu_open:
-			_execute_selected_quick_action()
-			return
-		interaction.try_interact()
+		_begin_interact_press()
+
+	if event.is_action_released("interact"):
+		_finish_interact_press()
 
 	if event.is_action_pressed("sprint_toggle"):
 		if stamina > 10.0:
@@ -306,15 +313,15 @@ func _on_weight_changed(_new_weight: float, new_load_factor: float):
 #  QUICK ACTIONS
 # ============================================================
 
-func open_quick_actions_for_target(target: Node) -> void:
+func open_quick_actions_for_target(target: Node) -> bool:
 	if target == null:
-		return
+		return false
 	if not target.has_method("get_interaction_actions"):
-		return
+		return false
 
 	var actions: Array[Dictionary] = target.get_interaction_actions(self)
 	if actions.is_empty():
-		return
+		return false
 
 	quick_action_target = target
 	quick_action_entries = actions
@@ -326,6 +333,7 @@ func open_quick_actions_for_target(target: Node) -> void:
 		quick_action_prompt_data = {}
 
 	emit_signal("quick_action_menu_changed", quick_action_prompt_data, quick_action_entries, quick_action_selected_index, true)
+	return true
 
 func perform_physical_inventory_action(item_id: String, action_id: String) -> void:
 	if inventory == null:
@@ -373,6 +381,38 @@ func _close_quick_action_menu() -> void:
 	quick_action_prompt_data = {}
 	quick_action_selected_index = 0
 	emit_signal("quick_action_menu_changed", {}, [], 0, false)
+
+func _begin_interact_press() -> void:
+	interact_pressed = true
+	interact_hold_consumed = false
+	interact_press_time_ms = Time.get_ticks_msec()
+
+func _finish_interact_press() -> void:
+	if not interact_pressed:
+		return
+
+	interact_pressed = false
+	if interact_hold_consumed:
+		return
+
+	if quick_action_menu_open:
+		_execute_selected_quick_action()
+		return
+
+	interaction.try_interact()
+
+func _check_interact_hold() -> void:
+	if not interact_pressed or interact_hold_consumed:
+		return
+	if quick_action_menu_open:
+		return
+
+	var held_duration := float(Time.get_ticks_msec() - interact_press_time_ms) / 1000.0
+	if held_duration < interact_hold_threshold:
+		return
+
+	if open_quick_actions_for_target(interaction.current_target):
+		interact_hold_consumed = true
 
 func _spawn_dropped_world_item(item: ItemInstance) -> void:
 	var world_item := WorldItem.new()

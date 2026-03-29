@@ -2,13 +2,13 @@
 type: system
 status: active
 owned_by: gameplay
-updated: 2026-03-26
+updated: 2026-03-28
 ---
 
 # 05 - Player, Visuals, and Attachment Points
 
 ## Summary
-The player controller coordinates movement and quick actions, while `VisualsComponent` is responsible for visual body responses and inventory-driven mounted item visuals.
+The player controller coordinates movement and quick actions, while `VisualsComponent` is responsible for visual body responses and inventory-driven equipment visuals for held and mounted items.
 
 ## CharacterController Responsibilities
 Script: `Player/Scripts/CharacterController.gd`
@@ -18,6 +18,7 @@ Owns:
 - sprinting and stamina
 - load factor usage
 - quick action input and routing
+- tap-versus-hold interact timing
 - spawning dropped world items
 - dependency resolution for inventory, interaction, visuals, camera, and animation
 
@@ -33,38 +34,68 @@ Owns:
 - body tilt
 - attachment root creation
 - inventory-to-visual binding
-- placeholder mounted visual creation
+- equipped proxy scene spawning
+- placeholder fallback visual creation
 - mounted interactable area creation
 
 ## Inventory-Driven Visual Flow
 1. `InventoryComponent` recalculates state.
-2. It emits `item_visuals_changed`.
+2. It emits `equipment_visuals_changed`.
 3. `VisualsComponent.bind_inventory(...)` listens to that signal.
-4. `get_visible_equipment()` returns visible slot occupants.
-5. `VisualsComponent` creates/removes placeholder visuals for those slots.
+4. `get_equipped_visuals()` returns visible slot occupants plus visual metadata.
+5. `VisualsComponent` creates, updates, or removes equipped visuals for those slots.
 
 This is the correct dependency direction:
 - inventory is the source of truth
 - visuals reflect inventory
 
 ## Current Attachment Support
-Right now there is one explicit body attachment root:
+Right now there are explicit body attachment roots for:
+- `right_hand`
+- `left_hand`
 - `lower_back`
+- reserved support anchor: `gun_support`
 
-It is created as a `BoneAttachment3D` attached to the configured lower-back bone.
+Current implementation uses `BoneAttachment3D` roots bound to:
+- `hand_r`
+- `hand_l`
+- `pelvis`
+- `ik_hand_gun`
 
-Current anchor lookup is hardcoded in `_get_slot_anchor(slot_name)`.
+Current anchor lookup is still code-defined in `_get_slot_anchor(slot_name)`.
 
-## Placeholder Visuals
-Placeholder visuals are currently generated from `ItemDefinition` fields:
+## Authored Equipment Visuals
+Items can now supply an authored equipped proxy scene through `ItemDefinition.equipped_visual_scene`.
+
+This scene is:
+- lightweight
+- attachment-oriented
+- separate from world pickup representation
+
+If no authored proxy exists, visuals fall back to generated placeholder meshes from:
 - `placeholder_visual_shape`
 - `placeholder_visual_size`
 - `placeholder_visual_color`
 
-This is intentionally temporary. The architecture matters more than final art at this stage.
+This gives the system a scalable path where content teams can improve item visuals without changing inventory code.
+
+## Attachment Profiles
+Per-slot offsets are now authored through `ItemVisualAttachmentProfile` resources.
+
+Each profile can define:
+- `slot_name`
+- `visual_state`
+- `position`
+- `rotation_degrees`
+- `scale`
+- `secondary_slot_name`
+
+This is the main data hook new developers should use when a held or mounted item looks wrong on the body.
 
 ## Mounted Interactables
-When a visible slot has an occupant, `VisualsComponent` can also create a `MountedItemInteractable` on that anchor so the player can target mounted gear in-world.
+When a visible mounted slot has an occupant, `VisualsComponent` can create a `MountedItemInteractable` on that anchor so the player can target mounted gear in-world.
+
+Held items intentionally do not get mounted interactables right now.
 
 ## How To Add A New Visible Attachment Point
 ### Logical side
@@ -80,14 +111,34 @@ When a visible slot has an occupant, `VisualsComponent` can also create a `Mount
 
 See also: [[09 - How To Add New Attachment Points]]
 
+## How To Modify Equipped Visuals
+When an item is attaching incorrectly:
+1. Check that the item definition has the correct `equipped_visual_scene`
+2. Check that the item has an `attachment_profile` for the slot it actually occupies
+3. Tune the profile resource before changing code
+4. Only change `VisualsComponent` if the anchor itself is missing or wrong
+
+When adding a new visible slot:
+1. add slot support in inventory
+2. add or reuse an anchor in `VisualsComponent`
+3. add profile resources for the items that need that slot
+4. test both authored-scene and placeholder fallback paths
+
+## How To Test Visual Changes
+Validate:
+1. world pickup into right hand spawns a held visual
+2. moving the same item to `left_hand` updates the anchor and offsets
+3. lower-back items still render and remain interactable
+4. items with no equipped proxy still show placeholder visuals
+5. stow, drop, and slot moves remove or relocate visuals correctly
+
 ## Current Limitations
 - slot-to-bone mapping is hardcoded
-- only one explicit visible anchor path exists right now
 - placeholder visual mesh generation is primitive
-- visual offsets are embedded in code rather than authored as data
+- anchor registry is not yet data-driven
+- two-hand support is only reserved in data, not yet enforced visually or by animation
 
 ## Future Refactor Targets
 - data-driven slot anchor definitions
-- authored attachment scene resources
-- per-item placeholder or proxy scene support
+- per-item proxy scene support for more item families
 - better separation between visible proxy and interactable collision shape

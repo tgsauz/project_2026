@@ -85,10 +85,16 @@ func _on_focus_changed(prompt_data: Dictionary) -> void:
 		return
 
 	prompt_name_label.text = prompt_data.get("title", "")
-	prompt_tooltip_label.text = "%s  %s" % [
-		prompt_data.get("interact_label", ""),
-		prompt_data.get("tooltip", "")
-	]
+	var interact_label := str(prompt_data.get("interact_label", ""))
+	var quick_action_label := str(prompt_data.get("quick_action_label", ""))
+	var prompt_segments: Array[String] = []
+	if not interact_label.is_empty():
+		prompt_segments.append(interact_label)
+	if not quick_action_label.is_empty():
+		prompt_segments.append(quick_action_label)
+	if not str(prompt_data.get("tooltip", "")).is_empty():
+		prompt_segments.append(str(prompt_data.get("tooltip", "")))
+	prompt_tooltip_label.text = "  ".join(prompt_segments)
 
 func _on_quick_action_menu_changed(prompt_data: Dictionary, actions: Array, selected_index: int, is_open: bool) -> void:
 	if quick_action_title_label == null or quick_action_list_label == null:
