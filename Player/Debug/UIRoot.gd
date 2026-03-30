@@ -20,7 +20,11 @@ var crosshair_ui: CrosshairUI
 var interact_prompt_ui: InteractionPromptUI
 var status_cluster_ui: StatusClusterUI
 var quick_action_panel_ui: QuickActionPanelUI
+var bounding_box_ui: BoundingBoxVisualUI
 var runtime_ui_style: UIStyleProfile
+var optimization_context: UIOptimizationContext
+var layout_manager: ResponsiveLayoutManager
+var player_character: Node
 
 # ============================================================
 # INIT
@@ -38,17 +42,34 @@ func _ready():
 	assert(gameplay_layer != null)
 	assert(debug_layer != null)
 	runtime_ui_style = _build_runtime_style()
+	optimization_context = UIOptimizationContext.new(runtime_ui_style, debug_enabled)
+	
+	# Initialize responsive layout manager
+	layout_manager = ResponsiveLayoutManager.new(runtime_ui_style)
+	add_child(layout_manager)
+	
 	_apply_ui_style()
+	_register_layout_components()
 	
 	# Gameplay always visible
 	gameplay_layer.visible = true
-	
+
 	# Debug hidden by default
 	debug_layer.visible = false
 
-	var parent_character := get_parent()
-	if parent_character != null:
-		bind_character(parent_character)
+	# Track owning character
+	player_character = get_parent()
+	if player_character != null:
+		bind_character(player_character)
+
+	# Create optional bounding box overlay as HUD layer
+	if gameplay_layer != null:
+		var hud_layer = gameplay_layer.get_node_or_null("HUD") as Control
+		if hud_layer != null:
+			bounding_box_ui = BoundingBoxVisualUI.new()
+			hud_layer.add_child(bounding_box_ui)
+			bounding_box_ui.apply_style(runtime_ui_style)
+
 
 func bind_character(character: Node) -> void:
 	if debug_stats_ui != null and debug_stats_ui.has_method("bind_character"):
@@ -84,6 +105,7 @@ func _on_focus_changed(prompt_data: Dictionary) -> void:
 		interact_prompt_ui.set_prompt_data(prompt_data)
 	if crosshair_ui != null:
 		crosshair_ui.set_focus_active(not prompt_data.is_empty())
+	_update_bounding_box_target()
 
 func _on_quick_action_menu_changed(prompt_data: Dictionary, actions: Array, selected_index: int, is_open: bool) -> void:
 	if quick_action_panel_ui != null:
@@ -96,6 +118,40 @@ func _build_runtime_style() -> UIStyleProfile:
 	return style_instance
 
 func _apply_ui_style() -> void:
-	for component in [crosshair_ui, interact_prompt_ui, status_cluster_ui, quick_action_panel_ui, debug_stats_ui]:
+	for component in [crosshair_ui, interact_prompt_ui, status_cluster_ui, quick_action_panel_ui, debug_stats_ui, bounding_box_ui]:
 		if component != null and component.has_method("apply_style"):
 			component.apply_style(runtime_ui_style)
+
+func _update_bounding_box_target() -> void:
+	if bounding_box_ui == null:
+		return
+	if player_character == null:
+		bounding_box_ui.set_target(null)
+		return
+
+	var interaction = player_character.get_node_or_null("InteractionComponent") as InteractionComponent
+	if interaction == null:
+		bounding_box_ui.set_target(null)
+		return
+
+	bounding_box_ui.set_target(interaction.current_target)
+
+func _register_layout_components() -> void:
+	if layout_manager == null:
+		return
+	if status_cluster_ui != null:
+		layout_manager.register_component(status_cluster_ui)
+	if interact_prompt_ui != null:
+		layout_manager.register_component(interact_prompt_ui)
+	if quick_action_panel_ui != null:
+		layout_manager.register_component(quick_action_panel_ui)
+
+# ============================================================
+# OPTIMIZATION
+# ============================================================
+
+func get_optimization_context() -> UIOptimizationContext:
+	return optimization_context
+
+func get_layout_manager() -> ResponsiveLayoutManager:
+	return layout_manager

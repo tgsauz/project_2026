@@ -13,6 +13,7 @@ display_name = "Prototype Rifle"
 tooltip_text = "Long-form weapon item used to validate hand and mount transitions."
 category = "weapon"
 weight = 3.5
+interaction_key_hint = "F"
 allowed_slots = PackedStringArray("right_hand", "left_hand", "back_mount", "shoulder_mount", "lower_back")
 visible_when_equipped = true
 preferred_slot = "right_hand"

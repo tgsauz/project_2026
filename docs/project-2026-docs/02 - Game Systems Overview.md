@@ -38,8 +38,12 @@ The current playable stack is centered on a modular player character with moveme
 - Creates mounted interactable areas for visible mounted gear
 
 ### UIRoot
-- Shows focus prompt text
-- Shows quick action menu entries
+- Central orchestrator for all gameplay UI components
+- Shows focus prompt text, quick action menu entries
+- Applies dynamic styling via `UIStyleProfile` resource
+- Supports **UI fade animations** (fade-in on value change, fade-out after stability threshold)
+- Manages **responsive layout** (4 breakpoints: mobile/tablet/desktop/ultrawide with dynamic margin scaling)
+- Displays **diegetic bounding box highlighting** for focused interactables (3D→2D projection, tier-gated)
 - Keeps debug UI separate from core gameplay logic
 
 ## Current Player Data Flow

@@ -46,10 +46,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4648862, 0)
 show_attachment_debug_gizmos = true
 
 [node name="Skeleton3D" parent="CharacterBody3D/Visuals/Rig/Armature" parent_id_path=PackedInt32Array(1321391257, 2009837787, 433468030) index="0" unique_id=1990901886]
-bones/7/rotation = Quaternion(-0.009220682, -1.2979386e-09, -6.571554e-10, 0.99995756)
-bones/9/rotation = Quaternion(0.15191191, 0.20252901, -0.46163297, 0.85017633)
-bones/25/rotation = Quaternion(0.15805864, -0.19761239, 0.46512586, 0.848307)
-bones/26/rotation = Quaternion(0.19001937, -0.0010817797, -0.056561787, 0.98014915)
+bones/7/rotation = Quaternion(-0.009935311, -1.2974685e-09, -6.580826e-10, 0.9999507)
+bones/9/rotation = Quaternion(0.15124695, 0.20289, -0.46147445, 0.8502949)
+bones/25/rotation = Quaternion(0.1572096, -0.19807781, 0.46492788, 0.84846485)
+bones/26/rotation = Quaternion(0.19025932, -0.0010799979, -0.056628823, 0.98009866)
 
 [node name="CAMERARIG" parent="CharacterBody3D/Visuals/Rig" parent_id_path=PackedInt32Array(1321391257, 2009837787) index="3" unique_id=999810615]
 tps_orbit_distance = 3.0
@@ -60,8 +60,9 @@ tps_height_offset = 0.0
 slot_names = PackedStringArray("left_hand", "right_hand", "torso", "lower_back", "belt", "back_mount", "shoulder_mount")
 
 [node name="UIRoot" parent="CharacterBody3D" unique_id=1321403690 instance=ExtResource("2_uay7f")]
+presentation_tier = 1
 
-[node name="ColorRect" parent="CharacterBody3D/UIRoot/GameplayLayer/HUD/Crosshair" parent_id_path=PackedInt32Array(1321403690, 1219082072) index="5" unique_id=293026410]
+[node name="ColorRect" parent="CharacterBody3D/UIRoot/GameplayLayer/HUD/Crosshair" parent_id_path=PackedInt32Array(1321403690, 1219082072) index="4" unique_id=293026410]
 mouse_filter = 2
 
 [node name="InteractPrompt" parent="CharacterBody3D/UIRoot/GameplayLayer/HUD" parent_id_path=PackedInt32Array(1321403690, 62627019) index="1" unique_id=135847907]
@@ -90,6 +91,9 @@ autowrap_mode = 1
 [node name="Panel" parent="CharacterBody3D/UIRoot/GameplayLayer/HUD/StatusContainer" parent_id_path=PackedInt32Array(1321403690, 1237071445) index="0" unique_id=218885455]
 anchors_preset = -1
 
+[node name="MenuLayer" parent="CharacterBody3D/UIRoot" index="1" unique_id=1237053139]
+visible = true
+
 [node name="QuickActionPanel" parent="CharacterBody3D/UIRoot/MenuLayer/MenuRoot" parent_id_path=PackedInt32Array(1321403690, 2087012693) index="0" unique_id=16342444]
 offset_left = 0.0
 offset_top = 0.0
@@ -98,9 +102,6 @@ offset_bottom = 220.0
 
 [node name="AccentBar" parent="CharacterBody3D/UIRoot/MenuLayer/MenuRoot/QuickActionPanel" index="0" unique_id=630545648]
 offset_right = 0.0
-
-[node name="DebugLayer" parent="CharacterBody3D/UIRoot" index="2" unique_id=1324122574]
-visible = false
 
 [node name="Panel" parent="CharacterBody3D/UIRoot/DebugLayer/DebugStatsUI" parent_id_path=PackedInt32Array(1321403690, 868507804) index="0" unique_id=1293253077]
 mouse_filter = 2

@@ -106,3 +106,178 @@ For your new component to actually receive the styles, `UIRoot` needs to know it
    ```
 
 By adding it to this array, the component will be fully styled at runtime in parity with the rest of the UI.
+
+## 5. UI Fade Animation System
+
+The UI supports automatic fade-in and fade-out animations controlled by `UIFadeController`. This is useful for ephemeral data like stamina/load indicators that should fade out when stable.
+
+### How Fade Works
+
+- **Fade-in**: Triggered when a tracked value changes
+- **Stability detection**: If the value remains unchanged for 6 frames, a fade-out is automatically queued
+- **Duration & easing**: Configured via `UIStyleProfile` exports (`fade_in_duration`, `fade_out_duration`, `fade_easing_type`)
+- **Tier gating**: LOW tier uses instant fades (0.0s duration), HIGH tier uses smooth animations (0.15-0.25s)
+
+### Using UIFadeController in Your Component
+
+To add fade behavior to an existing UI component:
+
+```gdscript
+extends Control
+class_name MyStatusUI
+
+var style_profile: UIStyleProfile
+var fade_controller: UIFadeController
+
+func _ready() -> void:
+    # Create fade controller
+    fade_controller = UIFadeController.new()
+    # Pass this node and the style profile
+    fade_controller.initialize(self, style_profile)
+    # Add fade signal handlers if desired
+    fade_controller.fade_started.connect(_on_fade_started)
+    fade_controller.fade_completed.connect(_on_fade_completed)
+
+func apply_style(style: UIStyleProfile) -> void:
+    style_profile = style
+    if fade_controller:
+        fade_controller.style_profile = style
+
+func _process(_delta: float) -> void:
+    # Observe a value each frame (e.g., stamina_ratio)
+    if fade_controller:
+        fade_controller.observe_value(stamina_ratio)
+
+func _on_fade_started(direction: String) -> void:
+    # Called when fade begins
+    pass
+
+func _on_fade_completed(direction: String) -> void:
+    # Called when fade completes
+    pass
+```
+
+### Fade Animation Flow
+
+1. You call `fade_controller.observe_value(current_value)` each frame
+2. Controller detects when value changes → triggers fade-in
+3. Controller counts stable frames (no change)
+4. After threshold reached (6 frames) → triggers fade-out
+5. Signals `fade_started()` and `fade_completed()` for UI events
+
+For detailed implementation, see `Player/Debug/Scripts/UIFadeController.gd`.
+
+## 6. Responsive Layout Framework
+
+The UI supports responsive layout similar to web design, adapting margins and positioning based on viewport resolution.
+
+### Available Breakpoints
+
+`ResponsiveLayoutManager` defines 4 breakpoints with automatic margin scaling:
+
+| Breakpoint | Resolution | Margin Scale |
+|-------------|-----------|--------------|
+| **MOBILE** | < 720px | 0.75x (75% of base) |
+| **TABLET** | 720-1280px | 0.90x |
+| **DESKTOP** | 1280-2560px | 1.0x (base margins) |
+| **ULTRAWIDE** | > 2560px | 1.15x (115% of base) |
+
+### Integrating Responsive Layout
+
+For a UI component that needs responsive positioning:
+
+1. **Enable responsive layout in UIStyleProfile**:
+   - Set `use_responsive_layout = true` (in UIStyleProfile exports)
+
+2. **In your component, register with ResponsiveLayoutManager**:
+   ```gdscript
+   extends Control
+   class_name MyResponsiveUI
+
+   var layout_manager: ResponsiveLayoutManager
+
+   func _ready() -> void:
+       # Get reference from UIRoot (passed via apply_style or dependency injection)
+       layout_manager = UIRoot.responsive_layout_manager
+       if layout_manager:
+           layout_manager.register_component(self, "anchor_position_string")
+
+   func on_breakpoint_changed(new_breakpoint: String) -> void:
+       # Called when viewport breakpoint changes
+       # Update your positioning here
+       _update_responsive_position()
+
+   func _update_responsive_position() -> void:
+       # Use ResponsiveLayoutManager to get scaled positions
+       if layout_manager:
+           var scaled_margin = layout_manager.get_scaled_margin("top")
+           position.y = scaled_margin
+   ```
+
+3. **Connect the breakpoint signal**:
+   ```gdscript
+   if layout_manager:
+       layout_manager.breakpoint_changed.connect(on_breakpoint_changed)
+   ```
+
+### Example: Repositioning on Breakpoint Change
+
+```gdscript
+func _update_responsive_position(animate: bool = true) -> void:
+    if not layout_manager:
+        return
+
+    var target_pos = layout_manager.get_anchored_position(anchor_name)
+    
+    if animate and style_profile.presentation_tier == UIStyleProfile.Tier.HIGH:
+        # Smooth animation on HIGH tier
+        var tween = create_tween()
+        tween.set_trans(Tween.TRANS_QUAD)
+        tween.set_ease(Tween.EASE_OUT)
+        tween.tween_property(self, "position", target_pos, 0.3)
+    else:
+        # Instant on LOW tier
+        position = target_pos
+```
+
+For detailed implementation, see `Player/Debug/Scripts/ResponsiveLayoutManager.gd`.
+
+## 7. Programmatic UI Creation (Advanced)
+
+By default, UI components are created as scenes in the editor and referenced in UIRoot. However, some components (like `BoundingBoxVisualUI`) are created at runtime and added to the scene tree programmatically.
+
+### When to Use Programmatic Creation
+
+- Component is spawned conditionally (optional feature)
+- Component needs lifecycle tied to a gameplay system (e.g., interaction focus)
+- Component is internal/utility and doesn't need editor visibility
+
+### Example: Creating BoundingBoxVisualUI Programmatically
+
+In `UIRoot._ready()`:
+
+```gdscript
+# Create the bounding box UI programmatically
+bounding_box_ui = BoundingBoxVisualUI.new()
+hud_layer.add_child(bounding_box_ui)
+bounding_box_ui.apply_style(runtime_ui_style)
+
+# Wire signals
+if interaction_component:
+    interaction_component.focus_changed.connect(_on_interaction_focus_changed)
+```
+
+Then in `_on_interaction_focus_changed()`:
+
+```gdscript
+func _on_interaction_focus_changed(new_target: Node) -> void:
+    if bounding_box_ui:
+        bounding_box_ui.set_target(new_target)
+```
+
+### Key Considerations
+
+- Programmatic UI must still implement `apply_style()` for styling consistency
+- Must be added to the scene tree via `add_child()` before use
+- Consider cleanup strategy (Godot auto-garbage collects through lifecycle)
+- For RefCounted utility objects, ensure proper initialization before use

@@ -102,10 +102,14 @@ func perform_current_action(actor: Node, action_id: String) -> void:
 func _resolve_interaction_target(candidate: Node) -> Node:
 	if candidate == null:
 		return null
+	if candidate is WorldInteractable:
+		return candidate
 	if candidate.has_method("interact"):
 		return candidate
 
 	var parent := candidate.get_parent()
+	if parent is WorldInteractable:
+		return parent
 	if parent is Node and parent.has_method("interact"):
 		return parent
 

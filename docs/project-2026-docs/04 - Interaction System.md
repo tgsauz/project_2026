@@ -122,3 +122,29 @@ Validate:
 - add new interactions by implementing the existing contract
 - avoid adding target-type special cases to `InteractionComponent`
 - put item-specific action logic near the item or the controller action router, not in the raycast component
+## World-Space Target Highlighting (Bounding Boxes)
+### New feature
+Phase 3 introduces a diegetic visual highlight for the focused interactable target. When the player looks at an interactable object, the system draws a 2D bounding outline over the projected object bounds.
+
+### Implementation
+- `BoundingBoxVisualUI.gd` (Control) is spawned under `UIRoot/GameplayLayer/HUD`.
+- `UIRoot` updates target via `_update_bounding_box_target()` on `focus_changed`.
+- `InteractionComponent.current_target` is passed through to `BoundingBoxVisualUI.set_target()`.
+- `BoundingBoxVisualUI` projects 3D world corners to screen space via `Camera3D.unproject_position()` (Godot 4.6 official API).
+- For dynamic targets, bounding box queries `get_aabb()` and transforms corners to world space before projection.
+- The bounding UI is full-screen (anchors set full rect), with a `Line2D` overlay.
+
+### Requirements
+- Interactable objects must implement `interact(actor)` and `get_interaction_prompt_data()`.
+- For precise bounds, object should provide geometry AABB (`get_transformed_aabb`/`get_aabb`) or a visible MeshInstance3D.
+- Requires `UIStyleProfile.bounding_box_enabled` to be true (HIGH tier recommended).
+
+### Testing
+1. Open `World/testing_world.tscn` and look at world items (Gun, Bandage).
+2. Confirm that interact flash overlay appears when the prompt is shown.
+3. Validate that focus loss hides the bounding box.
+4. Validate LOW tier still works (simpler visuals).
+
+### Notes
+- This feature is intentionally pluggable. Extend with `WorldInteractable` for additional data properties.
+- Keep interaction contract stable: feature should not require per-target type changes in `InteractionComponent`.

@@ -46,14 +46,6 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("3_rij77")
 
-[node name="OuterFrame" type="ColorRect" parent="GameplayLayer/HUD/Crosshair" unique_id=246399311]
-layout_mode = 0
-offset_left = 4.0
-offset_top = 4.0
-offset_right = 32.0
-offset_bottom = 32.0
-color = Color(1, 1, 1, 0.05)
-
 [node name="TopBar" type="ColorRect" parent="GameplayLayer/HUD/Crosshair" unique_id=1208064949]
 layout_mode = 0
 offset_left = 17.0
@@ -145,6 +137,7 @@ layout_mode = 2
 autowrap_mode = 2
 
 [node name="Line2D" type="Line2D" parent="GameplayLayer/HUD/InteractPrompt" unique_id=487682417]
+rotation = 1.5707964
 
 [node name="StatusContainer" type="Control" parent="GameplayLayer/HUD" unique_id=1237071445]
 custom_minimum_size = Vector2(238, 0)
@@ -232,7 +225,6 @@ layout_mode = 2
 text = "MASS  0.0 KG"
 
 [node name="MenuLayer" type="Control" parent="." unique_id=1237053139]
-visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -251,7 +243,6 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="QuickActionPanel" type="Panel" parent="MenuLayer/MenuRoot" unique_id=16342444]
-visible = false
 custom_minimum_size = Vector2(260, 0)
 layout_mode = 0
 offset_left = 24.0
