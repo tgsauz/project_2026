@@ -2,7 +2,7 @@
 type: entry
 status: active
 owned_by: gameplay
-updated: 2026-03-26
+updated: 2026-03-29
 ---
 
 # Welcome
@@ -27,3 +27,5 @@ Core notes:
 - [[07 - Developer + AI Workflow]]
 - [[08 - How To Add New Items]]
 - [[09 - How To Add New Attachment Points]]
+- [[10 - Control Point Roadmap]]
+- [[11 - Tone and Design Guardrails]]

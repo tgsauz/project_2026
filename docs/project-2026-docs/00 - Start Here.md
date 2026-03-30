@@ -2,7 +2,7 @@
 type: moc
 status: active
 owned_by: gameplay
-updated: 2026-03-26
+updated: 2026-03-29
 ---
 
 # 00 - Start Here
@@ -31,6 +31,8 @@ This vault explains how Project 2026 is structured today so developers and AI ag
 - [[07 - Developer + AI Workflow]]
 - [[08 - How To Add New Items]]
 - [[09 - How To Add New Attachment Points]]
+- [[10 - Control Point Roadmap]]
+- [[11 - Tone and Design Guardrails]]
 
 ## Recommended Reading Paths
 ### New developer
@@ -43,11 +45,17 @@ This vault explains how Project 2026 is structured today so developers and AI ag
 1. [[03 - Inventory and Item System]]
 2. [[04 - Interaction System]]
 3. [[05 - Player, Visuals, and Attachment Points]]
+4. [[10 - Control Point Roadmap]]
 
 ### AI-assisted implementation
 1. [[07 - Developer + AI Workflow]]
 2. Relevant system note
 3. Relevant extension guide
+
+### Roadmap and alignment
+1. [[10 - Control Point Roadmap]]
+2. [[11 - Tone and Design Guardrails]]
+3. Relevant system note
 
 ## Documentation Rules
 - Prefer documenting current behavior, not aspirational behavior.
@@ -57,3 +65,5 @@ This vault explains how Project 2026 is structured today so developers and AI ag
 
 ## Current State
 The most detailed system currently documented is the physical inventory and item interaction architecture. Some parts are intentionally placeholder or hardcoded, especially body slot definitions, attachment anchor lookup, and quick action behaviors.
+
+The latest control point for future work is documented in the roadmap and guardrails notes so new features can stay aligned with the current architecture and the grim dystopic tone.

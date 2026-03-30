@@ -1,14 +1,16 @@
 [gd_scene format=3 uid="uid://chkk4laksuify"]
 
-[ext_resource type="Script" uid="uid://b41go6yfp3pd4" path="res://Player/Debug/Scripts/DebugStatsUI.gd" id="1_aei66"]
 [ext_resource type="Script" uid="uid://ib6tgshf1dmu" path="res://Player/Debug/UIRoot.gd" id="1_mgb65"]
-[ext_resource type="Shader" uid="uid://dgq8wiu7ulhfi" path="res://Textures/Crosshair.gdshader" id="2_acktk"]
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_7i8ja"]
-shader = ExtResource("2_acktk")
+[ext_resource type="Script" uid="uid://b41go6yfp3pd4" path="res://Player/Debug/Scripts/DebugStatsUI.gd" id="2_j6l5c"]
+[ext_resource type="Script" uid="uid://clgcxflstc2ux" path="res://Player/Debug/Scripts/CrosshairUI.gd" id="3_rij77"]
+[ext_resource type="Script" uid="uid://42wvec1476am" path="res://Player/Debug/Scripts/InteractionPromptUI.gd" id="4_4cvli"]
+[ext_resource type="Script" uid="uid://pydlhueko71k" path="res://Player/Debug/Scripts/StatusClusterUI.gd" id="5_b5qb5"]
+[ext_resource type="Script" uid="uid://8htdgrejfs3y" path="res://Player/Debug/Scripts/QuickActionPanelUI.gd" id="6_q5jgh"]
+[ext_resource type="Resource" path="res://Player/Debug/Theme/Project2026UIStyle.tres" id="7_sffta"]
 
 [node name="UIRoot" type="CanvasLayer" unique_id=908704883]
 script = ExtResource("1_mgb65")
+ui_style = ExtResource("7_sffta")
 
 [node name="GameplayLayer" type="Control" parent="." unique_id=1793630363]
 layout_mode = 3
@@ -26,6 +28,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="Crosshair" type="Control" parent="GameplayLayer/HUD" unique_id=1219082072]
 layout_mode = 1
@@ -34,120 +37,335 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -8.0
-offset_top = -8.0
-offset_right = 8.0
-offset_bottom = 8.0
+offset_left = -18.0
+offset_top = -18.0
+offset_right = 18.0
+offset_bottom = 18.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("3_rij77")
+
+[node name="OuterFrame" type="ColorRect" parent="GameplayLayer/HUD/Crosshair" unique_id=246399311]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 32.0
+offset_bottom = 32.0
+color = Color(1, 1, 1, 0.05)
+
+[node name="TopBar" type="ColorRect" parent="GameplayLayer/HUD/Crosshair" unique_id=1208064949]
+layout_mode = 0
+offset_left = 17.0
+offset_top = 2.0
+offset_right = 19.0
+offset_bottom = 12.0
+
+[node name="RightBar" type="ColorRect" parent="GameplayLayer/HUD/Crosshair" unique_id=14293693]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 17.0
+offset_right = 34.0
+offset_bottom = 19.0
+
+[node name="BottomBar" type="ColorRect" parent="GameplayLayer/HUD/Crosshair" unique_id=1990216073]
+layout_mode = 0
+offset_left = 17.0
+offset_top = 24.0
+offset_right = 19.0
+offset_bottom = 34.0
+
+[node name="LeftBar" type="ColorRect" parent="GameplayLayer/HUD/Crosshair" unique_id=439346158]
+layout_mode = 0
+offset_left = 2.0
+offset_top = 17.0
+offset_right = 12.0
+offset_bottom = 19.0
 
 [node name="ColorRect" type="ColorRect" parent="GameplayLayer/HUD/Crosshair" unique_id=293026410]
-material = SubResource("ShaderMaterial_7i8ja")
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -20.0
+layout_mode = 0
+offset_left = 16.0
+offset_top = 16.0
 offset_right = 20.0
 offset_bottom = 20.0
+
+[node name="InteractPrompt" type="Control" parent="GameplayLayer/HUD" unique_id=135847907]
+custom_minimum_size = Vector2(320, 96)
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -150.0
+offset_right = 344.0
+offset_bottom = -54.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+script = ExtResource("4_4cvli")
+
+[node name="Panel" type="Panel" parent="GameplayLayer/HUD/InteractPrompt" unique_id=867333885]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.312
+offset_bottom = 0.04799652
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="InteractPrompt" type="Control" parent="GameplayLayer/HUD" unique_id=135847907]
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
+[node name="AccentBar" type="ColorRect" parent="GameplayLayer/HUD/InteractPrompt/Panel" unique_id=381506327]
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_right = 4.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="NameLabel" type="Label" parent="GameplayLayer/HUD/InteractPrompt" unique_id=333012379]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 23.0
+[node name="MarginContainer" type="MarginContainer" parent="GameplayLayer/HUD/InteractPrompt/Panel" unique_id=563399425]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 10.0
+offset_right = -12.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="TooltipLabel" type="Label" parent="GameplayLayer/HUD/InteractPrompt" unique_id=1614879955]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 23.0
+[node name="VBoxContainer" type="VBoxContainer" parent="GameplayLayer/HUD/InteractPrompt/Panel/MarginContainer" unique_id=1438079661]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="NameLabel" type="Label" parent="GameplayLayer/HUD/InteractPrompt/Panel/MarginContainer/VBoxContainer" unique_id=333012379]
+layout_mode = 2
+
+[node name="TooltipLabel" type="Label" parent="GameplayLayer/HUD/InteractPrompt/Panel/MarginContainer/VBoxContainer" unique_id=1614879955]
+layout_mode = 2
+autowrap_mode = 2
 
 [node name="Line2D" type="Line2D" parent="GameplayLayer/HUD/InteractPrompt" unique_id=487682417]
 
-[node name="StatusContainer" type="VBoxContainer" parent="GameplayLayer/HUD" unique_id=1237071445]
-custom_minimum_size = Vector2(30, 0)
+[node name="StatusContainer" type="Control" parent="GameplayLayer/HUD" unique_id=1237071445]
+custom_minimum_size = Vector2(238, 0)
 layout_mode = 1
 anchors_preset = 11
 anchor_left = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = -262.0
+offset_top = 17.0
+offset_right = -24.0
+offset_bottom = -24.0
 grow_horizontal = 0
 grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("5_b5qb5")
 
-[node name="ProgressBar" type="ProgressBar" parent="GameplayLayer/HUD/StatusContainer" unique_id=1540715607]
+[node name="Panel" type="Panel" parent="GameplayLayer/HUD/StatusContainer" unique_id=218885455]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GameplayLayer/HUD/StatusContainer/Panel" unique_id=227505665]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 10.0
+offset_right = -12.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 6
+
+[node name="HeaderLabel" type="Label" parent="GameplayLayer/HUD/StatusContainer/Panel/VBoxContainer" unique_id=1762468638]
+layout_mode = 2
+text = "PLAYER SYSTEM"
+
+[node name="Divider" type="ColorRect" parent="GameplayLayer/HUD/StatusContainer/Panel/VBoxContainer" unique_id=638593910]
+custom_minimum_size = Vector2(0, 1)
+layout_mode = 2
+color = Color(1, 1, 1, 0.08)
+
+[node name="StaminaRow" type="HBoxContainer" parent="GameplayLayer/HUD/StatusContainer/Panel/VBoxContainer" unique_id=1093387151]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="StaminaCaptionLabel" type="Label" parent="GameplayLayer/HUD/StatusContainer/Panel/VBoxContainer/StaminaRow" unique_id=713335697]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "STAMINA"
+
+[node name="StaminaValueLabel" type="Label" parent="GameplayLayer/HUD/StatusContainer/Panel/VBoxContainer/StaminaRow" unique_id=2079016894]
+layout_mode = 2
+text = "100%"
+
+[node name="ProgressBar" type="ProgressBar" parent="GameplayLayer/HUD/StatusContainer/Panel/VBoxContainer" unique_id=1540715607]
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+value = 100.0
+
+[node name="LoadRow" type="HBoxContainer" parent="GameplayLayer/HUD/StatusContainer/Panel/VBoxContainer" unique_id=457510797]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LoadCaptionLabel" type="Label" parent="GameplayLayer/HUD/StatusContainer/Panel/VBoxContainer/LoadRow" unique_id=1696392828]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "LOAD"
+
+[node name="LoadValueLabel" type="Label" parent="GameplayLayer/HUD/StatusContainer/Panel/VBoxContainer/LoadRow" unique_id=1061031922]
+layout_mode = 2
+text = "0%"
+
+[node name="LoadBar" type="ProgressBar" parent="GameplayLayer/HUD/StatusContainer/Panel/VBoxContainer" unique_id=413860811]
+custom_minimum_size = Vector2(0, 10)
 layout_mode = 2
 
+[node name="WeightLabel" type="Label" parent="GameplayLayer/HUD/StatusContainer/Panel/VBoxContainer" unique_id=1921352424]
+layout_mode = 2
+text = "MASS  0.0 KG"
+
 [node name="MenuLayer" type="Control" parent="." unique_id=1237053139]
+visible = false
 layout_mode = 3
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 
 [node name="MenuRoot" type="Control" parent="MenuLayer" unique_id=2087012693]
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
-[node name="QuickActionPanel" type="Panel" parent="MenuLayer/MenuRoot"]
+[node name="QuickActionPanel" type="Panel" parent="MenuLayer/MenuRoot" unique_id=16342444]
 visible = false
+custom_minimum_size = Vector2(260, 0)
+layout_mode = 0
 offset_left = 24.0
-offset_top = 160.0
-offset_right = 224.0
-offset_bottom = 284.0
+offset_top = 140.0
+offset_right = 308.0
+offset_bottom = 360.0
+mouse_filter = 2
+script = ExtResource("6_q5jgh")
 
-[node name="TitleLabel" type="Label" parent="MenuLayer/MenuRoot/QuickActionPanel"]
-offset_left = 10.0
+[node name="AccentBar" type="ColorRect" parent="MenuLayer/MenuRoot/QuickActionPanel" unique_id=630545648]
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_right = 4.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="MenuLayer/MenuRoot/QuickActionPanel" unique_id=1865724031]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
 offset_top = 10.0
-offset_right = 180.0
-offset_bottom = 30.0
+offset_right = -12.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="ActionsLabel" type="Label" parent="MenuLayer/MenuRoot/QuickActionPanel"]
-offset_left = 10.0
-offset_top = 36.0
-offset_right = 180.0
-offset_bottom = 110.0
+[node name="VBoxContainer" type="VBoxContainer" parent="MenuLayer/MenuRoot/QuickActionPanel/MarginContainer" unique_id=1798231937]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TitleLabel" type="Label" parent="MenuLayer/MenuRoot/QuickActionPanel/MarginContainer/VBoxContainer" unique_id=1274932185]
+layout_mode = 2
+text = "ACTIONS"
+
+[node name="Divider" type="ColorRect" parent="MenuLayer/MenuRoot/QuickActionPanel/MarginContainer/VBoxContainer" unique_id=1107642627]
+custom_minimum_size = Vector2(0, 1)
+layout_mode = 2
+color = Color(1, 1, 1, 0.08)
+
+[node name="ActionsLabel" type="VBoxContainer" parent="MenuLayer/MenuRoot/QuickActionPanel/MarginContainer/VBoxContainer" unique_id=1305170216]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="FooterLabel" type="Label" parent="MenuLayer/MenuRoot/QuickActionPanel/MarginContainer/VBoxContainer" unique_id=537178413]
+layout_mode = 2
+text = "F / ENTER EXECUTE    Q CLOSE"
 
 [node name="DebugLayer" type="Control" parent="." unique_id=1324122574]
 layout_mode = 3
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 
 [node name="DebugStatsUI" type="Control" parent="DebugLayer" unique_id=868507804]
 anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
-script = ExtResource("1_aei66")
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 308.0
+offset_bottom = 194.0
+mouse_filter = 2
+script = ExtResource("2_j6l5c")
 
 [node name="Panel" type="Panel" parent="DebugLayer/DebugStatsUI" unique_id=1293253077]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="DebugLayer/DebugStatsUI/Panel" unique_id=847533748]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 10.0
+offset_right = -12.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 4
+
+[node name="HeaderLabel" type="Label" parent="DebugLayer/DebugStatsUI/Panel/VBoxContainer" unique_id=1969139837]
+layout_mode = 2
+text = "DEBUG FEED"
+
+[node name="Divider" type="ColorRect" parent="DebugLayer/DebugStatsUI/Panel/VBoxContainer" unique_id=609682635]
+custom_minimum_size = Vector2(0, 1)
+layout_mode = 2
+color = Color(1, 1, 1, 0.08)
 
 [node name="SpeedLabel" type="Label" parent="DebugLayer/DebugStatsUI/Panel/VBoxContainer" unique_id=973229664]
 layout_mode = 2
+text = "SPD  0.00"
 
 [node name="VelocityLabel" type="Label" parent="DebugLayer/DebugStatsUI/Panel/VBoxContainer" unique_id=55932846]
 layout_mode = 2
+text = "VEL  (0.00, 0.00, 0.00)"
+
+[node name="StaminaLabel" type="Label" parent="DebugLayer/DebugStatsUI/Panel/VBoxContainer" unique_id=781466934]
+layout_mode = 2
+text = "STAM  0 / 0"
 
 [node name="LoadLabel" type="Label" parent="DebugLayer/DebugStatsUI/Panel/VBoxContainer" unique_id=769822503]
 layout_mode = 2
+text = "LOAD  0.00"
 
-[node name="WeightLabel" type="Label" parent="DebugLayer/DebugStatsUI/Panel/VBoxContainer" unique_id=1921352424]
+[node name="WeightLabel" type="Label" parent="DebugLayer/DebugStatsUI/Panel/VBoxContainer" unique_id=1294982685]
 layout_mode = 2
+text = "MASS  0.00"

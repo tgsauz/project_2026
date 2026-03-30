@@ -45,17 +45,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4648862, 0)
 [node name="Visuals" parent="CharacterBody3D" index="0" unique_id=1722711644]
 show_attachment_debug_gizmos = true
 
-[node name="Armature" parent="CharacterBody3D/Visuals/Rig" parent_id_path=PackedInt32Array(1321391257, 2009837787) index="0" unique_id=433468030]
-transform = Transform3D(100, 0, 0, 0, -2.3841858e-05, 99.99999, 0, -99.99999, -2.3841858e-05, 0, 0, 0)
-
-[node name="Skeleton3D" parent="CharacterBody3D/Visuals/Rig/Armature" index="0" unique_id=1990901886]
-bones/7/rotation = Quaternion(-0.009365965, -1.2978429e-09, -6.573438e-10, 0.9999562)
-bones/9/rotation = Quaternion(0.15174063, 0.20262201, -0.4615922, 0.8502069)
-bones/25/rotation = Quaternion(0.1578068, -0.19775048, 0.46506724, 0.84835386)
-bones/26/rotation = Quaternion(0.19017625, -0.001079924, -0.056607585, 0.98011607)
-
-[node name="CharacterMesh" parent="CharacterBody3D/Visuals/Rig/Armature/Skeleton3D" index="0" unique_id=1876716078]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+[node name="Skeleton3D" parent="CharacterBody3D/Visuals/Rig/Armature" parent_id_path=PackedInt32Array(1321391257, 2009837787, 433468030) index="0" unique_id=1990901886]
+bones/7/rotation = Quaternion(-0.009220682, -1.2979386e-09, -6.571554e-10, 0.99995756)
+bones/9/rotation = Quaternion(0.15191191, 0.20252901, -0.46163297, 0.85017633)
+bones/25/rotation = Quaternion(0.15805864, -0.19761239, 0.46512586, 0.848307)
+bones/26/rotation = Quaternion(0.19001937, -0.0010817797, -0.056561787, 0.98014915)
 
 [node name="CAMERARIG" parent="CharacterBody3D/Visuals/Rig" parent_id_path=PackedInt32Array(1321391257, 2009837787) index="3" unique_id=999810615]
 tps_orbit_distance = 3.0
@@ -67,47 +61,46 @@ slot_names = PackedStringArray("left_hand", "right_hand", "torso", "lower_back",
 
 [node name="UIRoot" parent="CharacterBody3D" unique_id=1321403690 instance=ExtResource("2_uay7f")]
 
-[node name="HUD" parent="CharacterBody3D/UIRoot/GameplayLayer" parent_id_path=PackedInt32Array(1321403690, 1793630363) index="0" unique_id=62627019]
+[node name="ColorRect" parent="CharacterBody3D/UIRoot/GameplayLayer/HUD/Crosshair" parent_id_path=PackedInt32Array(1321403690, 1219082072) index="5" unique_id=293026410]
 mouse_filter = 2
 
-[node name="Crosshair" parent="CharacterBody3D/UIRoot/GameplayLayer/HUD" index="0" unique_id=1219082072]
-mouse_filter = 2
+[node name="InteractPrompt" parent="CharacterBody3D/UIRoot/GameplayLayer/HUD" parent_id_path=PackedInt32Array(1321403690, 62627019) index="1" unique_id=135847907]
+anchors_preset = -1
+anchor_left = 0.021000002
+anchor_top = 0.76900005
+anchor_right = 0.29900002
+anchor_bottom = 0.96300006
+offset_left = -0.19200134
+offset_top = 0.68795776
+offset_right = -0.44802856
+offset_bottom = -0.024047852
 
-[node name="ColorRect" parent="CharacterBody3D/UIRoot/GameplayLayer/HUD/Crosshair" index="0" unique_id=293026410]
-mouse_filter = 2
+[node name="Panel" parent="CharacterBody3D/UIRoot/GameplayLayer/HUD/InteractPrompt" index="0" unique_id=867333885]
+anchor_bottom = 1.0
+offset_top = 1.0
+offset_bottom = 0.0
 
-[node name="InteractPrompt" parent="CharacterBody3D/UIRoot/GameplayLayer/HUD" index="1" unique_id=135847907]
-mouse_filter = 2
+[node name="AccentBar" parent="CharacterBody3D/UIRoot/GameplayLayer/HUD/InteractPrompt/Panel" index="0" unique_id=381506327]
+offset_right = 0.0
 
-[node name="StatusContainer" parent="CharacterBody3D/UIRoot/GameplayLayer/HUD" index="2" unique_id=1237071445]
-mouse_filter = 2
+[node name="TooltipLabel" parent="CharacterBody3D/UIRoot/GameplayLayer/HUD/InteractPrompt/Panel/MarginContainer/VBoxContainer" parent_id_path=PackedInt32Array(1321403690, 1438079661) index="1" unique_id=1614879955]
+custom_minimum_size = Vector2(5, 5)
+autowrap_mode = 1
 
-[node name="ProgressBar" parent="CharacterBody3D/UIRoot/GameplayLayer/HUD/StatusContainer" index="0" unique_id=1540715607]
-mouse_filter = 2
+[node name="Panel" parent="CharacterBody3D/UIRoot/GameplayLayer/HUD/StatusContainer" parent_id_path=PackedInt32Array(1321403690, 1237071445) index="0" unique_id=218885455]
+anchors_preset = -1
 
-[node name="MenuRoot" parent="CharacterBody3D/UIRoot/MenuLayer" parent_id_path=PackedInt32Array(1321403690, 1237053139) index="0" unique_id=2087012693]
-mouse_filter = 2
-
-[node name="QuickActionPanel" parent="CharacterBody3D/UIRoot/MenuLayer/MenuRoot" index="0"]
-layout_mode = 0
+[node name="QuickActionPanel" parent="CharacterBody3D/UIRoot/MenuLayer/MenuRoot" parent_id_path=PackedInt32Array(1321403690, 2087012693) index="0" unique_id=16342444]
 offset_left = 0.0
 offset_top = 0.0
-offset_right = 200.0
-offset_bottom = 124.0
+offset_right = 284.0
+offset_bottom = 220.0
 
-[node name="TitleLabel" parent="CharacterBody3D/UIRoot/MenuLayer/MenuRoot/QuickActionPanel" index="0"]
-layout_mode = 0
-offset_left = 0.0
-offset_top = 0.0
-offset_right = 170.0
-offset_bottom = 23.0
+[node name="AccentBar" parent="CharacterBody3D/UIRoot/MenuLayer/MenuRoot/QuickActionPanel" index="0" unique_id=630545648]
+offset_right = 0.0
 
-[node name="ActionsLabel" parent="CharacterBody3D/UIRoot/MenuLayer/MenuRoot/QuickActionPanel" index="1"]
-layout_mode = 0
-offset_left = 0.0
-offset_top = 0.0
-offset_right = 170.0
-offset_bottom = 74.0
+[node name="DebugLayer" parent="CharacterBody3D/UIRoot" index="2" unique_id=1324122574]
+visible = false
 
 [node name="Panel" parent="CharacterBody3D/UIRoot/DebugLayer/DebugStatsUI" parent_id_path=PackedInt32Array(1321403690, 868507804) index="0" unique_id=1293253077]
 mouse_filter = 2
