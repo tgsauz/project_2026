@@ -46,10 +46,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4648862, 0)
 show_attachment_debug_gizmos = true
 
 [node name="Skeleton3D" parent="CharacterBody3D/Visuals/Rig/Armature" parent_id_path=PackedInt32Array(1321391257, 2009837787, 433468030) index="0" unique_id=1990901886]
-bones/7/rotation = Quaternion(-0.009935311, -1.2974685e-09, -6.580826e-10, 0.9999507)
-bones/9/rotation = Quaternion(0.15124695, 0.20289, -0.46147445, 0.8502949)
-bones/25/rotation = Quaternion(0.1572096, -0.19807781, 0.46492788, 0.84846485)
-bones/26/rotation = Quaternion(0.19025932, -0.0010799979, -0.056628823, 0.98009866)
+bones/7/rotation = Quaternion(-0.010204223, -1.2972916e-09, -6.5843164e-10, 0.999948)
+bones/9/rotation = Quaternion(0.15101364, 0.20301661, -0.46141878, 0.8503364)
+bones/25/rotation = Quaternion(0.15699609, -0.19819477, 0.46487802, 0.8485043)
+bones/26/rotation = Quaternion(0.19039883, -0.0010789611, -0.0566678, 0.98006934)
 
 [node name="CAMERARIG" parent="CharacterBody3D/Visuals/Rig" parent_id_path=PackedInt32Array(1321391257, 2009837787) index="3" unique_id=999810615]
 tps_orbit_distance = 3.0
@@ -90,9 +90,6 @@ autowrap_mode = 1
 
 [node name="Panel" parent="CharacterBody3D/UIRoot/GameplayLayer/HUD/StatusContainer" parent_id_path=PackedInt32Array(1321403690, 1237071445) index="0" unique_id=218885455]
 anchors_preset = -1
-
-[node name="MenuLayer" parent="CharacterBody3D/UIRoot" index="1" unique_id=1237053139]
-visible = true
 
 [node name="QuickActionPanel" parent="CharacterBody3D/UIRoot/MenuLayer/MenuRoot" parent_id_path=PackedInt32Array(1321403690, 2087012693) index="0" unique_id=16342444]
 offset_left = 0.0

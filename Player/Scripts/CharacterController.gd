@@ -69,6 +69,7 @@ var quick_action_selected_index: int = 0
 var interact_pressed: bool = false
 var interact_press_time_ms: int = 0
 var interact_hold_consumed: bool = false
+var is_in_inventory: bool = false
 
 # ============================================================
 #  READY
@@ -102,10 +103,10 @@ func _process(_delta: float) -> void:
 
 func _unhandled_input(event):
 
-	if event is InputEventMouseButton and event.is_pressed():
+	if event is InputEventMouseButton and event.is_pressed() and not is_in_inventory:
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
-	if event.is_action_pressed("ui_cancel"):
+	if event.is_action_pressed("ui_cancel") and not is_in_inventory:
 		if quick_action_menu_open:
 			_close_quick_action_menu()
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
@@ -172,6 +173,11 @@ func _physics_process(delta):
 # ============================================================
 
 func _collect_input():
+
+	if is_in_inventory:
+		input_vector = Vector2.ZERO
+		intent_direction = Vector3.ZERO
+		return
 
 	input_vector = Input.get_vector("right", "left", "backward", "forward")
 
@@ -266,6 +272,13 @@ func _update_sprint(delta):
 		stamina += stamina_regen_rate * delta
 
 	stamina = clamp(stamina, 0.0, stamina_max)
+
+func set_inventory_mode_active(is_active: bool) -> void:
+	is_in_inventory = is_active
+	if is_active:
+		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	else:
+		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 # ============================================================
 #  ANIMATION

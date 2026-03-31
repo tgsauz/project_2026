@@ -34,6 +34,8 @@ var tps_yaw: float = 0.0
 # Current mode
 var using_fps: bool = true
 
+# Input blocking
+var _input_blocked: bool = false
 # ============================================================
 # READY
 # ============================================================
@@ -56,6 +58,8 @@ func _ready():
 
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	_set_camera_mode(true)
+	
+	_connect_inventory_view_controller()
 	
 func _process(_delta):
 	if not _is_valid_motor(motor):
@@ -114,7 +118,7 @@ func _validate_required_nodes() -> bool:
 # ============================================================
 
 func _unhandled_input(event):
-	if event is InputEventMouseMotion and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
+	if event is InputEventMouseMotion and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED and not _input_blocked:
 		_handle_mouse_motion(event)
 
 	if event.is_action_pressed("toggle_camera"):
@@ -155,6 +159,15 @@ func _apply_active_look():
 	
 	motor.set_camera_yaw(tps_yaw if not using_fps else fps_yaw)
 	motor.set_camera_mode(using_fps)
+
+func _connect_inventory_view_controller() -> void:
+	var inventory_view_controller = get_tree().root.find_child("InventoryViewController", true, false)
+	if inventory_view_controller and inventory_view_controller.has_signal("inventory_mode_changed"):
+		if not inventory_view_controller.inventory_mode_changed.is_connected(_on_inventory_mode_changed):
+			inventory_view_controller.inventory_mode_changed.connect(_on_inventory_mode_changed)
+
+func _on_inventory_mode_changed(is_active: bool) -> void:
+	_input_blocked = is_active
 
 # ============================================================
 # CAMERA MODE SWITCHING

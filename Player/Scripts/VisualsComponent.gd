@@ -343,3 +343,11 @@ func _resolve_inventory() -> InventoryComponent:
 	if parent.has_method("get_inventory_component"):
 		return parent.get_inventory_component()
 	return parent.get_node_or_null("InventoryComponent") as InventoryComponent
+
+func get_attachment_point_world_positions() -> Dictionary:
+	var positions := {}
+	for slot_name in attachment_content_roots.keys():
+		var anchor := attachment_content_roots[slot_name] as Node3D
+		if anchor != null and is_instance_valid(anchor):
+			positions[slot_name] = anchor.global_position
+	return positions

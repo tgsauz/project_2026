@@ -24,14 +24,17 @@ The current playable stack already provides:
 - physical inventory with body slots and nested containers
 - equipped item visuals for held and mounted items
 - quick actions for item handling
+- **serialization contract (save/load Dictionary model)**
+- **ItemDefinitionRegistry (O(1) item lookup)**
+- **Debug Inventory Inspector (real-time state viewer)**
 - smoke-style regression coverage
 - project docs grounded in the current codebase
 
 This is a strong base, but several important areas are still intentionally hardcoded or early:
 - slot definitions and anchor mapping
-- item action generation
-- persistence and runtime state restoration
+- item action generation (item-specific contexts)
 - deep validation for scenario-based gameplay flows
+- stack management and drag-and-drop UX
 
 ## Development Priorities
 ### Priority 1: Architecture stabilization and data contracts
@@ -57,7 +60,7 @@ Focus on:
 - a health and condition layer with wounds, bleeding, pain, and treatment state
 - item condition and maintenance for weapons, tools, and worn gear
 - ammunition and reload state as runtime state rather than item presence only
-- persistence and save/load for player inventory, equipment, and world item state
+- **full save/load implementation for player inventory and world item state using new serialization logic**
 
 Design intent:
 - treatment should consume time, attention, and finite resources

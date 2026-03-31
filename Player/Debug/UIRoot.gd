@@ -26,6 +26,15 @@ var optimization_context: UIOptimizationContext
 var layout_manager: ResponsiveLayoutManager
 var player_character: Node
 
+# Inventory UI Components (Phase 4)
+var inventory_view_controller: InventoryViewController
+var inventory_overlay_ui: InventoryOverlayUI
+var inventory_slot_panel_ui: InventorySlotPanelUI
+var inventory_action_menu: InventoryItemActionMenu
+var inventory_inspect_ui: ItemInspectUI
+var inventory_tooltip_ui: ItemTooltipUI
+var debug_inventory_inspector: DebugInventoryInspector
+
 # ============================================================
 # INIT
 # ============================================================
@@ -43,6 +52,9 @@ func _ready():
 	assert(debug_layer != null)
 	runtime_ui_style = _build_runtime_style()
 	optimization_context = UIOptimizationContext.new(runtime_ui_style, debug_enabled)
+	
+	# Store UI profile in metadata for other scripts to reference
+	set_meta("ui_profile", runtime_ui_style)
 	
 	# Initialize responsive layout manager
 	layout_manager = ResponsiveLayoutManager.new(runtime_ui_style)
@@ -69,6 +81,12 @@ func _ready():
 			bounding_box_ui = BoundingBoxVisualUI.new()
 			hud_layer.add_child(bounding_box_ui)
 			bounding_box_ui.apply_style(runtime_ui_style)
+	
+	# Initialize inventory UI components (Phase 4)
+	_initialize_inventory_ui()
+	
+	# Initialize debug inventory inspector (Phase 5)
+	_initialize_debug_inventory_ui()
 
 
 func bind_character(character: Node) -> void:
@@ -118,7 +136,7 @@ func _build_runtime_style() -> UIStyleProfile:
 	return style_instance
 
 func _apply_ui_style() -> void:
-	for component in [crosshair_ui, interact_prompt_ui, status_cluster_ui, quick_action_panel_ui, debug_stats_ui, bounding_box_ui]:
+	for component in [crosshair_ui, interact_prompt_ui, status_cluster_ui, quick_action_panel_ui, debug_stats_ui, bounding_box_ui, inventory_overlay_ui, inventory_slot_panel_ui, inventory_action_menu, inventory_tooltip_ui, debug_inventory_inspector]:
 		if component != null and component.has_method("apply_style"):
 			component.apply_style(runtime_ui_style)
 
@@ -145,6 +163,204 @@ func _register_layout_components() -> void:
 		layout_manager.register_component(interact_prompt_ui)
 	if quick_action_panel_ui != null:
 		layout_manager.register_component(quick_action_panel_ui)
+
+# ============================================================
+# INVENTORY UI INITIALIZATION (Phase 4)
+# ============================================================
+
+func _initialize_inventory_ui() -> void:
+	if gameplay_layer == null:
+		return
+	
+	var hud_layer = gameplay_layer.get_node_or_null("HUD") as Control
+	if hud_layer == null:
+		return
+	
+	# Create Camera/Inventory controller
+	inventory_view_controller = InventoryViewController.new()
+	inventory_view_controller.name = "InventoryViewController"
+	add_child(inventory_view_controller)
+	
+	if player_character != null:
+		inventory_view_controller.set_character(player_character)
+	
+	# Create Attachment line overlay (Control-based, 2D rendering)
+	inventory_overlay_ui = InventoryOverlayUI.new()
+	inventory_overlay_ui.name = "InventoryOverlayUI"
+	inventory_overlay_ui.modulate.a = 0.0  # Initially hidden
+	hud_layer.add_child(inventory_overlay_ui)
+	
+	if player_character != null:
+		inventory_overlay_ui.set_character(player_character)
+	
+	# Create Item selection panel (VBoxContainer-based scene)
+	inventory_slot_panel_ui = InventorySlotPanelUI.new()
+	inventory_slot_panel_ui.name = "InventorySlotPanel"
+	inventory_slot_panel_ui.modulate.a = 0.0  # Initially hidden
+	hud_layer.add_child(inventory_slot_panel_ui)
+	
+	# Create Action menu (HBoxContainer-based scene)
+	inventory_action_menu = InventoryItemActionMenu.new()
+	inventory_action_menu.name = "InventoryActionMenu"
+	inventory_action_menu.modulate.a = 0.0  # Initially hidden
+	hud_layer.add_child(inventory_action_menu)
+	
+	# Create 3D Inspect Viewer (Control-based Canvas)
+	inventory_inspect_ui = ItemInspectUI.new()
+	inventory_inspect_ui.name = "ItemInspectUI"
+	hud_layer.add_child(inventory_inspect_ui)
+	
+	# Create Item Tooltip (Phase 5)
+	inventory_tooltip_ui = ItemTooltipUI.new()
+	inventory_tooltip_ui.name = "ItemTooltipUI"
+	hud_layer.add_child(inventory_tooltip_ui)
+	
+	# Apply style to all newly created nodes
+	if inventory_overlay_ui: inventory_overlay_ui.apply_style(runtime_ui_style)
+	if inventory_slot_panel_ui: inventory_slot_panel_ui.apply_style(runtime_ui_style)
+	if inventory_action_menu: inventory_action_menu.apply_style(runtime_ui_style)
+	if inventory_inspect_ui: inventory_inspect_ui.apply_style(runtime_ui_style)
+	if inventory_tooltip_ui: inventory_tooltip_ui.apply_style(runtime_ui_style)
+	
+	# Wire signals: Camera mode toggle → UI visibility
+	inventory_view_controller.inventory_mode_changed.connect(_on_inventory_mode_changed)
+	
+	# Wire signals: Overlay line click / deselect → Accordion transitions
+	inventory_overlay_ui.slot_line_clicked.connect(_on_slot_line_clicked)
+	inventory_overlay_ui.deselected.connect(_on_deselected)
+	
+	# Wire signals: Item selection → Action menu populate
+	inventory_slot_panel_ui.item_selected.connect(_on_item_selected)
+	
+	# Wire signals: Item hover → Tooltip
+	inventory_slot_panel_ui.item_hovered.connect(_on_item_hovered)
+	inventory_slot_panel_ui.item_unhovered.connect(_on_item_unhovered)
+	
+	# Wire signals: Action selection → Execute and refresh
+	inventory_action_menu.item_action_selected.connect(_on_item_action_selected)
+
+func _initialize_debug_inventory_ui() -> void:
+	if debug_layer == null:
+		return
+	debug_inventory_inspector = DebugInventoryInspector.new()
+	debug_inventory_inspector.name = "DebugInventoryInspector"
+	debug_layer.add_child(debug_inventory_inspector)
+	if runtime_ui_style:
+		debug_inventory_inspector.apply_style(runtime_ui_style)
+
+func _on_deselected() -> void:
+	if inventory_slot_panel_ui: inventory_slot_panel_ui.clear()
+	if inventory_action_menu: inventory_action_menu.clear()
+	if inventory_inspect_ui and inventory_inspect_ui.active: inventory_inspect_ui._close()
+	if inventory_tooltip_ui: inventory_tooltip_ui.hide_tooltip()
+
+func _on_inventory_mode_changed(is_active: bool) -> void:
+	if inventory_overlay_ui == null:
+		return
+	
+	if player_character != null and player_character.has_method("set_inventory_mode_active"):
+		player_character.set_inventory_mode_active(is_active)
+	
+	if crosshair_ui != null and crosshair_ui.has_method("set_cursor_mode"):
+		crosshair_ui.set_cursor_mode(is_active)
+	
+	if is_active:
+		inventory_overlay_ui.set_visibility(true)
+		inventory_overlay_ui.update_lines()
+	else:
+		inventory_overlay_ui.set_visibility(false)
+		if inventory_slot_panel_ui: inventory_slot_panel_ui.clear()
+		if inventory_action_menu: inventory_action_menu.clear()
+		if inventory_tooltip_ui: inventory_tooltip_ui.hide_tooltip()
+
+func _on_slot_line_clicked(slot_name: String) -> void:
+	if inventory_slot_panel_ui == null or player_character == null:
+		return
+	
+	# Query inventory component for items in this slot
+	var inventory = player_character.get_node_or_null("InventoryComponent") as Node
+	if inventory == null or not inventory.has_method("get_slot_state"):
+		return
+	
+	var slot_state = inventory.get_slot_state(slot_name)
+	var ui_items = []
+	if slot_state:
+		var main_item = slot_state.get("item")
+		if main_item != null:
+			if main_item.has_method("is_container") and main_item.is_container():
+				for nested_id in main_item.contained_item_ids:
+					var nested = inventory.get_item_instance(str(nested_id))
+					if nested:
+						ui_items.append({
+							"id": nested.instance_id,
+							"name": nested.get_display_name() if nested.has_method("get_display_name") else nested.definition.item_name,
+							"quantity": nested.stack_count
+						})
+			else:
+				ui_items.append({
+					"id": main_item.instance_id,
+					"name": main_item.get_display_name() if main_item.has_method("get_display_name") else main_item.definition.item_name,
+					"quantity": main_item.stack_count
+				})
+				
+	inventory_slot_panel_ui.set_slot_items(slot_name, ui_items)
+	inventory_slot_panel_ui.set_inventory_component(inventory)
+	
+	inventory_overlay_ui.expand_slot(slot_name, inventory_slot_panel_ui)
+	inventory_action_menu.clear()
+
+func _on_item_selected(item) -> void:
+	if inventory_action_menu == null:
+		return
+	
+	# Get current slot from panel
+	var slot_name = inventory_slot_panel_ui._current_slot
+	inventory_action_menu.set_item(item, slot_name)
+	
+	inventory_overlay_ui.expand_action(inventory_action_menu, inventory_slot_panel_ui)
+
+func _on_item_hovered(item_dict: Dictionary, screen_pos: Vector2) -> void:
+	if inventory_tooltip_ui:
+		inventory_tooltip_ui.show_tooltip(item_dict, screen_pos)
+
+func _on_item_unhovered() -> void:
+	if inventory_tooltip_ui:
+		inventory_tooltip_ui.hide_tooltip()
+
+func _on_item_action_selected(action_id: String) -> void:
+	if player_character == null:
+		return
+	
+	var inventory = player_character.get_node_or_null("InventoryComponent") as Node
+	if inventory == null:
+		return
+	
+	var item = inventory_action_menu._current_item
+	if item == null: return
+	var item_id = item.get("id", "")
+	
+	# Execute action
+	match action_id:
+		"equip", "move_to_hand":
+			if inventory.has_method("move_item_to_hand"):
+				inventory.move_item_to_hand(item_id)
+		"drop":
+			if inventory.has_method("drop_item"):
+				inventory.drop_item(item_id)
+		"stow", "unequip":
+			if inventory.has_method("unequip_item"):
+				inventory.unequip_item(item_id)
+		"inspect":
+			if inventory.has_method("get_item_instance"):
+				var instance = inventory.get_item_instance(item_id)
+				if instance != null and instance.get("definition"):
+					inventory_inspect_ui.inspect_item(instance.definition)
+					
+	# Refresh panel with updated inventory
+	if action_id != "inspect":
+		var current_slot = inventory_slot_panel_ui._current_slot
+		_on_slot_line_clicked(current_slot)
+	inventory_action_menu.clear()
 
 # ============================================================
 # OPTIMIZATION

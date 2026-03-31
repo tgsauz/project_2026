@@ -44,6 +44,7 @@ signal equipment_visuals_changed(visible_items: Array)
 # ============================================================
 
 func _ready() -> void:
+	ItemDefinitionRegistry.initialize()
 	slot_configs = _build_slot_configs()
 	_initialize_slots()
 
@@ -335,6 +336,77 @@ func _recalculate() -> void:
 	var equipped_visuals := get_equipped_visuals()
 	emit_signal("item_visuals_changed", equipped_visuals)
 	emit_signal("equipment_visuals_changed", equipped_visuals)
+
+# ============================================================
+#  SERIALIZATION
+# ============================================================
+
+func serialize() -> Dictionary:
+	var serialized_items: Dictionary = {}
+	for item_id in item_instances.keys():
+		var item = item_instances[item_id]
+		if item == null or item.definition == null:
+			continue
+		serialized_items[str(item_id)] = {
+			"definition_id": item.definition.id,
+			"stack_count": item.stack_count,
+			"condition": item.condition,
+			"owning_slot": item.owning_slot,
+			"parent_instance_id": item.parent_instance_id,
+			"contained_item_ids": Array(item.contained_item_ids),
+			"custom_state": item.custom_state.duplicate(true)
+		}
+	
+	var serialized_slots: Dictionary = {}
+	for slot_name in slot_names:
+		var state = slot_state.get(slot_name, {})
+		serialized_slots[slot_name] = str(state.get("item_id", ""))
+	
+	return {
+		"slot_state": serialized_slots,
+		"items": serialized_items
+	}
+
+func deserialize(data: Dictionary) -> void:
+	clear()
+	
+	var items_data: Dictionary = data.get("items", {})
+	var slots_data: Dictionary = data.get("slot_state", {})
+	
+	# Pass 1: Recreate all ItemInstance objects
+	for item_id in items_data.keys():
+		var item_data: Dictionary = items_data[item_id]
+		var def_id: String = item_data.get("definition_id", "")
+		var definition = ItemDefinitionRegistry.find_by_id(def_id)
+		if definition == null:
+			push_warning("InventoryComponent.deserialize: Unknown definition '%s', skipping." % def_id)
+			continue
+		
+		var instance = ItemInstance.new()
+		instance.instance_id = str(item_id)
+		instance.definition = definition
+		instance.stack_count = int(item_data.get("stack_count", 1))
+		instance.condition = float(item_data.get("condition", 1.0))
+		instance.owning_slot = str(item_data.get("owning_slot", ""))
+		instance.parent_instance_id = str(item_data.get("parent_instance_id", ""))
+		instance.custom_state = item_data.get("custom_state", {}).duplicate(true)
+		
+		var contained: Array = item_data.get("contained_item_ids", [])
+		var packed := PackedStringArray()
+		for cid in contained:
+			packed.append(str(cid))
+		instance.contained_item_ids = packed
+		
+		item_instances[str(item_id)] = instance
+	
+	# Pass 2: Restore slot occupancy
+	for slot_name in slots_data.keys():
+		var occupant_id: String = str(slots_data[slot_name])
+		if slot_state.has(slot_name):
+			slot_state[slot_name]["item_id"] = occupant_id
+	
+	_recalculate()
+	print("[InventoryComponent] Deserialized %d items across %d slots." % [item_instances.size(), slot_names.size()])
 
 # ============================================================
 #  HELPERS

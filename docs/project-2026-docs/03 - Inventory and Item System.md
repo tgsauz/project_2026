@@ -53,6 +53,14 @@ Key fields:
 - `parent_instance_id`
 - `contained_item_ids`
 
+### ItemDefinitionRegistry
+Script: `World/Items/Scripts/ItemDefinitionRegistry.gd`
+
+Purpose:
+- static preloaded lookup for item definitions by string ID
+- enables efficient serialization and deserialization
+- optimized for low-end hardware (O(1) lookups after initial scan)
+
 ## InventoryComponent Responsibilities
 Script: `World/Items/Scripts/InventoryComponent.gd`
 
@@ -128,6 +136,12 @@ This means a secured container on lower back can carry medical or ammo items whi
 - `get_total_weight()`
 - `get_load_factor()`
 
+### Persistence (Phase 5)
+- `serialize() -> Dictionary`
+- `deserialize(data: Dictionary) -> void`
+
+The serialization model flattens the nested storage graph into a serializable Dictionary containing item instances, their state, and slot occupancy. It uses `ItemDefinitionRegistry` to restore design-time references.
+
 ## Placement Rules
 When an item is introduced into inventory:
 1. The inventory checks allowed body slots.
@@ -184,6 +198,26 @@ Container behavior is still generic, which is good:
 
 all fit the same structural model.
 
+## UI Presentation (Phase 4 & 5)
+The inventory UI is diegetic and uses a Camera-based orbit view.
+
+### InventoryOverlayUI
+- Accordion-style sidebar menu
+- Dynamic leader lines projecting 3D attachment points to 2D screen space
+- **Slot Status Indicators**: Buttons show inline occupant names and container counts (e.g., `Lower Back — Med Pouch (2/4)`)
+- Category filters (Hotkey 1-4)
+
+### ItemSlotPanelUI
+- Expandable list of items within a slot or container
+- **Item Tooltips**: Hovering an item shows name, category, weight, condition, and description.
+
+### ItemInspectUI
+- 3D viewport for inspecting selected items with rotation support.
+
+### Debug Inventory Inspector
+- Raw state viewer for developers (toggled with Debug hotkey)
+- Provides quick actions: `Clear All`, `Add Test Item`, `Serialize`, `Deserialize`
+
 ## Categories
 Current categories:
 - `weapon`
@@ -192,7 +226,7 @@ Current categories:
 - `equipment`
 - `clothing`
 
-Right now categories mostly drive slot/container acceptance and future intent. They are not yet full gameplay behavior systems.
+Right now categories mostly drive slot/container acceptance, UI filtering, and future intent. They are not yet full gameplay behavior systems.
 
 ## World Flow
 Ground items are represented by `WorldItem`.
@@ -236,8 +270,9 @@ After changes in this layer, validate:
 - auto-stow is still heuristic rather than fully policy-driven
 
 ## Future Refactor Targets
-- data-driven slot definitions
-- data-driven action providers
-- serialization helpers for save/load
+- data-driven slot definitions (move out of hardcoded dictionary)
+- data-driven action providers (item-specific actions like "Unload" or "Use")
 - richer runtime item state per item family
 - cleaner typing restoration after parser stability work
+- drag-and-drop item movement between slots
+- stack split/merge UI systems
