@@ -1,45 +1,115 @@
-[gd_scene load_steps=5 format=3 uid="uid://char_tuner_root"]
+[gd_scene format=3 uid="uid://cosvbfpxycxfs"]
 
 [ext_resource type="PackedScene" uid="uid://rtqyrsecfpib" path="res://Player/master_character_rig.tscn" id="1_rig"]
-[ext_resource type="Script" path="res://Tools/CharacterTuner/CharacterTunerController.gd" id="2_ctrl"]
-[ext_resource type="Script" path="res://Tools/CharacterTuner/TunerCamera.gd" id="3_cam"]
-[ext_resource type="Script" path="res://Tools/CharacterTuner/CharacterTunerUI.gd" id="4_ui"]
+[ext_resource type="Script" uid="uid://cw4s205ttmxnc" path="res://Tools/CharacterTuner/CharacterTunerController.gd" id="2_ctrl"]
+[ext_resource type="Script" uid="uid://duhiucd08hrjr" path="res://Tools/CharacterTuner/TunerCamera.gd" id="3_cam"]
+[ext_resource type="Script" uid="uid://kewbrkpejqwn" path="res://Tools/CharacterTuner/CharacterTunerUI.gd" id="4_ui"]
+[ext_resource type="Script" uid="uid://cugcfuh4swrqi" path="res://Player/Scripts/VisualsComponent.gd" id="5_vis"]
+[ext_resource type="Resource" path="res://Player/Debug/Theme/Project2026UIStyle.tres" id="6_style"]
 
-[node name="CharacterTuner" type="Node3D"]
+[sub_resource type="PhysicalSkyMaterial" id="PhysicalSkyMaterial_s086b"]
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+[sub_resource type="Sky" id="Sky_7rv3c"]
+sky_material = SubResource("PhysicalSkyMaterial_s086b")
+
+[sub_resource type="Environment" id="Environment_ovghc"]
+background_mode = 2
+background_color = Color(0.90137976, 0.7701636, 0.96549326, 1)
+sky = SubResource("Sky_7rv3c")
+
+[sub_resource type="Animation" id="Animation_show"]
+resource_name = "show"
+length = 2.0
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.3, 1.5, 2),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1), Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_notification"]
+_data = {
+&"show": SubResource("Animation_show")
+}
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s086b"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_7rv3c"]
+
+[node name="CharacterTuner" type="Node3D" unique_id=663333765]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1426668559]
 transform = Transform3D(0.866025, -0.433013, 0.25, 0, 0.5, 0.866025, -0.5, -0.75, 0.433013, 0, 5, 0)
 shadow_enabled = true
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=523375514]
+environment = SubResource("Environment_ovghc")
 
-[node name="PreviewRig" parent="." instance=ExtResource("1_rig")]
+[node name="Visuals" type="Node3D" parent="." unique_id=1371431912]
+script = ExtResource("5_vis")
 
-[node name="TunerController" type="Node" parent="."]
+[node name="Rig" parent="Visuals" unique_id=545050917 instance=ExtResource("1_rig")]
+
+[node name="TunerController" type="Node" parent="." unique_id=854674237 node_paths=PackedStringArray("visuals", "animation_tree")]
 script = ExtResource("2_ctrl")
-character_rig_path = NodePath("../PreviewRig")
+visuals = NodePath("../Visuals")
+animation_tree = NodePath("../Visuals/Rig/AnimationTree")
 
-[node name="TunerCamera" type="Node3D" parent="." node_paths=PackedStringArray("target")]
+[node name="TunerCamera" type="Node3D" parent="." unique_id=1751789224 node_paths=PackedStringArray("target")]
 script = ExtResource("3_cam")
-target = NodePath("../PreviewRig")
+target = NodePath("../Visuals/Rig")
 
-[node name="TunerUI" type="CanvasLayer" parent="." node_paths=PackedStringArray("controller_path", "slot_list_path", "transform_panel_path", "pos_x_path", "pos_y_path", "pos_z_path", "rot_x_path", "rot_y_path", "rot_z_path", "sca_x_path", "move_x_path", "move_y_path", "save_button_path")]
+[node name="TunerUI" type="CanvasLayer" parent="." unique_id=1792856801 node_paths=PackedStringArray("controller", "slot_list", "transform_panel", "selection_controls", "slider_controls", "item_dropdown", "profile_dropdown", "pos_x_slider", "pos_y_slider", "pos_z_slider", "rot_x_slider", "rot_y_slider", "rot_z_slider", "sca_x_slider", "sca_y_slider", "sca_z_slider", "pos_x_val", "pos_y_val", "pos_z_val", "rot_x_val", "rot_y_val", "rot_z_val", "sca_x_val", "sca_y_val", "sca_z_val", "move_x_slider", "move_y_slider", "sidebar_panel", "tuning_panel_container", "anim_panel_container", "sidebar_header", "tuning_header", "anim_header", "setting_labels", "save_button", "reset_button", "confirmation_dialog", "notification_panel", "notification_label", "notification_anim", "ui_style")]
 script = ExtResource("4_ui")
-controller_path = NodePath("../TunerController")
-slot_list_path = NodePath("Control/Panel/ScrollContainer/SlotList")
-transform_panel_path = NodePath("Control/TuningPanel")
-pos_x_path = NodePath("Control/TuningPanel/VBoxContainer/PosX/HSlider")
-pos_y_path = NodePath("Control/TuningPanel/VBoxContainer/PosY/HSlider")
-pos_z_path = NodePath("Control/TuningPanel/VBoxContainer/PosZ/HSlider")
-rot_x_path = NodePath("Control/TuningPanel/VBoxContainer/RotX/HSlider")
-rot_y_path = NodePath("Control/TuningPanel/VBoxContainer/RotY/HSlider")
-rot_z_path = NodePath("Control/TuningPanel/VBoxContainer/RotZ/HSlider")
-sca_x_path = NodePath("Control/TuningPanel/VBoxContainer/Scale/HSlider")
-move_x_path = NodePath("Control/AnimPanel/VBoxContainer/MoveX/HSlider")
-move_y_path = NodePath("Control/AnimPanel/VBoxContainer/MoveY/HSlider")
-save_button_path = NodePath("Control/TuningPanel/VBoxContainer/SaveButton")
+controller = NodePath("../TunerController")
+slot_list = NodePath("Control/Panel/ScrollContainer/SlotList")
+transform_panel = NodePath("Control/TuningPanel")
+selection_controls = NodePath("Control/TuningPanel/TuningControls")
+slider_controls = NodePath("Control/TuningPanel/TuningControls/SliderControls")
+item_dropdown = NodePath("Control/TuningPanel/TuningControls/ItemSelection/OptionButton")
+profile_dropdown = NodePath("Control/TuningPanel/TuningControls/ProfileSelection/OptionButton")
+pos_x_slider = NodePath("Control/TuningPanel/TuningControls/SliderControls/PosX/HSlider")
+pos_y_slider = NodePath("Control/TuningPanel/TuningControls/SliderControls/PosY/HSlider")
+pos_z_slider = NodePath("Control/TuningPanel/TuningControls/SliderControls/PosZ/HSlider")
+rot_x_slider = NodePath("Control/TuningPanel/TuningControls/SliderControls/RotX/HSlider")
+rot_y_slider = NodePath("Control/TuningPanel/TuningControls/SliderControls/RotY/HSlider")
+rot_z_slider = NodePath("Control/TuningPanel/TuningControls/SliderControls/RotZ/HSlider")
+sca_x_slider = NodePath("Control/TuningPanel/TuningControls/SliderControls/ScaleX/HSlider")
+sca_y_slider = NodePath("Control/TuningPanel/TuningControls/SliderControls/ScaleY/HSlider")
+sca_z_slider = NodePath("Control/TuningPanel/TuningControls/SliderControls/ScaleZ/HSlider")
+pos_x_val = NodePath("Control/TuningPanel/TuningControls/SliderControls/PosX/Value")
+pos_y_val = NodePath("Control/TuningPanel/TuningControls/SliderControls/PosY/Value")
+pos_z_val = NodePath("Control/TuningPanel/TuningControls/SliderControls/PosZ/Value")
+rot_x_val = NodePath("Control/TuningPanel/TuningControls/SliderControls/RotX/Value")
+rot_y_val = NodePath("Control/TuningPanel/TuningControls/SliderControls/RotY/Value")
+rot_z_val = NodePath("Control/TuningPanel/TuningControls/SliderControls/RotZ/Value")
+sca_x_val = NodePath("Control/TuningPanel/TuningControls/SliderControls/ScaleX/Value")
+sca_y_val = NodePath("Control/TuningPanel/TuningControls/SliderControls/ScaleY/Value")
+sca_z_val = NodePath("Control/TuningPanel/TuningControls/SliderControls/ScaleZ/Value")
+move_x_slider = NodePath("Control/AnimPanel/VBoxContainer/MoveX/HSlider")
+move_y_slider = NodePath("Control/AnimPanel/VBoxContainer/MoveY/HSlider")
+sidebar_panel = NodePath("Control/Panel")
+tuning_panel_container = NodePath("Control/TuningPanel")
+anim_panel_container = NodePath("Control/AnimPanel")
+sidebar_header = NodePath("Control/Panel/Label")
+tuning_header = NodePath("Control/TuningPanel/Label")
+anim_header = NodePath("Control/AnimPanel/VBoxContainer/Label")
+setting_labels = [NodePath("Control/TuningPanel/TuningControls/ItemSelection/Label"), NodePath("Control/TuningPanel/TuningControls/ProfileSelection/Label"), NodePath("Control/TuningPanel/TuningControls/SliderControls/PosX/Label"), NodePath("Control/TuningPanel/TuningControls/SliderControls/PosY/Label"), NodePath("Control/TuningPanel/TuningControls/SliderControls/PosZ/Label"), NodePath("Control/TuningPanel/TuningControls/SliderControls/RotX/Label"), NodePath("Control/TuningPanel/TuningControls/SliderControls/RotY/Label"), NodePath("Control/TuningPanel/TuningControls/SliderControls/RotZ/Label"), NodePath("Control/TuningPanel/TuningControls/SliderControls/ScaleX/Label"), NodePath("Control/TuningPanel/TuningControls/SliderControls/ScaleY/Label"), NodePath("Control/TuningPanel/TuningControls/SliderControls/ScaleZ/Label"), NodePath("Control/AnimPanel/VBoxContainer/MoveX/Label"), NodePath("Control/AnimPanel/VBoxContainer/MoveY/Label")]
+save_button = NodePath("Control/TuningPanel/TuningControls/SliderControls/SaveButton")
+reset_button = NodePath("Control/TuningPanel/TuningControls/SliderControls/ResetButton")
+confirmation_dialog = NodePath("Control/ConfirmationDialog")
+notification_panel = NodePath("Control/NotificationPanel")
+notification_label = NodePath("Control/NotificationPanel/Label")
+notification_anim = NodePath("Control/NotificationPanel/AnimationPlayer")
+ui_style = ExtResource("6_style")
 
-[node name="Control" type="Control" parent="TunerUI"]
+[node name="Control" type="Control" parent="TunerUI" unique_id=2137565201]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -47,26 +117,37 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Panel" type="Panel" parent="TunerUI/Control"]
+[node name="Panel" type="Panel" parent="TunerUI/Control" unique_id=1113784001]
 layout_mode = 1
 anchors_preset = 9
 anchor_bottom = 1.0
 offset_right = 250.0
 grow_vertical = 2
 
-[node name="ScrollContainer" type="ScrollContainer" parent="TunerUI/Control/Panel"]
+[node name="Label" type="Label" parent="TunerUI/Control/Panel" unique_id=2147483647]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 31.0
+grow_horizontal = 2
+text = "Attachment mount points"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="TunerUI/Control/Panel" unique_id=571227311]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = 40.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="SlotList" type="VBoxContainer" parent="TunerUI/Control/Panel/ScrollContainer"]
+[node name="SlotList" type="VBoxContainer" parent="TunerUI/Control/Panel/ScrollContainer" unique_id=1361628435]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="TuningPanel" type="Panel" parent="TunerUI/Control"]
+[node name="TuningPanel" type="Panel" parent="TunerUI/Control" unique_id=333958302]
 layout_mode = 1
 anchors_preset = 11
 anchor_left = 1.0
@@ -76,7 +157,7 @@ offset_left = -300.0
 grow_horizontal = 0
 grow_vertical = 2
 
-[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel"]
+[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel" unique_id=318938578]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
@@ -85,153 +166,341 @@ grow_horizontal = 2
 text = "Character Tuner"
 horizontal_alignment = 1
 
-[node name="ItemList" type="VBoxContainer" parent="TunerUI/Control/TuningPanel"]
+[node name="TuningControls" type="VBoxContainer" parent="TunerUI/Control/TuningPanel" unique_id=1768038936]
 layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_top = 40.0
-offset_bottom = 240.0
-grow_horizontal = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="TunerUI/Control/TuningPanel"]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -400.0
+offset_top = 40.0
 grow_horizontal = 2
-grow_vertical = 0
+grow_vertical = 2
 
-[node name="PosX" type="HBoxContainer" parent="TunerUI/Control/TuningPanel/VBoxContainer"]
+[node name="ItemSelection" type="VBoxContainer" parent="TunerUI/Control/TuningPanel/TuningControls" unique_id=1768038937]
 layout_mode = 2
-[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel/VBoxContainer/PosX"]
+
+[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel/TuningControls/ItemSelection" unique_id=318938580]
+layout_mode = 2
+text = "Select Item"
+
+[node name="OptionButton" type="OptionButton" parent="TunerUI/Control/TuningPanel/TuningControls/ItemSelection" unique_id=318938581]
+layout_mode = 2
+
+[node name="ProfileSelection" type="VBoxContainer" parent="TunerUI/Control/TuningPanel/TuningControls" unique_id=1768038938]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel/TuningControls/ProfileSelection" unique_id=318938582]
+layout_mode = 2
+text = "Attachment Profile"
+
+[node name="OptionButton" type="OptionButton" parent="TunerUI/Control/TuningPanel/TuningControls/ProfileSelection" unique_id=318938583]
+layout_mode = 2
+
+[node name="HSeparator" type="HSeparator" parent="TunerUI/Control/TuningPanel/TuningControls" unique_id=318938584]
+layout_mode = 2
+
+[node name="SliderControls" type="VBoxContainer" parent="TunerUI/Control/TuningPanel/TuningControls" unique_id=1533619756]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PosX" type="HBoxContainer" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls" unique_id=2072982833]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/PosX" unique_id=37299789]
+custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
 text = "Pos X"
-[node name="HSlider" type="HSlider" parent="TunerUI/Control/TuningPanel/VBoxContainer/PosX"]
+
+[node name="HSlider" type="HSlider" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/PosX" unique_id=1368257200]
 layout_mode = 2
 size_flags_horizontal = 3
 min_value = -2.0
 max_value = 2.0
 step = 0.01
 
-[node name="PosY" type="HBoxContainer" parent="TunerUI/Control/TuningPanel/VBoxContainer"]
+[node name="Value" type="LineEdit" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/PosX" unique_id=37299790]
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
-[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel/VBoxContainer/PosY"]
+text = "0.00"
+alignment = 1
+editable = false
+
+[node name="PosY" type="HBoxContainer" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls" unique_id=1724544611]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/PosY" unique_id=856777764]
+custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
 text = "Pos Y"
-[node name="HSlider" type="HSlider" parent="TunerUI/Control/TuningPanel/VBoxContainer/PosY"]
+
+[node name="HSlider" type="HSlider" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/PosY" unique_id=599420350]
 layout_mode = 2
 size_flags_horizontal = 3
 min_value = -2.0
 max_value = 2.0
 step = 0.01
 
-[node name="PosZ" type="HBoxContainer" parent="TunerUI/Control/TuningPanel/VBoxContainer"]
+[node name="Value" type="LineEdit" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/PosY" unique_id=856777765]
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
-[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel/VBoxContainer/PosZ"]
+text = "0.00"
+alignment = 1
+editable = false
+
+[node name="PosZ" type="HBoxContainer" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls" unique_id=2046159156]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/PosZ" unique_id=639313274]
+custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
 text = "Pos Z"
-[node name="HSlider" type="HSlider" parent="TunerUI/Control/TuningPanel/VBoxContainer/PosZ"]
+
+[node name="HSlider" type="HSlider" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/PosZ" unique_id=661791218]
 layout_mode = 2
 size_flags_horizontal = 3
 min_value = -2.0
 max_value = 2.0
 step = 0.01
 
-[node name="RotX" type="HBoxContainer" parent="TunerUI/Control/TuningPanel/VBoxContainer"]
+[node name="Value" type="LineEdit" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/PosZ" unique_id=639313275]
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
-[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel/VBoxContainer/RotX"]
+text = "0.00"
+alignment = 1
+editable = false
+
+[node name="RotX" type="HBoxContainer" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls" unique_id=1301152831]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/RotX" unique_id=1182335059]
+custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
 text = "Rot X"
-[node name="HSlider" type="HSlider" parent="TunerUI/Control/TuningPanel/VBoxContainer/RotX"]
+
+[node name="HSlider" type="HSlider" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/RotX" unique_id=952817441]
 layout_mode = 2
 size_flags_horizontal = 3
 min_value = -180.0
 max_value = 180.0
 
-[node name="RotY" type="HBoxContainer" parent="TunerUI/Control/TuningPanel/VBoxContainer"]
+[node name="Value" type="LineEdit" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/RotX" unique_id=1182335060]
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
-[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel/VBoxContainer/RotY"]
+text = "0"
+alignment = 1
+editable = false
+
+[node name="RotY" type="HBoxContainer" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls" unique_id=133000288]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/RotY" unique_id=1778934079]
+custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
 text = "Rot Y"
-[node name="HSlider" type="HSlider" parent="TunerUI/Control/TuningPanel/VBoxContainer/RotY"]
+
+[node name="HSlider" type="HSlider" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/RotY" unique_id=134749840]
 layout_mode = 2
 size_flags_horizontal = 3
 min_value = -180.0
 max_value = 180.0
 
-[node name="RotZ" type="HBoxContainer" parent="TunerUI/Control/TuningPanel/VBoxContainer"]
+[node name="Value" type="LineEdit" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/RotY" unique_id=1778934080]
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
-[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel/VBoxContainer/RotZ"]
+text = "0"
+alignment = 1
+editable = false
+
+[node name="RotZ" type="HBoxContainer" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls" unique_id=1959262235]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/RotZ" unique_id=1949784414]
+custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
 text = "Rot Z"
-[node name="HSlider" type="HSlider" parent="TunerUI/Control/TuningPanel/VBoxContainer/RotZ"]
+
+[node name="HSlider" type="HSlider" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/RotZ" unique_id=656981905]
 layout_mode = 2
 size_flags_horizontal = 3
 min_value = -180.0
 max_value = 180.0
 
-[node name="Scale" type="HBoxContainer" parent="TunerUI/Control/TuningPanel/VBoxContainer"]
+[node name="Value" type="LineEdit" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/RotZ" unique_id=1949784415]
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
-[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel/VBoxContainer/Scale"]
+text = "0"
+alignment = 1
+editable = false
+
+[node name="ScaleX" type="HBoxContainer" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls" unique_id=1741583914]
 layout_mode = 2
-text = "Scale"
-[node name="HSlider" type="HSlider" parent="TunerUI/Control/TuningPanel/VBoxContainer/Scale"]
+
+[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/ScaleX" unique_id=1527387678]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+text = "Sca X"
+
+[node name="HSlider" type="HSlider" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/ScaleX" unique_id=401329036]
 layout_mode = 2
 size_flags_horizontal = 3
 min_value = 0.1
 max_value = 5.0
-value = 1.0
 step = 0.01
+value = 1.0
 
-[node name="SaveButton" type="Button" parent="TunerUI/Control/TuningPanel/VBoxContainer"]
+[node name="Value" type="LineEdit" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/ScaleX" unique_id=1527387681]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+text = "1.00"
+alignment = 1
+editable = false
+
+[node name="ScaleY" type="HBoxContainer" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls" unique_id=1741583915]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/ScaleY" unique_id=1527387679]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+text = "Sca Y"
+
+[node name="HSlider" type="HSlider" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/ScaleY" unique_id=401329037]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.1
+max_value = 5.0
+step = 0.01
+value = 1.0
+
+[node name="Value" type="LineEdit" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/ScaleY" unique_id=1527387682]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+text = "1.00"
+alignment = 1
+editable = false
+
+[node name="ScaleZ" type="HBoxContainer" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls" unique_id=1741583916]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/ScaleZ" unique_id=1527387680]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+text = "Sca Z"
+
+[node name="HSlider" type="HSlider" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/ScaleZ" unique_id=401329038]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.1
+max_value = 5.0
+step = 0.01
+value = 1.0
+
+[node name="Value" type="LineEdit" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls/ScaleZ" unique_id=1527387683]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+text = "1.00"
+alignment = 1
+editable = false
+
+[node name="ResetButton" type="Button" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls" unique_id=1285166285]
+layout_mode = 2
+text = "Reset Transforms"
+
+[node name="SaveButton" type="Button" parent="TunerUI/Control/TuningPanel/TuningControls/SliderControls" unique_id=1285166284]
 layout_mode = 2
 text = "Save To Resource"
 
-[node name="AnimPanel" type="Panel" parent="TunerUI/Control"]
+[node name="AnimPanel" type="Panel" parent="TunerUI/Control" unique_id=1323882822]
 layout_mode = 1
-anchors_preset = 12
+anchors_preset = -1
+anchor_left = 0.21700001
 anchor_top = 1.0
-anchor_right = 1.0
+anchor_right = 0.74
 anchor_bottom = 1.0
+offset_left = 0.015991211
 offset_top = -100.0
+offset_right = -0.47998047
 grow_horizontal = 2
 grow_vertical = 0
 
-[node name="VBoxContainer" type="VBoxContainer" parent="TunerUI/Control/AnimPanel"]
+[node name="VBoxContainer" type="VBoxContainer" parent="TunerUI/Control/AnimPanel" unique_id=2051257357]
 layout_mode = 1
-anchors_preset = 15
+anchors_preset = -1
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Label" type="Label" parent="TunerUI/Control/AnimPanel/VBoxContainer"]
+[node name="Label" type="Label" parent="TunerUI/Control/AnimPanel/VBoxContainer" unique_id=246104599]
 layout_mode = 2
 text = "Locomotion Preview"
 horizontal_alignment = 1
 
-[node name="MoveX" type="HBoxContainer" parent="TunerUI/Control/AnimPanel/VBoxContainer"]
+[node name="MoveX" type="HBoxContainer" parent="TunerUI/Control/AnimPanel/VBoxContainer" unique_id=406828862]
 layout_mode = 2
-[node name="Label" type="Label" parent="TunerUI/Control/AnimPanel/VBoxContainer/MoveX"]
+
+[node name="Label" type="Label" parent="TunerUI/Control/AnimPanel/VBoxContainer/MoveX" unique_id=1053026268]
 layout_mode = 2
 text = "Lateral"
-[node name="HSlider" type="HSlider" parent="TunerUI/Control/AnimPanel/VBoxContainer/MoveX"]
+
+[node name="HSlider" type="HSlider" parent="TunerUI/Control/AnimPanel/VBoxContainer/MoveX" unique_id=70476950]
 layout_mode = 2
 size_flags_horizontal = 3
 min_value = -1.0
 max_value = 1.0
 step = 0.01
 
-[node name="MoveY" type="HBoxContainer" parent="TunerUI/Control/AnimPanel/VBoxContainer"]
+[node name="MoveY" type="HBoxContainer" parent="TunerUI/Control/AnimPanel/VBoxContainer" unique_id=92170444]
 layout_mode = 2
-[node name="Label" type="Label" parent="TunerUI/Control/AnimPanel/VBoxContainer/MoveY"]
+
+[node name="Label" type="Label" parent="TunerUI/Control/AnimPanel/VBoxContainer/MoveY" unique_id=426829576]
 layout_mode = 2
 text = "Forward"
-[node name="HSlider" type="HSlider" parent="TunerUI/Control/AnimPanel/VBoxContainer/MoveY"]
+
+[node name="HSlider" type="HSlider" parent="TunerUI/Control/AnimPanel/VBoxContainer/MoveY" unique_id=2108379402]
 layout_mode = 2
 size_flags_horizontal = 3
 min_value = -1.0
 max_value = 1.0
 step = 0.01
+
+[node name="ConfirmationDialog" type="ConfirmationDialog" parent="TunerUI/Control" unique_id=318938585]
+initial_position = 2
+size = Vector2i(300, 100)
+unresizable = true
+ok_button_text = "Confirm"
+
+[node name="NotificationPanel" type="PanelContainer" parent="TunerUI/Control" unique_id=318938586]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -100.0
+offset_top = 20.0
+offset_right = 100.0
+offset_bottom = 60.0
+grow_horizontal = 2
+
+[node name="Label" type="Label" parent="TunerUI/Control/NotificationPanel" unique_id=318938587]
+layout_mode = 2
+text = "Saved Successfully"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="TunerUI/Control/NotificationPanel" unique_id=318938588]
+libraries/ = SubResource("AnimationLibrary_notification")
+
+[node name="Floor" type="Node3D" parent="." unique_id=788485741]
+
+[node name="StaticBody3D" type="StaticBody3D" parent="Floor" unique_id=1715455395]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor/StaticBody3D" unique_id=430685256]
+shape = SubResource("BoxShape3D_s086b")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor/StaticBody3D" unique_id=1995674503]
+transform = Transform3D(10, 0, 0, 0, 0.25, 0, 0, 0, 10, 0, -0.25, 0)
+mesh = SubResource("BoxMesh_7rv3c")
+
+[node name="DirectionalLight3D_Secondary" type="DirectionalLight3D" parent="." unique_id=1426668560]
+transform = Transform3D(-0.866025, 0.433013, -0.25, 0, 0.5, 0.866025, 0.5, 0.75, -0.433013, 0, 5, 0)
+light_color = Color(0.92, 0.88, 0.8, 1)
+light_energy = 0.5

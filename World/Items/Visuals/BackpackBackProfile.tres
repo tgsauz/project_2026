@@ -1,10 +1,11 @@
-[gd_resource type="Resource" script_class="ItemVisualAttachmentProfile" format=3 uid="uid://cc6ab0ijnuirf"]
+[gd_resource type="Resource" script_class="ItemVisualAttachmentProfile" format=3]
 
-[ext_resource type="Script" uid="uid://d2acu83ir08qt" path="res://World/Items/Scripts/ItemVisualAttachmentProfile.gd" id="1_ts2s5"]
+[ext_resource type="Script" path="res://World/Items/Scripts/ItemVisualAttachmentProfile.gd" id="1_ts2s5"]
 
 [resource]
 script = ExtResource("1_ts2s5")
 slot_name = "back_mount"
-position = Vector3(0, 0, -0.25)
-rotation_degrees = Vector3(0, 20, 0)
+position = Vector3(0, 0.08, -0.31)
+rotation_degrees = Vector3(11, 0, 0)
+scale = Vector3(1.1, 1.1, 1.1)
 metadata/_custom_type_script = "uid://d2acu83ir08qt"

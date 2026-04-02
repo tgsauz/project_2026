@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="ItemResource" format=4 uid="uid://dc5apfwo8bakm"]
+[gd_resource type="Resource" script_class="ItemResource" format=4]
 
-[ext_resource type="Resource" uid="uid://cc6ab0ijnuirf" path="res://World/Items/Visuals/BackpackBackProfile.tres" id="1_kgypb"]
-[ext_resource type="Script" uid="uid://cgvv34qt43vdl" path="res://World/Items/Scripts/ItemResource.gd" id="1_ox2nt"]
+[ext_resource type="Resource" path="res://World/Items/Visuals/BackpackBackProfile.tres" id="1_kgypb"]
+[ext_resource type="Script" path="res://World/Items/Scripts/ItemResource.gd" id="1_ox2nt"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_t8hhd"]
 resource_name = "M_Char"
@@ -93,5 +93,5 @@ visible_when_equipped = true
 preferred_slot = "back_mount"
 equipped_visual_scene = SubResource("PackedScene_ox2nt")
 attachment_profiles = [ExtResource("1_kgypb")]
-container_allowed_categories = null
+container_allowed_categories = PackedStringArray()
 metadata/_custom_type_script = "uid://cgvv34qt43vdl"

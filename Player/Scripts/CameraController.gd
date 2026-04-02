@@ -109,7 +109,9 @@ func _validate_required_nodes() -> bool:
 		valid = false
 	
 	if not _is_valid_motor(motor):
-		push_warning("No valid motor found at startup. CameraController will retry via parent traversal.")
+		var is_tuner = get_tree().current_scene and get_tree().current_scene.name == "CharacterTuner"
+		if not is_tuner:
+			push_warning("No valid motor found at startup. CameraController will retry via parent traversal.")
 
 	return valid
 

@@ -103,11 +103,17 @@ func clear_runtime_visual(slot_name: String) -> void:
 			keys_to_remove.append(visual_key)
 			
 	for visual_key in keys_to_remove:
-		var visual = equipped_visuals[visual_key]
+		var visual = equipped_visuals.get(visual_key)
 		if is_instance_valid(visual):
 			visual.queue_free()
 		equipped_visuals.erase(visual_key)
-		_remove_mounted_interactable(visual_key)
+	
+	# Cleanup interactable for the slot
+	if mounted_interactables.has(slot_name):
+		var interactable = mounted_interactables[slot_name]
+		if is_instance_valid(interactable):
+			interactable.queue_free()
+		mounted_interactables.erase(slot_name)
 
 func get_active_visual(slot_name: String, item_id: String = "") -> Node3D:
 	var visual_key = slot_name

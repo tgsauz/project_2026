@@ -10,12 +10,13 @@ var rot_x: float = -0.2
 var rot_y: float = 0.0
 var anchor_pos: Vector3 = Vector3(0, 1, 0)
 
-@onready var camera: Camera3D = $Camera3D
+var camera: Camera3D
 
 func _ready():
 	if not camera:
 		camera = Camera3D.new()
 		add_child(camera)
+		camera.current = true
 	
 	_update_camera()
 
