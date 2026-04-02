@@ -53,33 +53,52 @@ func _ready() -> void:
 	visible = false
 
 ## Set items to display from a given slot
-func set_slot_items(slot_name: String, items: Array) -> void:
+func set_slot_items(slot_name: String, items_data) -> void:
 	_current_slot = slot_name
-	_current_items = items
+	_current_items = []
+	item_list.clear()
 	
 	# Update title with clean display name
 	title_label.text = slot_name.replace("_", " ").capitalize()
 	
-	# Populate item list
-	item_list.clear()
-	
-	if items.is_empty():
+	var items_to_process = []
+	if items_data is Array:
+		items_to_process = items_data
+	elif items_data is Dictionary:
+		items_to_process = items_data.get("items", [])
+		if items_to_process.is_empty() and items_data.get("item") != null:
+			items_to_process = [items_data.get("item")]
+
+	if items_to_process.is_empty():
 		item_list.add_item("(empty)")
 		if style_profile:
 			item_list.set_item_custom_fg_color(0, style_profile.secondary_text_color)
 	else:
-		for i in range(items.size()):
-			var item = items[i]
-			var item_name = item.get("name", "Unknown") if item is Dictionary else "Item"
-			var quantity = item.get("quantity", 1) if item is Dictionary else 1
+		for i in range(items_to_process.size()):
+			var item = items_to_process[i]
+			var display_text: String = "Unknown Item"
+			var quantity: int = 1
 			
-			var display_text = "%s (x%d)" % [item_name, quantity] if quantity > 1 else item_name
+			if item is ItemInstance:
+				display_text = item.get_display_name()
+				quantity = item.stack_count
+			elif item is Dictionary:
+				display_text = item.get("name", item.get("display_name", "Unknown"))
+				quantity = item.get("quantity", 1)
+			
+			if quantity > 1:
+				display_text += " (x%d)" % quantity
+			
+			# Add to UI
 			item_list.add_item(display_text)
+			_current_items.append(item)
 			
+			# Ensure text color is visible
 			if style_profile:
 				item_list.set_item_custom_fg_color(i, style_profile.primary_text_color)
+			else:
+				item_list.set_item_custom_fg_color(i, Color.WHITE)
 	
-	# Apply font to item_list
 	if style_profile:
 		var font = style_profile.get_font()
 		if font: item_list.add_theme_font_override("font", font)

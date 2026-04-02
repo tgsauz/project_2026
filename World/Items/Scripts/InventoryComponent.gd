@@ -271,10 +271,14 @@ func get_slot_state(target_slot: String) -> Dictionary:
 
 	var state: Dictionary = slot_state[target_slot].duplicate(true)
 	var item_id: String = str(state.get("item_id", ""))
+	state["items"] = [] # UI expects a list
+	
 	if not item_id.is_empty() and item_instances.has(item_id):
 		var item = item_instances[item_id]
 		state["item"] = item
 		state["definition"] = item.definition
+		state["items"].append(item)
+		
 	return state
 
 func get_visible_equipment() -> Array:
@@ -285,28 +289,36 @@ func get_equipped_visuals() -> Array:
 	for slot_name in slot_names:
 		var state: Dictionary = get_slot_state(slot_name)
 		var item = state.get("item", null)
-		if item == null or item.definition == null:
-			continue
-		if not item.definition.should_show_in_slot(slot_name):
-			continue
-		var config: Dictionary = slot_configs.get(slot_name, {})
-		if not bool(config.get("visible", false)):
-			continue
-
-		var profile: ItemVisualAttachmentProfile = item.definition.get_attachment_profile(slot_name)
-
-		visible_items.append({
-			"slot_name": slot_name,
-			"item_id": item.instance_id,
-			"definition": item.definition,
-			"display_name": item.get_display_name(),
-			"attachment_profile": profile,
-			"visual_state": item.definition.get_visual_state_for_slot(slot_name),
-			"secondary_slot_name": _get_secondary_slot_name(item, slot_name),
-			"equipped_visual_scene": item.definition.equipped_visual_scene,
-			"visual_profile_id": item.definition.visual_profile_id
-		})
+		_collect_visible_items_recursive(item, slot_name, visible_items)
 	return visible_items
+
+func _collect_visible_items_recursive(item, slot_name: String, out_list: Array) -> void:
+	if item == null or item.definition == null:
+		return
+	
+	# If this item should be visible in its current slot, add it
+	if item.definition.should_show_in_slot(slot_name):
+		var config: Dictionary = slot_configs.get(slot_name, {"visible": true}) # fallback to true for nested slots
+		if bool(config.get("visible", false)):
+			var profile: ItemVisualAttachmentProfile = item.definition.get_attachment_profile(slot_name)
+			out_list.append({
+				"slot_name": slot_name,
+				"item_id": item.instance_id,
+				"definition": item.definition,
+				"display_name": item.get_display_name(),
+				"attachment_profile": profile,
+				"visual_state": item.definition.get_visual_state_for_slot(slot_name),
+				"secondary_slot_name": _get_secondary_slot_name(item, slot_name),
+				"equipped_visual_scene": item.definition.equipped_visual_scene,
+				"visual_profile_id": item.definition.visual_profile_id
+			})
+
+	# If this item is a container, look at its children too
+	if item.is_container():
+		for nested_id in item.contained_item_ids:
+			var nested = get_item_instance(str(nested_id))
+			# We pass the same slot_name or we might want to handle nested slot names in the future
+			_collect_visible_items_recursive(nested, slot_name, out_list)
 
 # ============================================================
 #  CORE

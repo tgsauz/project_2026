@@ -23,7 +23,7 @@ const CATEGORY_CLOTHING := "clothing"
 
 @export_category("Interaction")
 @export var interaction_verb: String = "Pick up"
-@export var interaction_key_hint: String = "E"
+@export var interaction_key_hint: String = "F"
 @export var world_pickup_enabled: bool = true
 
 @export_category("Stacking")
@@ -33,12 +33,13 @@ const CATEGORY_CLOTHING := "clothing"
 @export_category("Equipment")
 @export var allowed_slots: PackedStringArray = PackedStringArray()
 @export var visible_when_equipped: bool = false
-@export var preferred_slot: String = ""
+@export_enum("left_hand", "right_hand", "torso", "head", "belt", "lower_back", "back_mount", "shoulder_mount", "left_pocket", "right_pocket") var preferred_slot: String = "torso"
 @export var equipped_visual_scene: PackedScene
+@export var is_skinned_mesh: bool = false
 @export var visual_profile_id: String = ""
 @export var attachment_profiles: Array = []
 @export var reserve_secondary_hand: bool = false
-@export var secondary_hand_slot: String = ""
+@export_enum("left_hand", "right_hand", "torso", "head", "belt", "lower_back", "back_mount", "shoulder_mount", "left_pocket", "right_pocket") var secondary_hand_slot: String = "left_hand"
 
 @export_category("Container")
 @export var is_container: bool = false

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://cv5lvcf0engvj"]
+
+[ext_resource type="Script" uid="uid://cgvv34qt43vdl" path="res://World/Items/Scripts/ItemResource.gd" id="1_o8j3p"]
+
+[resource]
+script = ExtResource("1_o8j3p")
+id = "simple_belt"
+display_name = "Belt"
+tooltip_text = "Adds attachment points"
+category = "clothing"
+allowed_slots = null
+is_skinned_mesh = true
+container_allowed_categories = null
+metadata/_custom_type_script = "uid://cgvv34qt43vdl"

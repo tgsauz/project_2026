@@ -6,6 +6,8 @@
 [ext_resource type="Resource" uid="uid://cbg4cqfn7gxe2" path="res://World/Items/TestMedicalItem.tres" id="4_1cs7u"]
 [ext_resource type="Resource" uid="uid://12ggde6tffjy" path="res://World/Items/TestWeaponItem.tres" id="4_fisen"]
 [ext_resource type="PackedScene" uid="uid://deoryykdwr3xr" path="res://World/Items/Bandage.fbx" id="5_ubkvh"]
+[ext_resource type="Resource" uid="uid://dc5apfwo8bakm" path="res://World/Items/simpleBackpack.tres" id="7_e3p3y"]
+[ext_resource type="PackedScene" uid="uid://wchrbesm6103" path="res://World/Items/simpleBackpack.glb" id="8_bd0b7"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_gpduo"]
 size = Vector3(25, 0.5, 25)
@@ -37,6 +39,9 @@ size = Vector3(0.15, 0.15, 1)
 radius = 0.022460938
 height = 0.1099987
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_e3p3y"]
+size = Vector3(0.26831552, 0.30618927, 0.1733449)
+
 [node name="TestingWorld" type="Node3D" unique_id=1497402206]
 
 [node name="CharacterBody3D" parent="." unique_id=1321391257 instance=ExtResource("1_7qfgn")]
@@ -45,14 +50,26 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4648862, 0)
 [node name="Visuals" parent="CharacterBody3D" index="0" unique_id=1722711644]
 show_attachment_debug_gizmos = true
 
-[node name="Skeleton3D" parent="CharacterBody3D/Visuals/Rig/Armature" parent_id_path=PackedInt32Array(1321391257, 2009837787, 433468030) index="0" unique_id=1990901886]
-bones/7/rotation = Quaternion(-0.010204223, -1.2972916e-09, -6.5843164e-10, 0.999948)
-bones/9/rotation = Quaternion(0.15101364, 0.20301661, -0.46141878, 0.8503364)
-bones/25/rotation = Quaternion(0.15699609, -0.19819477, 0.46487802, 0.8485043)
-bones/26/rotation = Quaternion(0.19039883, -0.0010789611, -0.0566678, 0.98006934)
+[node name="Skeleton3D" parent="CharacterBody3D/Visuals/Rig/Armature" parent_id_path=PackedInt32Array(1321391257, 135511932, 1932452601) index="0" unique_id=319456642]
+bones/1/position = Vector3(2.0068596e-09, 0.025644153, 0.8905724)
+bones/1/rotation = Quaternion(0.70710665, -8.43138e-08, -0.0001469394, 0.7071069)
+bones/2/rotation = Quaternion(0.99704367, 0.023752471, -0.003491083, 0.072991125)
+bones/3/rotation = Quaternion(0.13419487, 0.009092008, 0.019010015, 0.9907309)
+bones/5/rotation = Quaternion(0.16922888, -0.0336446, 0.004548561, 0.98499185)
+bones/7/rotation = Quaternion(-0.00916425, -1.2976111e-09, -6.46878e-10, 0.999958)
+bones/9/rotation = Quaternion(0.15144807, 0.203034, -0.4616524, 0.85012805)
+bones/10/rotation = Quaternion(0.2060387, -0.0043182103, 0.058708124, 0.97677165)
+bones/25/rotation = Quaternion(0.15838867, -0.19725545, 0.46518576, 0.8482957)
+bones/26/rotation = Quaternion(0.19062, -0.0010818448, -0.056746807, 0.9800218)
+bones/38/rotation = Quaternion(0.9973736, -0.012323299, 0.0031258587, 0.07130439)
+bones/39/rotation = Quaternion(0.13692284, -0.010713208, 0.0026423878, 0.9905203)
+bones/41/rotation = Quaternion(0.17144853, 0.070629306, -0.0014447889, 0.9826571)
+bones/43/position = Vector3(-0.11251843, 0.049869314, 0.09975449)
+bones/44/position = Vector3(0.115834475, 0.04503413, 0.09930016)
+bones/47/position = Vector3(-0.25837514, 0.024780901, 0.97470677)
+bones/48/position = Vector3(0.261527, 0.025521325, 0.97458714)
 
-[node name="CAMERARIG" parent="CharacterBody3D/Visuals/Rig" parent_id_path=PackedInt32Array(1321391257, 2009837787) index="3" unique_id=999810615]
-tps_orbit_distance = 3.0
+[node name="CAMERARIG" parent="CharacterBody3D/Visuals/Rig" parent_id_path=PackedInt32Array(1321391257, 135511932) index="3" unique_id=629580240]
 tps_shoulder_offset = 0.0
 tps_height_offset = 0.0
 
@@ -149,7 +166,21 @@ shape = SubResource("CapsuleShape3D_fisen")
 [node name="Bandage_LOD0" parent="Items/Bandage/Bandage" index="0" unique_id=284270595]
 transform = Transform3D(-42.62276, 90.46159, 3.954202e-06, 0, -4.371139e-06, 100, 90.461586, 42.622765, 1.8631001e-06, 0, 0, 0)
 
+[node name="Backpack" type="RigidBody3D" parent="Items" unique_id=502547712]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.7557735, 0.8212156, -1.7164879)
+script = ExtResource("3_3umvx")
+item_definition = ExtResource("7_e3p3y")
+prompt_title = "BPWI"
+metadata/_custom_type_script = "uid://5yq8nk5vvg62"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Items/Backpack" unique_id=97283457]
+transform = Transform3D(1, 0, 0, 0, 0.9958868, 0.090606086, 0, -0.090606086, 0.9958868, -0.00022733212, -0.0010279417, 0.11174083)
+shape = SubResource("BoxShape3D_e3p3y")
+
+[node name="simpleBackpack" parent="Items/Backpack" unique_id=1481509700 instance=ExtResource("8_bd0b7")]
+
 [editable path="CharacterBody3D"]
 [editable path="CharacterBody3D/Visuals/Rig"]
 [editable path="CharacterBody3D/UIRoot"]
 [editable path="Items/Bandage/Bandage"]
+[editable path="Items/Backpack/simpleBackpack"]

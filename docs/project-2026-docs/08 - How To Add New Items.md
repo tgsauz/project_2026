@@ -18,12 +18,13 @@ New items are added by authoring an `ItemDefinition` resource and then deciding 
 5. Set `category`
 6. Set `weight`
 7. Set `interaction_verb` and `interaction_key_hint`
-8. Set `allowed_slots`
+8. Set `allowed_slots` (e.g., `back_mount`, `torso`, `head`, `belt`)
 9. Set `preferred_slot`
 10. Set `visible_when_equipped` if it should appear on the body
 11. If it should appear while equipped, decide whether to assign:
     - `equipped_visual_scene`
     - `attachment_profiles`
+    - **`is_skinned_mesh`**: IMPORTANT for clothing (Vests, Shirts) that needs to move with the character bones.
 12. Set placeholder visual fields as fallback even if an equipped proxy scene exists
 
 ## Category Guidance
@@ -44,8 +45,9 @@ New items are added by authoring an `ItemDefinition` resource and then deciding 
 - Often the category used for visible mounted body items
 
 ### Clothing
-- Good for wearable items and future clothing systems
-- Currently mostly acts as a storage-policy category
+- Good for wearable items like Vests, Helmets, or Backpacks.
+- **Vests/Shirts**: Usually require `is_skinned_mesh = true` to prevent clipping during animation.
+- **Helmets**: Mount to the `head` slot.
 
 ## Checklist: Add A Physical Container
 1. Create the item definition
@@ -70,10 +72,13 @@ New items are added by authoring an `ItemDefinition` resource and then deciding 
 
 ## Checklist: Add Equipped Visual Authoring
 For a visible item:
-1. Create or choose a lightweight equipped proxy scene
-2. Create one profile resource per slot that needs different placement
-3. Assign those profiles in `attachment_profiles`
-4. Test the actual occupied slots, not just the preferred one
+1. Create or choose a lightweight equipped proxy scene.
+2. If it is clothing that deforms, set `is_skinned_mesh = true`.
+3. If it looks wrong on the body, choose one of two paths:
+   - **Scene Path**: Open the `equipped_visual_scene` and adjust the mesh root position/rotation/scale.
+   - **Profile Path**: Create an `ItemVisualAttachmentProfile` for that slot and set specific offsets there.
+4. Assign any profiles in `attachment_profiles`.
+5. Test the actual occupied slots, not just the preferred one.
 
 ## Checklist: Spawn It In The World
 1. Add or instantiate a `WorldItem`

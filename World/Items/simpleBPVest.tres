@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://bc44fi8bkvw2b"]
+
+[ext_resource type="Script" uid="uid://cgvv34qt43vdl" path="res://World/Items/Scripts/ItemResource.gd" id="1_ib5ee"]
+
+[resource]
+script = ExtResource("1_ib5ee")
+id = "bpvest_simple"
+display_name = "Bulletproof Vest"
+tooltip_text = "Protects you from incoming kinetic projectiles."
+allowed_slots = null
+is_skinned_mesh = true
+container_allowed_categories = null
+metadata/_custom_type_script = "uid://cgvv34qt43vdl"

@@ -293,13 +293,13 @@ func _on_slot_line_clicked(slot_name: String) -> void:
 					if nested:
 						ui_items.append({
 							"id": nested.instance_id,
-							"name": nested.get_display_name() if nested.has_method("get_display_name") else nested.definition.item_name,
+							"name": nested.get_display_name() if nested.has_method("get_display_name") else nested.definition.display_name,
 							"quantity": nested.stack_count
 						})
 			else:
 				ui_items.append({
 					"id": main_item.instance_id,
-					"name": main_item.get_display_name() if main_item.has_method("get_display_name") else main_item.definition.item_name,
+					"name": main_item.get_display_name() if main_item.has_method("get_display_name") else main_item.definition.display_name,
 					"quantity": main_item.stack_count
 				})
 				

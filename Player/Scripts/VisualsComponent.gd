@@ -7,13 +7,15 @@ class_name VisualsComponent
 @export var max_tilt_angle: float = 0.35
 
 @export_category("Anchor Bones")
-@export var bone_name: String = "Spine"
-@export var lower_back_bone_name: String = "pelvis"
+@export var back_bone_name: String = "spine_02"
+@export var lower_back_bone_name: String = "spine_01"
 @export var right_hand_bone_name: String = "hand_r"
 @export var left_hand_bone_name: String = "hand_l"
 @export var gun_support_bone_name: String = "ik_hand_gun"
 @export var left_shoulder_bone_name: String = "clavicle_l"
-@export var attachment_content_scale_compensation: float = 0.01
+@export var head_bone_name: String = "head"
+@export var belt_bone_name: String = "spine_01"
+@export var attachment_content_scale_compensation: float = 1.0
 
 @export_category("Debug")
 @export var show_attachment_debug_gizmos: bool = false
@@ -30,17 +32,31 @@ var attachment_debug_gizmos: Dictionary = {}
 var tilt: Vector2 = Vector2.ZERO
 
 func _ready():
-	skeleton = get_node_or_null("Rig/Armature/Skeleton3D") as Skeleton3D
+	var rig = get_node_or_null("Rig")
+	skeleton = _find_skeleton_recursive(rig) if rig else null
+	
 	if skeleton == null:
-		push_error("VisualsComponent could not resolve Rig/Armature/Skeleton3D.")
-		return
+		push_error("[VisualsComponent] Could not resolve Skeleton3D in Rig subtree.")
+		# Fallback: search the entire Visuals node if Rig fails
+		skeleton = _find_skeleton_recursive(self)
+		if skeleton == null:
+			return
 
-	bone_idx = skeleton.find_bone(bone_name)
+	bone_idx = skeleton.find_bone(back_bone_name)
 	if bone_idx == -1:
-		push_warning("VisualsComponent could not find bone '%s'." % bone_name)
+		push_warning("VisualsComponent could not find bone '%s'." % back_bone_name)
 
 	_ensure_attachment_roots()
 	_refresh_attachment_debug_gizmos()
+
+func _find_skeleton_recursive(node: Node) -> Skeleton3D:
+	if node is Skeleton3D:
+		return node
+	for child in node.get_children():
+		var found = _find_skeleton_recursive(child)
+		if found:
+			return found
+	return null
 
 func update_tilt(delta: float, velocity: Vector3, target_velocity: Vector3, global_basis: Basis):
 	var accel = target_velocity - velocity
@@ -71,6 +87,42 @@ func _apply():
 	skeleton.set_bone_global_pose(bone_idx, pose)
 
 # ============================================================
+#  TUNER API
+# ============================================================
+
+func set_runtime_visual(slot_name: String, entry: Dictionary) -> Node3D:
+	# This allows the tuner to force an item into a slot manually
+	_ensure_attachment_roots()
+	_update_equipped_visual(slot_name, entry)
+	return get_active_visual(slot_name, str(entry.get("item_id", "")))
+
+func clear_runtime_visual(slot_name: String) -> void:
+	var keys_to_remove = []
+	for visual_key in equipped_visuals.keys():
+		if visual_key.begins_with(slot_name + "_"):
+			keys_to_remove.append(visual_key)
+			
+	for visual_key in keys_to_remove:
+		var visual = equipped_visuals[visual_key]
+		if is_instance_valid(visual):
+			visual.queue_free()
+		equipped_visuals.erase(visual_key)
+		_remove_mounted_interactable(visual_key)
+
+func get_active_visual(slot_name: String, item_id: String = "") -> Node3D:
+	var visual_key = slot_name
+	if not item_id.is_empty():
+		visual_key = slot_name + "_" + item_id
+	else:
+		# Search for first one if ID is empty
+		for k in equipped_visuals.keys():
+			if k.begins_with(slot_name + "_"):
+				visual_key = k
+				break
+				
+	return equipped_visuals.get(visual_key, null)
+
+# ============================================================
 #  EQUIPMENT VISUALS
 # ============================================================
 
@@ -84,28 +136,48 @@ func bind_inventory(inventory: InventoryComponent) -> void:
 func _on_equipment_visuals_changed(visible_items: Array) -> void:
 	_ensure_attachment_roots()
 
-	var active_slots: Dictionary = {}
+	var active_visual_keys: Dictionary = {}
 	for entry in visible_items:
 		var slot_name: String = entry.get("slot_name", "")
+		var item_id: String = str(entry.get("item_id", ""))
 		var definition: ItemDefinition = entry.get("definition", null)
 		if slot_name.is_empty() or definition == null:
 			continue
-
-		active_slots[slot_name] = true
+		
+		var visual_key: String = "%s_%s" % [slot_name, item_id]
+		active_visual_keys[visual_key] = true
+		
+		print_debug("[VisualsComponent] Processing item: %s (%s) in slot: %s" % [definition.display_name, item_id, slot_name])
 		_update_equipped_visual(slot_name, entry)
 		_update_slot_interactable(slot_name, entry)
 
-	for slot_name in equipped_visuals.keys():
-		if active_slots.has(slot_name):
-			continue
-		var visual := equipped_visuals[slot_name] as Node3D
+	# Clean up visuals that are no longer active
+	var keys_to_remove = []
+	for visual_key in equipped_visuals.keys():
+		if not active_visual_keys.has(visual_key):
+			keys_to_remove.append(visual_key)
+			
+	for visual_key in keys_to_remove:
+		var visual := equipped_visuals[visual_key] as Node3D
 		if is_instance_valid(visual):
+			print_debug("[VisualsComponent] Removing visual for key: %s" % visual_key)
 			visual.queue_free()
-		equipped_visuals.erase(slot_name)
+		equipped_visuals.erase(visual_key)
 
+	# Clean up interactables that are no longer active (using same logic)
+	var interactable_keys_to_remove = []
 	for slot_name in mounted_interactables.keys():
-		if active_slots.has(slot_name):
-			continue
+		# Note: interactables are still mapped by slot_name for now as they are per-mount
+		var has_active_item_in_slot = false
+		for k in active_visual_keys.keys():
+			if k.begins_with(slot_name + "_"):
+				has_active_item_in_slot = true
+				break
+		
+		if not has_active_item_in_slot:
+			interactable_keys_to_remove.append(slot_name)
+			
+	for slot_name in interactable_keys_to_remove:
 		var interactable := mounted_interactables[slot_name] as Area3D
 		if is_instance_valid(interactable):
 			interactable.queue_free()
@@ -116,6 +188,10 @@ func _ensure_attachment_roots() -> void:
 		return
 
 	_ensure_attachment_root("lower_back", lower_back_bone_name, Vector3(0.0, -0.0012, 0.002), Vector3(0.0, PI, 0.0))
+	_ensure_attachment_root("back_mount", back_bone_name, Vector3(0.0, -0.0012, 0.012), Vector3(0.0, PI, 0.0))
+	_ensure_attachment_root("torso", back_bone_name, Vector3.ZERO, Vector3.ZERO)
+	_ensure_attachment_root("head", head_bone_name, Vector3.ZERO, Vector3.ZERO)
+	_ensure_attachment_root("belt", belt_bone_name, Vector3.ZERO, Vector3.ZERO)
 	_ensure_attachment_root("right_hand", right_hand_bone_name, Vector3.ZERO, Vector3.ZERO)
 	_ensure_attachment_root("left_hand", left_hand_bone_name, Vector3.ZERO, Vector3.ZERO)
 	_ensure_attachment_root("gun_support", gun_support_bone_name, Vector3.ZERO, Vector3.ZERO)
@@ -231,21 +307,36 @@ func _get_debug_color_for_slot(slot_name: String) -> Color:
 			return Color(1.0, 1.0, 1.0, 1.0)
 
 func _update_equipped_visual(slot_name: String, entry: Dictionary) -> void:
-	var anchor := _get_slot_anchor(slot_name)
+	var item_id: String = str(entry.get("item_id", ""))
+	var definition: ItemDefinition = entry.get("definition", null)
+	var is_skinned: bool = definition.is_skinned_mesh if definition != null else false
+
+	var anchor: Node3D = skeleton if is_skinned else _get_slot_anchor(slot_name)
 	if anchor == null:
+		print_debug("[VisualsComponent] WARNING: No anchor found for slot: %s" % slot_name)
 		return
 
-	var visual := equipped_visuals.get(slot_name, null) as Node3D
+	# Use a unique key combining slot and item_id to allow multiple items per slot (e.g. backpack + items on it)
+	var visual_key: String = "%s_%s" % [slot_name, item_id]
+	var visual := equipped_visuals.get(visual_key, null) as Node3D
 	var desired_scene: PackedScene = entry.get("equipped_visual_scene", null)
+	
 	if visual == null or not _matches_equipped_scene(visual, desired_scene):
 		if is_instance_valid(visual):
 			visual.queue_free()
+
 		visual = _instantiate_equipped_visual(entry)
 		if visual == null:
+			print_debug("[VisualsComponent] ERROR: Failed to instantiate visual for %s" % item_id)
 			return
-		anchor.add_child(visual)
-		equipped_visuals[slot_name] = visual
 
+		anchor.add_child(visual)
+		equipped_visuals[visual_key] = visual
+
+		if is_skinned:
+			_fix_skinned_visuals(visual)
+
+	visual.visible = true
 	_apply_visual_profile(visual, entry)
 
 func _instantiate_equipped_visual(entry: Dictionary) -> Node3D:
@@ -277,9 +368,8 @@ func _matches_equipped_scene(visual: Node3D, equipped_scene: PackedScene) -> boo
 func _apply_visual_profile(visual: Node3D, entry: Dictionary) -> void:
 	var profile: ItemVisualAttachmentProfile = entry.get("attachment_profile", null)
 	if profile == null:
-		visual.position = Vector3.ZERO
-		visual.rotation = Vector3.ZERO
-		visual.scale = Vector3.ONE
+		# If no profile is found, we do NOT reset the transform to zero.
+		# This allows the scene's internal origin/transform to take effect.
 		return
 
 	visual.position = profile.position
@@ -351,3 +441,11 @@ func get_attachment_point_world_positions() -> Dictionary:
 		if anchor != null and is_instance_valid(anchor):
 			positions[slot_name] = anchor.global_position
 	return positions
+
+func _fix_skinned_visuals(root: Node) -> void:
+	if skeleton == null:
+		return
+	if root is MeshInstance3D:
+		root.skeleton = root.get_path_to(skeleton)
+	for child in root.get_children():
+		_fix_skinned_visuals(child)

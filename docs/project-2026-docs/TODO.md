@@ -39,6 +39,14 @@ This document tracks the implementation status of all major gameplay systems and
 - [ ] Scavenging "Stations" (e.g., workbench, medical station)
 - [ ] Persistence of world item drops across save/load
 
+## [x] Tools & Utilities
+- [x] Character Visuals Tuner (Phase 1-2)
+    - [x] Standalone preview scene
+    - [x] Orbit camera & Inspection controls
+    - [x] Real-time transform sliders
+    - [x] Locomotion & Clipping preview
+    - [x] Runtime Resource Saving support
+
 ## [ ] Technical Debt & Refactoring
 - [ ] Move hardcoded slot definitions to Data-Driven Resources
 - [ ] Implement Drag-and-Drop for accordion item movement

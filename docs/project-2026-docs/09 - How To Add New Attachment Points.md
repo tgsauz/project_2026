@@ -11,36 +11,35 @@ updated: 2026-03-28
 Adding a new attachment point requires changes in both the logical inventory layer and the visual attachment layer. A slot is not complete until inventory rules and anchor mapping both exist.
 
 ## Step 1: Add The Logical Slot
-In `InventoryComponent`:
-1. Add the slot name to `slot_names`
-2. Add its slot config in `_build_slot_configs()`
-3. Decide:
-   - display name
-   - accepted categories
-   - whether it counts as a visible slot
+In `ItemDefinition.gd`:
+1. Add the new slot name to the `@export_enum` for `preferred_slot` and `secondary_hand_slot`. This ensures the slot appears in the Godot Inspector dropdowns.
 
-Examples of future slots:
-- `left_shoulder`
-- `right_shoulder`
-- `chest_rig`
-- `backpack_mount`
-- `holster_left`
-- `holster_right`
+In `InventoryComponent`:
+1. Add the slot name to `slot_names` in the Inspector.
+2. Add its slot config in `_build_slot_configs()` (if specific category rules are needed).
 
 ## Step 2: Let Items Use That Slot
-In the item definition:
-1. Add the new slot to `allowed_slots`
-2. Optionally set it as `preferred_slot`
-3. Set `visible_when_equipped = true` if it should appear on the body
-4. Add an `ItemVisualAttachmentProfile` for that slot if it needs custom placement
-5. Optionally assign an `equipped_visual_scene`
+In the item definition (`.tres`):
+1. Add the new slot to `allowed_slots`.
+2. Optionally set it as `preferred_slot`.
+3. Set `visible_when_equipped = true` if it should appear on the body.
 
 ## Step 3: Add The Visual Anchor
-In `VisualsComponent`:
-1. Create a new attachment root for the slot
-2. Bind it to the chosen bone or stable node
-3. Set local offset and rotation
-4. Return it from `_get_slot_anchor(slot_name)`
+In `VisualsComponent.gd`:
+1. Register the new anchor in `_ensure_attachment_roots()`.
+2. Map it to the desired bone name (e.g., `_ensure_attachment_root("head", head_bone_name, Vector3.ZERO, Vector3.ZERO)`).
+3. The system will automatically create a `BoneAttachment3D` and a scaled `ContentRoot` for you.
+
+## Current Implemented Anchors
+The following anchors are already registered and ready to use:
+- `right_hand` (hand_r)
+- `left_hand` (hand_l)
+- `lower_back` (spine_01)
+- `back_mount` (spine_02)
+- `torso` (spine_02)
+- `head` (head)
+- `belt` (spine_01)
+- `gun_support` (ik_hand_gun)
 
 ## Step 4: Enable Interaction If Needed
 If the slot is visible and should be physically targetable:

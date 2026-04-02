@@ -1,0 +1,237 @@
+[gd_scene load_steps=5 format=3 uid="uid://char_tuner_root"]
+
+[ext_resource type="PackedScene" uid="uid://rtqyrsecfpib" path="res://Player/master_character_rig.tscn" id="1_rig"]
+[ext_resource type="Script" path="res://Tools/CharacterTuner/CharacterTunerController.gd" id="2_ctrl"]
+[ext_resource type="Script" path="res://Tools/CharacterTuner/TunerCamera.gd" id="3_cam"]
+[ext_resource type="Script" path="res://Tools/CharacterTuner/CharacterTunerUI.gd" id="4_ui"]
+
+[node name="CharacterTuner" type="Node3D"]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.433013, 0.25, 0, 0.5, 0.866025, -0.5, -0.75, 0.433013, 0, 5, 0)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+
+[node name="PreviewRig" parent="." instance=ExtResource("1_rig")]
+
+[node name="TunerController" type="Node" parent="."]
+script = ExtResource("2_ctrl")
+character_rig_path = NodePath("../PreviewRig")
+
+[node name="TunerCamera" type="Node3D" parent="." node_paths=PackedStringArray("target")]
+script = ExtResource("3_cam")
+target = NodePath("../PreviewRig")
+
+[node name="TunerUI" type="CanvasLayer" parent="." node_paths=PackedStringArray("controller_path", "slot_list_path", "transform_panel_path", "pos_x_path", "pos_y_path", "pos_z_path", "rot_x_path", "rot_y_path", "rot_z_path", "sca_x_path", "move_x_path", "move_y_path", "save_button_path")]
+script = ExtResource("4_ui")
+controller_path = NodePath("../TunerController")
+slot_list_path = NodePath("Control/Panel/ScrollContainer/SlotList")
+transform_panel_path = NodePath("Control/TuningPanel")
+pos_x_path = NodePath("Control/TuningPanel/VBoxContainer/PosX/HSlider")
+pos_y_path = NodePath("Control/TuningPanel/VBoxContainer/PosY/HSlider")
+pos_z_path = NodePath("Control/TuningPanel/VBoxContainer/PosZ/HSlider")
+rot_x_path = NodePath("Control/TuningPanel/VBoxContainer/RotX/HSlider")
+rot_y_path = NodePath("Control/TuningPanel/VBoxContainer/RotY/HSlider")
+rot_z_path = NodePath("Control/TuningPanel/VBoxContainer/RotZ/HSlider")
+sca_x_path = NodePath("Control/TuningPanel/VBoxContainer/Scale/HSlider")
+move_x_path = NodePath("Control/AnimPanel/VBoxContainer/MoveX/HSlider")
+move_y_path = NodePath("Control/AnimPanel/VBoxContainer/MoveY/HSlider")
+save_button_path = NodePath("Control/TuningPanel/VBoxContainer/SaveButton")
+
+[node name="Control" type="Control" parent="TunerUI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="Panel" parent="TunerUI/Control"]
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_right = 250.0
+grow_vertical = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="TunerUI/Control/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SlotList" type="VBoxContainer" parent="TunerUI/Control/Panel/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TuningPanel" type="Panel" parent="TunerUI/Control"]
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -300.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 23.0
+grow_horizontal = 2
+text = "Character Tuner"
+horizontal_alignment = 1
+
+[node name="ItemList" type="VBoxContainer" parent="TunerUI/Control/TuningPanel"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 40.0
+offset_bottom = 240.0
+grow_horizontal = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="TunerUI/Control/TuningPanel"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -400.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="PosX" type="HBoxContainer" parent="TunerUI/Control/TuningPanel/VBoxContainer"]
+layout_mode = 2
+[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel/VBoxContainer/PosX"]
+layout_mode = 2
+text = "Pos X"
+[node name="HSlider" type="HSlider" parent="TunerUI/Control/TuningPanel/VBoxContainer/PosX"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = -2.0
+max_value = 2.0
+step = 0.01
+
+[node name="PosY" type="HBoxContainer" parent="TunerUI/Control/TuningPanel/VBoxContainer"]
+layout_mode = 2
+[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel/VBoxContainer/PosY"]
+layout_mode = 2
+text = "Pos Y"
+[node name="HSlider" type="HSlider" parent="TunerUI/Control/TuningPanel/VBoxContainer/PosY"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = -2.0
+max_value = 2.0
+step = 0.01
+
+[node name="PosZ" type="HBoxContainer" parent="TunerUI/Control/TuningPanel/VBoxContainer"]
+layout_mode = 2
+[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel/VBoxContainer/PosZ"]
+layout_mode = 2
+text = "Pos Z"
+[node name="HSlider" type="HSlider" parent="TunerUI/Control/TuningPanel/VBoxContainer/PosZ"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = -2.0
+max_value = 2.0
+step = 0.01
+
+[node name="RotX" type="HBoxContainer" parent="TunerUI/Control/TuningPanel/VBoxContainer"]
+layout_mode = 2
+[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel/VBoxContainer/RotX"]
+layout_mode = 2
+text = "Rot X"
+[node name="HSlider" type="HSlider" parent="TunerUI/Control/TuningPanel/VBoxContainer/RotX"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = -180.0
+max_value = 180.0
+
+[node name="RotY" type="HBoxContainer" parent="TunerUI/Control/TuningPanel/VBoxContainer"]
+layout_mode = 2
+[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel/VBoxContainer/RotY"]
+layout_mode = 2
+text = "Rot Y"
+[node name="HSlider" type="HSlider" parent="TunerUI/Control/TuningPanel/VBoxContainer/RotY"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = -180.0
+max_value = 180.0
+
+[node name="RotZ" type="HBoxContainer" parent="TunerUI/Control/TuningPanel/VBoxContainer"]
+layout_mode = 2
+[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel/VBoxContainer/RotZ"]
+layout_mode = 2
+text = "Rot Z"
+[node name="HSlider" type="HSlider" parent="TunerUI/Control/TuningPanel/VBoxContainer/RotZ"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = -180.0
+max_value = 180.0
+
+[node name="Scale" type="HBoxContainer" parent="TunerUI/Control/TuningPanel/VBoxContainer"]
+layout_mode = 2
+[node name="Label" type="Label" parent="TunerUI/Control/TuningPanel/VBoxContainer/Scale"]
+layout_mode = 2
+text = "Scale"
+[node name="HSlider" type="HSlider" parent="TunerUI/Control/TuningPanel/VBoxContainer/Scale"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.1
+max_value = 5.0
+value = 1.0
+step = 0.01
+
+[node name="SaveButton" type="Button" parent="TunerUI/Control/TuningPanel/VBoxContainer"]
+layout_mode = 2
+text = "Save To Resource"
+
+[node name="AnimPanel" type="Panel" parent="TunerUI/Control"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -100.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="TunerUI/Control/AnimPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="TunerUI/Control/AnimPanel/VBoxContainer"]
+layout_mode = 2
+text = "Locomotion Preview"
+horizontal_alignment = 1
+
+[node name="MoveX" type="HBoxContainer" parent="TunerUI/Control/AnimPanel/VBoxContainer"]
+layout_mode = 2
+[node name="Label" type="Label" parent="TunerUI/Control/AnimPanel/VBoxContainer/MoveX"]
+layout_mode = 2
+text = "Lateral"
+[node name="HSlider" type="HSlider" parent="TunerUI/Control/AnimPanel/VBoxContainer/MoveX"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = -1.0
+max_value = 1.0
+step = 0.01
+
+[node name="MoveY" type="HBoxContainer" parent="TunerUI/Control/AnimPanel/VBoxContainer"]
+layout_mode = 2
+[node name="Label" type="Label" parent="TunerUI/Control/AnimPanel/VBoxContainer/MoveY"]
+layout_mode = 2
+text = "Forward"
+[node name="HSlider" type="HSlider" parent="TunerUI/Control/AnimPanel/VBoxContainer/MoveY"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = -1.0
+max_value = 1.0
+step = 0.01

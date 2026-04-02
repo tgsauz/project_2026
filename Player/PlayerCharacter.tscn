@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://m62ijxeuosdk"]
 
 [ext_resource type="Script" uid="uid://ckaet3rbw2rrp" path="res://World/Items/Scripts/InventoryComponent.gd" id="1_2nw4y"]
-[ext_resource type="Script" path="res://Player/Scripts/CharacterController.gd" id="1_ay0dg"]
-[ext_resource type="PackedScene" uid="uid://wqrih7e0got5" path="res://Player/rig.tscn" id="2_1gtpu"]
+[ext_resource type="Script" uid="uid://dkue2j3r6w56m" path="res://Player/Scripts/CharacterController.gd" id="1_ay0dg"]
 [ext_resource type="Script" uid="uid://cugcfuh4swrqi" path="res://Player/Scripts/VisualsComponent.gd" id="3_5dj55"]
+[ext_resource type="PackedScene" uid="uid://rtqyrsecfpib" path="res://Player/master_character_rig.tscn" id="3_05ndu"]
 [ext_resource type="Script" uid="uid://dkq2hvbf4rmq0" path="res://World/Items/Scripts/InteractionComponent.gd" id="4_mg46b"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_jdwmw"]
@@ -17,16 +17,7 @@ script = ExtResource("1_ay0dg")
 script = ExtResource("3_5dj55")
 bone_name = "spine_01"
 
-[node name="Rig" parent="Visuals" unique_id=2009837787 instance=ExtResource("2_1gtpu")]
-
-[node name="Skeleton3D" parent="Visuals/Rig/Armature" parent_id_path=PackedInt32Array(2009837787, 433468030) index="0" unique_id=1990901886]
-bones/7/rotation = Quaternion(-0.009506485, -1.2977506e-09, -6.5752614e-10, 0.9999548)
-bones/9/rotation = Quaternion(0.15164295, 0.20267506, -0.4615689, 0.85022444)
-bones/25/rotation = Quaternion(0.15773971, -0.19778727, 0.46505162, 0.8483664)
-bones/26/rotation = Quaternion(0.19010653, -0.0010811338, -0.056586135, 0.98013085)
-
-[node name="CAMERARIG" parent="Visuals/Rig" index="3" unique_id=999810615]
-tps_orbit_distance = 0.0
+[node name="Rig" parent="Visuals" unique_id=135511932 instance=ExtResource("3_05ndu")]
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=2018647733]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.88413084, 0)
@@ -38,5 +29,3 @@ metadata/_custom_type_script = "uid://ckaet3rbw2rrp"
 
 [node name="InteractionComponent" type="Node" parent="." unique_id=765704100]
 script = ExtResource("4_mg46b")
-
-[editable path="Visuals/Rig"]
