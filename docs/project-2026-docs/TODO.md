@@ -4,19 +4,21 @@ This document tracks the implementation status of all major gameplay systems and
 
 ## [x] Physical Inventory System (Phase 1-5)
 - [x] ItemDefinition / ItemInstance architecture
-- [x] Slot-based occupancy with nested container support
+- [x] Attachment-driven occupancy graph with nested container support
 - [x] Weight and load factor calculation
 - [x] World pickup with auto-stow logic
 - [x] `ItemDefinitionRegistry` (static lookup)
 - [x] Serialization (Save/Load Dictionary support)
+- [x] Equipment-contributed attachment nodes (belt / vest)
+- [x] Size-based container capacity rules
 
 ## [x] Diegetic Inventory UI
 - [x] Independent Inventory Camera (Orbit View)
-- [x] Accordion Sidebar with dynamic leader lines
-- [x] Slot status indicators (Inline item names)
+- [x] Attachment-node dots with selected connector line
+- [x] Selected-item panel with principal item actions
 - [x] Item Tooltips (Hover details)
 - [x] 3D Item Inspection Viewport
-- [x] Category filtering (Hotkey 1-4)
+- [ ] Category filtering (Hotkey 1-4)
 - [x] Debug Inventory Inspector (Raw state table)
 
 ## [/] Movement & Interaction
@@ -48,8 +50,9 @@ This document tracks the implementation status of all major gameplay systems and
     - [x] Runtime Resource Saving support
 
 ## [ ] Technical Debt & Refactoring
-- [ ] Move hardcoded slot definitions to Data-Driven Resources
+- [x] Move hardcoded slot definitions to Data-Driven Resources
+- [x] Promote slot truth into shared attachment layout resources
 - [ ] Implement Drag-and-Drop for accordion item movement
 - [ ] Stack Split/Merge UI
-- [ ] Scenario-based Smoke Tests for complex loops
+- [x] Scenario-based Smoke Tests for complex loops
 - [ ] Full Godot 4.6 Feature Audit (Rendering/Physics)

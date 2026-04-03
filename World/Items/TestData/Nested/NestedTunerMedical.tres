@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3]
+
+[ext_resource type="Script" path="res://World/Items/Scripts/ItemResource.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = "nested_tuner_medical"
+display_name = "Nested Medical Test"
+tooltip_text = "Nested resource used to validate recursive item discovery."
+category = "medical"
+weight = 0.2
+allowed_slots = PackedStringArray("belt", "left_pocket", "right_pocket")
+visible_when_equipped = false
+preferred_slot = "belt"

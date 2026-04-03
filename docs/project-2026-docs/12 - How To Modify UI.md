@@ -8,11 +8,39 @@ The UI layer is managed centrally by `UIRoot.gd`. The UI visual design is contro
 
 When `UIRoot` initializes, it generates a "runtime style" by duplicating the assigned `UIStyleProfile`. It then passes this style profile down to all registered UI components inside the `_apply_ui_style()` function.
 
-*   **UIRoot.gd Engine Layer:** Handles input, visibility toggling, and passes the style definition to children.
+*   **UIRoot.gd Engine Layer:** Handles input, visibility toggling, explicit dependency wiring, and passes the style definition to children.
 *   **UIStyleProfile.gd Resource:** Exposes all global properties for styling. It manages base fonts, accent colors, preset styles, presentation tiers, and includes helper methods to generate Godot `StyleBoxFlat` and `LabelSettings`.
 
 > [!WARNING]
 > Do not assign hardcoded RGB values, custom fonts, or Theme overrides directly to individual UI nodes within the editor. The dynamic styling system will ignore or overwrite these changes. All styles must be drawn directly from `UIStyleProfile`.
+
+## 1.1 Inventory UI Dependency Rule
+Inventory-related widgets should receive their dependencies explicitly.
+
+Preferred pattern:
+- `UIRoot` binds `InventoryComponent`, `VisualsComponent`, or `CharacterController` into the widget once
+- the widget keeps that reference locally
+- hover, action, and refresh paths reuse that bound dependency
+
+Avoid:
+- scene-tree searches such as `find_child("UIRoot")`
+- tooltip or action menu logic that "discovers" inventory each time it runs
+
+Example:
+- `ItemTooltipUI.set_inventory_component(inventory)`
+- `InventoryItemActionMenu.set_inventory_component(inventory)`
+- `InventoryOverlayUI.set_visuals_component(visuals)`
+
+## 1.2 Current Inventory UI Shape
+The current inventory interaction flow is split into two focused widgets:
+
+- `InventoryOverlayUI` owns attachment-node projection, hover/click detection, dot rendering, and the single selected connector line.
+- `InventorySlotPanelUI` owns the top-left selected-item card, including the principal item label, accent underline, metadata, and action buttons.
+
+Keep this boundary:
+- projection and screen-space selection stay in the overlay
+- card layout and button rendering stay in the panel
+- actual inventory mutations stay in `UIRoot` through the bound `InventoryComponent`
 
 ## 2. Customizing Existing Appearance
 
@@ -241,6 +269,20 @@ func _update_responsive_position(animate: bool = true) -> void:
 ```
 
 For detailed implementation, see `Player/Debug/Scripts/ResponsiveLayoutManager.gd`.
+
+## 6.1 Inventory Panel Responsiveness
+The selected-item inventory panel should remain comfortable across viewport sizes.
+
+Current guidance:
+- anchor the panel to the top-left with consistent padding
+- clamp panel width to a viewport-relative range instead of a single desktop width
+- let action buttons wrap in a flow container when width gets tighter
+- connect the overlay line to a stable internal anchor such as the accent underline, not to the outer panel bounds
+
+Example:
+- `InventorySlotPanelUI` computes its width from viewport width and emits the accent-anchor position
+- `UIRoot` forwards that anchor into `InventoryOverlayUI`
+- `InventoryOverlayUI` redraws the selected connector line without needing to know the panel layout internals
 
 ## 7. Programmatic UI Creation (Advanced)
 

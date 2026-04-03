@@ -13,23 +13,26 @@ var dragging: bool = false
 
 var style_profile: UIStyleProfile
 var fade_controller: UIFadeController
+var background_rect: ColorRect
+var close_label: Label
+var close_button: Button
 
 func _ready() -> void:
 	visible = false
 	
 	# Background
-	var bg = ColorRect.new()
-	bg.color = Color(0, 0, 0, 0.8)
-	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(bg)
+	background_rect = ColorRect.new()
+	background_rect.color = Color(0, 0, 0, 0.8)
+	background_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(background_rect)
 	
 	# Close label
-	var label = Label.new()
-	label.text = "[Click Background or Press ESC to close Inspector]"
-	label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.offset_bottom = -50
-	add_child(label)
+	close_label = Label.new()
+	close_label.text = "[Click Background or Press ESC to close Inspector]"
+	close_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	close_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	close_label.offset_bottom = -50
+	add_child(close_label)
 	
 	# 3D Viewport
 	viewport_container = SubViewportContainer.new()
@@ -59,12 +62,12 @@ func _ready() -> void:
 	sub_viewport.add_child(anchor_node)
 	
 	# Input blocking bg
-	var close_btn = Button.new()
-	close_btn.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	close_btn.flat = true
-	close_btn.button_down.connect(_close)
-	add_child(close_btn)
-	move_child(close_btn, 1) # Put under viewport but over bg
+	close_button = Button.new()
+	close_button.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	close_button.flat = true
+	close_button.button_down.connect(_close)
+	add_child(close_button)
+	move_child(close_button, 1) # Put under viewport but over bg
 
 func apply_style(style: UIStyleProfile) -> void:
 	style_profile = style
@@ -72,6 +75,10 @@ func apply_style(style: UIStyleProfile) -> void:
 		fade_controller = UIFadeController.new(self, style)
 	else:
 		fade_controller.style_profile = style
+	if close_label != null:
+		close_label.label_settings = style.make_label_settings("meta")
+	if background_rect != null:
+		background_rect.color = Color(style.panel_fill_color.r, style.panel_fill_color.g, style.panel_fill_color.b, 0.92)
 
 func inspect_item(item_definition: Resource) -> void:
 	if item_definition == null or not item_definition.get("equipped_visual_scene"):

@@ -10,6 +10,7 @@ var _desc_label: Label
 var _condition_bar: ProgressBar
 
 var style_profile: UIStyleProfile
+var _inventory_component: InventoryComponent
 
 func _ready() -> void:
 	visible = false
@@ -56,6 +57,9 @@ func apply_style(style: UIStyleProfile) -> void:
 	_condition_bar.add_theme_stylebox_override("background", style.make_progress_background_style())
 	_condition_bar.add_theme_stylebox_override("fill", style.make_progress_fill_style(style.get_accent_color()))
 
+func set_inventory_component(inventory: InventoryComponent) -> void:
+	_inventory_component = inventory
+
 func show_tooltip(item_dict: Dictionary, screen_pos: Vector2) -> void:
 	if item_dict.is_empty():
 		hide_tooltip()
@@ -70,14 +74,10 @@ func show_tooltip(item_dict: Dictionary, screen_pos: Vector2) -> void:
 	var definition: ItemDefinition = null
 	var instance: ItemInstance = null
 	
-	# Attempt to get the ItemInstance from InventoryComponent
-	var root = get_tree().root.find_child("UIRoot", true, false)
-	if root and root.get("player_character"):
-		var inv = root.player_character.get_node_or_null("InventoryComponent")
-		if inv and not item_id.is_empty():
-			instance = inv.get_item_instance(item_id)
-			if instance:
-				definition = instance.definition
+	if _inventory_component != null and not item_id.is_empty():
+		instance = _inventory_component.get_item_instance(item_id)
+		if instance != null:
+			definition = instance.definition
 	
 	# Fallback: registry lookup by name
 	if definition == null:

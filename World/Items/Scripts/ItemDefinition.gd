@@ -32,20 +32,26 @@ const CATEGORY_CLOTHING := "clothing"
 
 @export_category("Equipment")
 @export var allowed_slots: PackedStringArray = PackedStringArray()
+@export var attachment_tags: PackedStringArray = PackedStringArray()
 @export var visible_when_equipped: bool = false
-@export_enum("left_hand", "right_hand", "torso", "head", "belt", "lower_back", "back_mount", "shoulder_mount", "left_pocket", "right_pocket") var preferred_slot: String = "torso"
+@export var preferred_slot: String = "torso"
 @export var equipped_visual_scene: PackedScene
 @export var is_skinned_mesh: bool = false
 @export var visual_profile_id: String = ""
 @export var attachment_profiles: Array = []
+@export var attachment_modifier: EquipmentAttachmentModifier
 @export var reserve_secondary_hand: bool = false
-@export_enum("left_hand", "right_hand", "torso", "head", "belt", "lower_back", "back_mount", "shoulder_mount", "left_pocket", "right_pocket") var secondary_hand_slot: String = "left_hand"
+@export var secondary_hand_slot: String = "left_hand"
 
 @export_category("Container")
 @export var is_container: bool = false
 @export var container_capacity: int = 0
 @export var container_max_weight: float = 0.0
 @export var container_allowed_categories: PackedStringArray = PackedStringArray()
+@export var item_size: int = 1
+@export var storage_capacity_units: int = 0
+@export var storage_allowed_categories: PackedStringArray = PackedStringArray()
+@export var storage_allowed_tags: PackedStringArray = PackedStringArray()
 
 @export_category("Placeholder Visual")
 @export_enum("none", "box", "long_box", "pouch") var placeholder_visual_shape: String = "box"
@@ -68,6 +74,31 @@ func can_store_category(target_category: String) -> bool:
 	if container_allowed_categories.is_empty():
 		return true
 	return container_allowed_categories.has(target_category)
+
+func can_store_in_storage(item_definition: ItemDefinition) -> bool:
+	if item_definition == null:
+		return false
+	if not storage_allowed_categories.is_empty() and not storage_allowed_categories.has(item_definition.category):
+		return false
+	if not storage_allowed_tags.is_empty():
+		if item_definition.attachment_tags.is_empty():
+			return false
+		for tag in item_definition.attachment_tags:
+			if storage_allowed_tags.has(tag):
+				return true
+		return false
+	return true
+
+func get_storage_item_size() -> int:
+	return max(item_size, 1)
+
+func get_storage_capacity() -> int:
+	if storage_capacity_units > 0:
+		return storage_capacity_units
+	return container_capacity
+
+func provides_attachment_nodes() -> bool:
+	return attachment_modifier != null and not attachment_modifier.attachment_points.is_empty()
 
 func supports_slot(target_slot: String) -> bool:
 	return allowed_slots.has(target_slot)

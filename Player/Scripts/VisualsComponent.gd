@@ -6,15 +6,8 @@ class_name VisualsComponent
 @export var tilt_smoothing: float = 6.0
 @export var max_tilt_angle: float = 0.35
 
-@export_category("Anchor Bones")
-@export var back_bone_name: String = "spine_02"
-@export var lower_back_bone_name: String = "spine_01"
-@export var right_hand_bone_name: String = "hand_r"
-@export var left_hand_bone_name: String = "hand_l"
+@export_category("Helpers")
 @export var gun_support_bone_name: String = "ik_hand_gun"
-@export var left_shoulder_bone_name: String = "clavicle_l"
-@export var head_bone_name: String = "head"
-@export var belt_bone_name: String = "spine_01"
 @export var attachment_content_scale_compensation: float = 1.0
 
 @export_category("Debug")
@@ -28,6 +21,8 @@ var attachment_content_roots: Dictionary = {}
 var equipped_visuals: Dictionary = {}
 var mounted_interactables: Dictionary = {}
 var attachment_debug_gizmos: Dictionary = {}
+var attachment_node_data: Dictionary = {}
+var bound_inventory: InventoryComponent
 
 var tilt: Vector2 = Vector2.ZERO
 
@@ -42,9 +37,11 @@ func _ready():
 		if skeleton == null:
 			return
 
-	bone_idx = skeleton.find_bone(back_bone_name)
+	var spine_slot := AttachmentLayoutLibrary.get_default_point("back_mount")
+	var tilt_bone_name := spine_slot.anchor_bone_name if spine_slot != null else "spine_02"
+	bone_idx = skeleton.find_bone(tilt_bone_name)
 	if bone_idx == -1:
-		push_warning("VisualsComponent could not find bone '%s'." % back_bone_name)
+		push_warning("VisualsComponent could not find bone '%s'." % tilt_bone_name)
 
 	_ensure_attachment_roots()
 	_refresh_attachment_debug_gizmos()
@@ -107,7 +104,7 @@ func clear_runtime_visual(slot_name: String) -> void:
 		if is_instance_valid(visual):
 			visual.queue_free()
 		equipped_visuals.erase(visual_key)
-		_remove_mounted_interactable(visual_key)
+		_remove_slot_interactable(slot_name)
 
 func get_active_visual(slot_name: String, item_id: String = "") -> Node3D:
 	var visual_key = slot_name
@@ -129,9 +126,18 @@ func get_active_visual(slot_name: String, item_id: String = "") -> Node3D:
 func bind_inventory(inventory: InventoryComponent) -> void:
 	if inventory == null:
 		return
+	bound_inventory = inventory
+	if not inventory.inventory_updated.is_connected(_on_inventory_layout_changed):
+		inventory.inventory_updated.connect(_on_inventory_layout_changed)
 	if not inventory.equipment_visuals_changed.is_connected(_on_equipment_visuals_changed):
 		inventory.equipment_visuals_changed.connect(_on_equipment_visuals_changed)
+	_on_inventory_layout_changed()
 	_on_equipment_visuals_changed(inventory.get_equipped_visuals())
+
+func _on_inventory_layout_changed() -> void:
+	if bound_inventory == null:
+		return
+	_ensure_attachment_roots_for_nodes(bound_inventory.get_available_attachment_nodes(true))
 
 func _on_equipment_visuals_changed(visible_items: Array) -> void:
 	_ensure_attachment_roots()
@@ -187,13 +193,22 @@ func _ensure_attachment_roots() -> void:
 	if skeleton == null:
 		return
 
-	_ensure_attachment_root("lower_back", lower_back_bone_name, Vector3(0.0, -0.0012, 0.002), Vector3(0.0, PI, 0.0))
-	_ensure_attachment_root("back_mount", back_bone_name, Vector3(0.0, -0.0012, 0.012), Vector3(0.0, PI, 0.0))
-	_ensure_attachment_root("torso", back_bone_name, Vector3.ZERO, Vector3.ZERO)
-	_ensure_attachment_root("head", head_bone_name, Vector3.ZERO, Vector3.ZERO)
-	_ensure_attachment_root("belt", belt_bone_name, Vector3.ZERO, Vector3.ZERO)
-	_ensure_attachment_root("right_hand", right_hand_bone_name, Vector3.ZERO, Vector3.ZERO)
-	_ensure_attachment_root("left_hand", left_hand_bone_name, Vector3.ZERO, Vector3.ZERO)
+	var nodes := []
+	if bound_inventory != null:
+		nodes = bound_inventory.get_available_attachment_nodes(true)
+	_ensure_attachment_roots_for_nodes(nodes)
+
+func _ensure_attachment_roots_for_nodes(nodes: Array) -> void:
+	if skeleton == null:
+		return
+
+	for node_data in nodes:
+		var node_id := str(node_data.get("node_id", ""))
+		var bone_name := str(node_data.get("anchor_bone_name", ""))
+		if node_id.is_empty() or bone_name.is_empty():
+			continue
+		attachment_node_data[node_id] = node_data.duplicate(true)
+		_ensure_attachment_root(node_id, bone_name, node_data.get("anchor_local_position", Vector3.ZERO), node_data.get("anchor_local_rotation", Vector3.ZERO))
 	_ensure_attachment_root("gun_support", gun_support_bone_name, Vector3.ZERO, Vector3.ZERO)
 	_refresh_attachment_debug_gizmos()
 
@@ -294,13 +309,10 @@ func _remove_attachment_debug_gizmo(slot_name: String) -> void:
 	attachment_debug_gizmos.erase(slot_name)
 
 func _get_debug_color_for_slot(slot_name: String) -> Color:
+	if attachment_node_data.has(slot_name):
+		return attachment_node_data[slot_name].get("debug_color", Color.WHITE)
+
 	match slot_name:
-		"right_hand":
-			return Color(1.0, 0.75, 0.2, 1.0)
-		"left_hand":
-			return Color(0.2, 0.9, 1.0, 1.0)
-		"lower_back":
-			return Color(0.8, 0.35, 1.0, 1.0)
 		"gun_support":
 			return Color(0.7, 0.7, 0.7, 1.0)
 		_:

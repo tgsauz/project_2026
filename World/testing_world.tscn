@@ -74,7 +74,6 @@ tps_shoulder_offset = 0.0
 tps_height_offset = 0.0
 
 [node name="InventoryComponent" parent="CharacterBody3D" index="2" unique_id=446658261]
-slot_names = PackedStringArray("left_hand", "right_hand", "torso", "lower_back", "belt", "back_mount", "shoulder_mount")
 
 [node name="UIRoot" parent="CharacterBody3D" unique_id=1321403690 instance=ExtResource("2_uay7f")]
 presentation_tier = 1

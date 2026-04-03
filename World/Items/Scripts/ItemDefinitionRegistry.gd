@@ -30,6 +30,14 @@ static func get_all() -> Dictionary:
 		initialize()
 	return _cache
 
+static func get_all_definitions() -> Array[ItemDefinition]:
+	if not _initialized:
+		initialize()
+	return _cache.values()
+
+static func is_initialized() -> bool:
+	return _initialized
+
 ## Recursively scans a directory for .tres resources that extend ItemDefinition
 static func _scan_directory(path: String) -> void:
 	var dir = DirAccess.open(path)
@@ -47,7 +55,35 @@ static func _scan_directory(path: String) -> void:
 			var resource = ResourceLoader.load(full_path, "", ResourceLoader.CACHE_MODE_REUSE)
 			if resource is ItemDefinition:
 				var item_def := resource as ItemDefinition
+				_validate_slots(item_def, full_path)
 				if not item_def.id.is_empty():
 					_cache[item_def.id] = item_def
 		file_name = dir.get_next()
 	dir.list_dir_end()
+
+static func _validate_slots(item_def: ItemDefinition, full_path: String) -> void:
+	if item_def == null:
+		return
+
+	var known_points := _build_known_point_ids_for_validation(item_def)
+
+	for slot_name in item_def.allowed_slots:
+		if not known_points.has(slot_name):
+			push_warning("ItemDefinitionRegistry: %s references unknown allowed slot '%s'." % [full_path, slot_name])
+
+	if not item_def.preferred_slot.is_empty() and not known_points.has(item_def.preferred_slot):
+		push_warning("ItemDefinitionRegistry: %s uses unknown preferred_slot '%s'." % [full_path, item_def.preferred_slot])
+
+	if not item_def.secondary_hand_slot.is_empty() and not known_points.has(item_def.secondary_hand_slot):
+		push_warning("ItemDefinitionRegistry: %s uses unknown secondary_hand_slot '%s'." % [full_path, item_def.secondary_hand_slot])
+
+static func _build_known_point_ids_for_validation(item_def: ItemDefinition) -> PackedStringArray:
+	var known_points := AttachmentLayoutLibrary.get_base_known_point_ids()
+	known_points = AttachmentLayoutLibrary.append_modifier_point_ids(known_points, item_def.attachment_modifier)
+
+	for cached_definition in _cache.values():
+		if cached_definition == null:
+			continue
+		known_points = AttachmentLayoutLibrary.append_modifier_point_ids(known_points, cached_definition.attachment_modifier)
+
+	return known_points

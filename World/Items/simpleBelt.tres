@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://cv5lvcf0engvj"]
 
 [ext_resource type="Script" uid="uid://cgvv34qt43vdl" path="res://World/Items/Scripts/ItemResource.gd" id="1_o8j3p"]
+[ext_resource type="Resource" path="res://World/Items/Config/BeltAttachmentModifier.tres" id="2_modifier"]
 
 [resource]
 script = ExtResource("1_o8j3p")
@@ -8,7 +9,10 @@ id = "simple_belt"
 display_name = "Belt"
 tooltip_text = "Adds attachment points"
 category = "clothing"
-allowed_slots = null
+allowed_slots = PackedStringArray("belt")
+attachment_tags = PackedStringArray("belt")
+preferred_slot = "belt"
 is_skinned_mesh = true
+attachment_modifier = ExtResource("2_modifier")
 container_allowed_categories = null
 metadata/_custom_type_script = "uid://cgvv34qt43vdl"

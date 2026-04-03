@@ -1,0 +1,118 @@
+[gd_resource type="Resource" script_class="AttachmentLayoutDefinition" format=3]
+
+[ext_resource type="Script" path="res://World/Items/Scripts/AttachmentLayoutDefinition.gd" id="1_layout"]
+[ext_resource type="Script" path="res://World/Items/Scripts/AttachmentPointDefinition.gd" id="2_point"]
+
+[sub_resource type="Resource" id="AttachmentPointDefinition_left_hand"]
+script = ExtResource("2_point")
+node_id = "left_hand"
+display_name = "Left Hand"
+accepted_categories = PackedStringArray("weapon", "ammo", "medical", "equipment", "clothing")
+visible = true
+anchor_bone_name = "hand_l"
+debug_color = Color(0.2, 0.9, 1, 1)
+is_hand_slot = true
+tuner_enabled = true
+sort_order = 0
+
+[sub_resource type="Resource" id="AttachmentPointDefinition_right_hand"]
+script = ExtResource("2_point")
+node_id = "right_hand"
+display_name = "Right Hand"
+accepted_categories = PackedStringArray("weapon", "ammo", "medical", "equipment", "clothing")
+visible = true
+anchor_bone_name = "hand_r"
+debug_color = Color(1, 0.75, 0.2, 1)
+is_hand_slot = true
+tuner_enabled = true
+sort_order = 1
+
+[sub_resource type="Resource" id="AttachmentPointDefinition_torso"]
+script = ExtResource("2_point")
+node_id = "torso"
+display_name = "Torso"
+accepted_categories = PackedStringArray("equipment", "clothing", "medical")
+visible = true
+anchor_bone_name = "spine_02"
+debug_color = Color(0.7, 0.9, 1, 1)
+tuner_enabled = true
+sort_order = 2
+
+[sub_resource type="Resource" id="AttachmentPointDefinition_belt"]
+script = ExtResource("2_point")
+node_id = "belt"
+display_name = "Waist"
+accepted_categories = PackedStringArray("equipment", "clothing", "medical", "ammo")
+visible = true
+anchor_bone_name = "spine_01"
+debug_color = Color(1, 0.9, 0.4, 1)
+tuner_enabled = true
+sort_order = 3
+
+[sub_resource type="Resource" id="AttachmentPointDefinition_back_mount"]
+script = ExtResource("2_point")
+node_id = "back_mount"
+display_name = "Back"
+accepted_categories = PackedStringArray("equipment", "weapon")
+visible = true
+anchor_bone_name = "spine_02"
+anchor_local_position = Vector3(0, -0.0012, 0.012)
+anchor_local_rotation = Vector3(0, 3.1415927, 0)
+debug_color = Color(0.95, 0.65, 0.2, 1)
+tuner_enabled = true
+sort_order = 4
+
+[sub_resource type="Resource" id="AttachmentPointDefinition_lower_back"]
+script = ExtResource("2_point")
+node_id = "lower_back"
+display_name = "Lower Back"
+accepted_categories = PackedStringArray("equipment", "weapon")
+visible = true
+anchor_bone_name = "spine_01"
+anchor_local_position = Vector3(0, -0.05, -0.13)
+anchor_local_rotation = Vector3(0, 3.1415927, 0)
+debug_color = Color(0.9, 0.55, 0.25, 1)
+tuner_enabled = true
+sort_order = 5
+
+[sub_resource type="Resource" id="AttachmentPointDefinition_shoulder_mount"]
+script = ExtResource("2_point")
+node_id = "shoulder_mount"
+display_name = "Shoulder"
+accepted_categories = PackedStringArray("equipment", "weapon")
+visible = true
+anchor_bone_name = "clavicle_l"
+anchor_local_position = Vector3(-0.02, 0.06, 0)
+debug_color = Color(0.6, 1, 0.6, 1)
+tuner_enabled = true
+sort_order = 6
+
+[sub_resource type="Resource" id="AttachmentPointDefinition_left_pocket"]
+script = ExtResource("2_point")
+node_id = "left_pocket"
+display_name = "Left Pocket"
+accepted_categories = PackedStringArray("ammo", "medical", "equipment")
+visible = false
+anchor_bone_name = "spine_01"
+anchor_local_position = Vector3(-0.12, -0.02, 0.08)
+debug_color = Color(0.45, 0.8, 1, 1)
+tuner_enabled = false
+sort_order = 7
+
+[sub_resource type="Resource" id="AttachmentPointDefinition_right_pocket"]
+script = ExtResource("2_point")
+node_id = "right_pocket"
+display_name = "Right Pocket"
+accepted_categories = PackedStringArray("ammo", "medical", "equipment")
+visible = false
+anchor_bone_name = "spine_01"
+anchor_local_position = Vector3(0.12, -0.02, 0.08)
+debug_color = Color(1, 0.65, 0.45, 1)
+tuner_enabled = false
+sort_order = 8
+
+[resource]
+script = ExtResource("1_layout")
+layout_id = "player_default_body"
+display_name = "Player Default Body"
+attachment_points = Array[ExtResource("2_point")]([SubResource("AttachmentPointDefinition_left_hand"), SubResource("AttachmentPointDefinition_right_hand"), SubResource("AttachmentPointDefinition_torso"), SubResource("AttachmentPointDefinition_belt"), SubResource("AttachmentPointDefinition_back_mount"), SubResource("AttachmentPointDefinition_lower_back"), SubResource("AttachmentPointDefinition_shoulder_mount"), SubResource("AttachmentPointDefinition_left_pocket"), SubResource("AttachmentPointDefinition_right_pocket")])

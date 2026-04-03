@@ -2,13 +2,13 @@
 type: overview
 status: active
 owned_by: gameplay
-updated: 2026-03-26
+updated: 2026-04-03
 ---
 
 # 02 - Game Systems Overview
 
 ## Summary
-The current playable stack is centered on a modular player character with movement, interaction, physical inventory, debug UI, and inventory-driven placeholder visuals.
+The current playable stack is centered on a modular player character with movement, interaction, physical inventory, shared slot metadata, debug UI, and inventory-driven equipped visuals.
 
 ## Main Runtime Pieces
 ### Player root
@@ -23,6 +23,7 @@ The current playable stack is centered on a modular player character with moveme
 
 ### InventoryComponent
 - Stores physical items on body slots and within containers
+- Builds slot config from the shared equipment slot catalog
 - Recalculates total weight and load factor
 - Emits visual-state updates for mounted items
 
@@ -34,12 +35,14 @@ The current playable stack is centered on a modular player character with moveme
 
 ### VisualsComponent
 - Applies upper-body tilt based on movement acceleration
+- Creates attachment roots from the shared equipment slot catalog
 - Creates placeholder attachment visuals for visible equipped items
 - Creates mounted interactable areas for visible mounted gear
 
 ### UIRoot
 - Central orchestrator for all gameplay UI components
 - Shows focus prompt text, quick action menu entries
+- Wires runtime inventory UI dependencies explicitly instead of relying on scene-tree discovery
 - Applies dynamic styling via `UIStyleProfile` resource
 - Supports **UI fade animations** (fade-in on value change, fade-out after stability threshold)
 - Manages **responsive layout** (4 breakpoints: mobile/tablet/desktop/ultrawide with dynamic margin scaling)
@@ -53,6 +56,7 @@ The current playable stack is centered on a modular player character with moveme
 4. On interaction, the target processes the action.
 5. If an item moves into or out of inventory, `InventoryComponent` recalculates weight and visible equipment.
 6. `VisualsComponent` updates mounted placeholder visuals from inventory state.
+7. Inventory UI widgets refresh from explicit inventory references rather than pulling state indirectly.
 
 ## Why This Matters
 This architecture already supports several future-friendly behaviors:

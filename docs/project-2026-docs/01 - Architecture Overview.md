@@ -2,7 +2,7 @@
 type: overview
 status: active
 owned_by: gameplay
-updated: 2026-03-26
+updated: 2026-04-03
 ---
 
 # 01 - Architecture Overview
@@ -22,7 +22,8 @@ Project 2026 is a Godot 4.6 game that should be built with scalability, modulari
 - `InventoryComponent` owns physical storage state and weight/load data.
 - `InteractionComponent` owns raycast-based focus and interaction dispatch.
 - `VisualsComponent` owns body tilt and inventory-driven attachment visuals.
-- `UIRoot` is a thin view layer for prompts and quick actions.
+- `UIRoot` is a thin view layer for prompts, inventory overlays, and quick actions.
+- `EquipmentSlotCatalog` is the shared data contract for gameplay slot metadata and visual anchors.
 
 See also: [[02 - Game Systems Overview]]
 
@@ -59,12 +60,9 @@ This split is one of the most important architectural decisions in the current i
 See also: [[03 - Inventory and Item System]]
 
 ## Current Hardcoded Areas
-- Body slot list and accepted categories are hardcoded in `InventoryComponent`
-- Slot-to-attachment-anchor mapping is hardcoded in `VisualsComponent`
+- Large inventory UI creation still starts in `UIRoot`
 - Quick action list generation is still simple and generic
 - Placeholder visuals are shape/color driven rather than asset-driven
-
-These hardcoded areas are acceptable for the current phase but are the most likely future refactor targets.
 
 ## Extension Principles
 - Add new behavior by layering on top of current responsibilities, not by collapsing everything into the controller
@@ -72,3 +70,17 @@ These hardcoded areas are acceptable for the current phase but are the most like
 - Keep action dispatch in interactables/controllers
 - Keep representation concerns in visuals/UI
 - Prefer data-driven definitions when a feature starts repeating patterns
+
+## Shared Slot Truth
+Gameplay equipment slots now come from a shared resource catalog rather than separate hardcoded lists.
+
+Current shared pieces:
+- `EquipmentSlotDefinition`
+- `EquipmentSlotCatalog`
+- `EquipmentSlotLibrary`
+
+This catalog is consumed by:
+- `InventoryComponent` for slot names, display names, accepted categories, and visible flags
+- `VisualsComponent` for attachment roots and debug colors
+- `CharacterTuner` for tunable slot discovery
+- smoke coverage and item validation

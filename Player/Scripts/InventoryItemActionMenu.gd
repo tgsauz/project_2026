@@ -13,6 +13,7 @@ signal item_action_selected(action_id: String)
 var _current_item = null
 var _current_slot: String = ""
 var _action_buttons: Dictionary = {}
+var _inventory_component: InventoryComponent
 
 var style_profile: UIStyleProfile
 var fade_controller: UIFadeController
@@ -46,7 +47,10 @@ func _ready() -> void:
 	visible = false
 
 ## Set the item and populate available actions
-func set_item(item, slot_name: String) -> void:
+func set_inventory_component(inventory: InventoryComponent) -> void:
+	_inventory_component = inventory
+
+func set_item(item: Dictionary, slot_name: String) -> void:
 	_current_item = item
 	_current_slot = slot_name
 	
@@ -56,15 +60,14 @@ func set_item(item, slot_name: String) -> void:
 	_action_buttons.clear()
 	
 	# Get item name for title
-	var item_name = item.get("name", "Unknown") if item is Dictionary else "Item"
+	var item_name = item.get("display_name", item.get("name", "Unknown")) if item is Dictionary else "Item"
 	title_label.text = item_name
 	
 	# Try to get context-aware actions from InventoryComponent
 	var actions: Array = []
-	var inv = _find_inventory_component()
 	var item_id = item.get("id", "") if item is Dictionary else ""
-	if inv and not item_id.is_empty() and inv.has_method("get_item_actions"):
-		var raw_actions = inv.get_item_actions(item_id)
+	if _inventory_component != null and not item_id.is_empty():
+		var raw_actions = _inventory_component.get_item_actions(item_id)
 		for a in raw_actions:
 			actions.append({"id": a.get("id", ""), "label": a.get("label", ""), "enabled": true})
 	else:
@@ -82,12 +85,6 @@ func set_item(item, slot_name: String) -> void:
 		fade_controller.fade_in()
 	visible = true
 
-func _find_inventory_component() -> Node:
-	var root = get_tree().root.find_child("UIRoot", true, false)
-	if root and root.get("player_character"):
-		return root.player_character.get_node_or_null("InventoryComponent")
-	return null
-
 ## Create context-aware action buttons
 func _create_action_buttons_from(actions: Array) -> void:
 	for action_data in actions:
@@ -104,6 +101,8 @@ func _create_action_buttons_from(actions: Array) -> void:
 			button.add_theme_font_size_override("font_size", style_profile.small_font_size)
 			button.add_theme_color_override("font_color", style_profile.primary_text_color)
 			button.add_theme_color_override("font_hover_color", style_profile.get_accent_color())
+			button.add_theme_stylebox_override("normal", style_profile.make_panel_style())
+			button.add_theme_stylebox_override("hover", style_profile.make_panel_style("elevated"))
 		
 		action_container.add_child(button)
 		_action_buttons[action_data.get("id", "")] = button

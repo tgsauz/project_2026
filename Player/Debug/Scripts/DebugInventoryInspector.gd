@@ -9,6 +9,7 @@ var _header: Label
 var _slot_table: RichTextLabel
 var _actions_row: HBoxContainer
 var _last_serialized: Dictionary = {}
+var _inventory_component: InventoryComponent
 
 var style_profile: UIStyleProfile
 
@@ -62,6 +63,11 @@ func apply_style(style: UIStyleProfile) -> void:
 			var font = style.get_font()
 			if font: btn.add_theme_font_override("font", font)
 			btn.add_theme_font_size_override("font_size", style.small_font_size)
+			btn.add_theme_stylebox_override("normal", style.make_panel_style())
+			btn.add_theme_stylebox_override("hover", style.make_panel_style("elevated"))
+
+func set_inventory_component(inventory: InventoryComponent) -> void:
+	_inventory_component = inventory
 
 func _process(_delta: float) -> void:
 	if not visible:
@@ -77,8 +83,8 @@ func _refresh_display() -> void:
 	var bbcode := ""
 	
 	# Slot states
-	bbcode += "[b]SLOTS[/b]\n"
-	for slot_name in inv.slot_names:
+	bbcode += "[b]ATTACHMENT NODES[/b]\n"
+	for slot_name in inv.slot_state.keys():
 		var state = inv.get_slot_state(slot_name)
 		var item = state.get("item")
 		if item != null:
@@ -111,10 +117,7 @@ func _refresh_display() -> void:
 	_slot_table.text = bbcode
 
 func _find_inventory() -> InventoryComponent:
-	var root = get_tree().root.find_child("UIRoot", true, false)
-	if root and root.get("player_character"):
-		return root.player_character.get_node_or_null("InventoryComponent") as InventoryComponent
-	return null
+	return _inventory_component
 
 func _add_action_button(label: String, callback: Callable) -> void:
 	var btn = Button.new()

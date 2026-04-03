@@ -2,13 +2,13 @@
 type: system
 status: active
 owned_by: gameplay
-updated: 2026-03-28
+updated: 2026-04-03
 ---
 
 # 03 - Inventory and Item System
 
 ## Summary
-The inventory system is a physical storage graph built from body slots, mounted containers, and runtime item instances. It replaces the old flat inventory list with a structure that can represent where an item physically exists on the character.
+The inventory system is now an attachment-driven graph built from default body nodes, equipment-contributed child nodes, mounted containers, and runtime item instances. It replaces the old flat slot list with a runtime topology that can express where an item physically exists, what item created that node, and how much storage capacity each container exposes.
 
 ## Core Types
 ### ItemDefinition
@@ -27,14 +27,19 @@ Key fields:
 - `interaction_verb`
 - `interaction_key_hint`
 - `allowed_slots`
+- `attachment_tags`
 - `preferred_slot`
+- `attachment_modifier`
 - `visible_when_equipped`
 - `equipped_visual_scene`
 - `visual_profile_id`
 - `attachment_profiles`
 - `reserve_secondary_hand`
 - `secondary_hand_slot`
-- container-related fields
+- `item_size`
+- `storage_capacity_units`
+- `storage_allowed_categories`
+- `storage_allowed_tags`
 - placeholder visual fields
 
 ### ItemInstance
@@ -67,9 +72,12 @@ Script: `World/Items/Scripts/InventoryComponent.gd`
 `InventoryComponent` is the authority for physical storage state.
 
 It owns:
-- root slot configuration
-- slot occupancy
+- default body layout bootstrap
+- runtime attachment graph
+- node occupancy
 - runtime item registry
+- equipment-contributed node activation/removal
+- container storage contents
 - total carried weight
 - load factor
 - equipment pickup routing
@@ -82,41 +90,60 @@ It does not own:
 - UI rendering
 - final mesh asset spawning
 
-## Root Body Slots
-Current slots:
+## Root Body Nodes
+Current default body nodes:
 - `left_hand`
 - `right_hand`
 - `torso`
-- `lower_back`
 - `belt`
+- `back_mount`
+- `lower_back`
+- `shoulder_mount`
 - `left_pocket`
 - `right_pocket`
-- `back_mount`
-- `shoulder_mount`
 
-Each slot has:
+Each node has:
 - a display name
 - accepted categories
+- optional accepted item tags
 - a `visible` flag used by visuals
+- anchor metadata used by visuals and tooling
+- a `tuner_enabled` flag used by `CharacterTuner`
 
-Current slot definitions are hardcoded in `_build_slot_configs()`.
+Current default body node definitions live in the shared attachment layout:
+- `AttachmentPointDefinition`
+- `AttachmentLayoutDefinition`
+- `AttachmentLayoutLibrary`
 
-## Storage Graph Model
+Example:
+- if you add a new body node such as `radio_mount`, add it to the default attachment layout first
+- if an equipped item should add child nodes, author an `EquipmentAttachmentModifier` instead of hardcoding them in UI or runtime visuals
+
+## Attachment Graph Model
 The system is not a simple array.
 
-Storage layers:
-- root body slots hold direct item occupants
-- some occupants are containers
-- containers hold child item instance ids
-- nested items can themselves contain more items later
+Runtime layers:
+- root body nodes hold direct item occupants
+- some equipped occupants contribute new child attachment nodes through `attachment_modifier`
+- some items are containers and hold child item instance ids
+- attached items and stored items can coexist in the same runtime inventory graph
 
-This means a secured container on lower back can carry medical or ammo items while still being itself mounted on the character.
+This means a belt can occupy the `belt` root node, create `belt_slot_01` through `belt_slot_08`, mount a pouch on one child node, and then let that pouch hold medical or ammo items internally.
 
 ## Main Inventory APIs
 ### Placement and movement
-- `can_store_item(item, target_slot)`
-- `store_item_in_slot(item, target_slot)`
+- `get_attachment_node(node_id)`
+- `get_attachment_children(node_id)`
+- `get_available_attachment_nodes(include_hidden := false)`
+- `can_attach_item(item, node_id)`
+- `attach_item(item, node_id)`
+- `detach_item(item_id)`
+- `can_store_item(item, target_slot)` (compatibility wrapper)
+- `store_item_in_slot(item, target_slot)` (compatibility wrapper)
 - `store_item_in_container(item, target_container_id)`
+- `can_store_item_in_storage(item, target_container_id)`
+- `get_storage_usage(container_id)`
+- `get_storage_capacity(container_id)`
 - `store_item_instance_best_effort(item)`
 - `pickup_item_instance(item, prefer_equipment, allow_fallback_storage)`
 - `move_item(item_id, target_slot, target_container_id)`
@@ -144,10 +171,16 @@ The serialization model flattens the nested storage graph into a serializable Di
 
 ## Placement Rules
 When an item is introduced into inventory:
-1. The inventory checks allowed body slots.
-2. It tries preferred and allowed slots first.
-3. If no slot works, it tries existing containers.
-4. Containers validate category, capacity, and weight constraints.
+1. The inventory checks currently active attachment nodes.
+2. It tries preferred and allowed root nodes first.
+3. If an equipped item contributes child nodes, those become valid attachment targets too.
+4. If no node works, it tries existing containers.
+5. Containers validate category, size-capacity, and weight constraints.
+
+Examples:
+- Equipping `simpleBelt.tres` into `belt` creates `belt_slot_01` through `belt_slot_08`.
+- Attaching `simplePouch.tres` to `belt_slot_01` succeeds because the node accepts `pouch` items.
+- Storing a weapon of size `3` into a pouch with `storage_capacity_units = 3` works only if the pouch is otherwise empty.
 
 ## Hand Pickup Rules
 Direct world pickup can now prefer equipment placement instead of generic storage.
@@ -202,14 +235,18 @@ all fit the same structural model.
 The inventory UI is diegetic and uses a Camera-based orbit view.
 
 ### InventoryOverlayUI
-- Accordion-style sidebar menu
-- Dynamic leader lines projecting 3D attachment points to 2D screen space
+- Stylized dots project directly over active attachment nodes
+- Hovering a node shows the principal item tooltip
 - **Slot Status Indicators**: Buttons show inline occupant names and container counts (e.g., `Lower Back — Med Pouch (2/4)`)
+- Clicking a node selects it and extrudes a single connector line
 - Category filters (Hotkey 1-4)
+- The connector line terminates at the selected panel's accent underline
+- Reads node state from the bound `InventoryComponent`
 
-### ItemSlotPanelUI
-- Expandable list of items within a slot or container
-- **Item Tooltips**: Hovering an item shows name, category, weight, condition, and description.
+### InventorySlotPanelUI
+- Responsive top-left selected-item panel
+- Shows the principal item name for the selected node
+- Renders direct action buttons and container context without mutating inventory directly
 
 ### ItemInspectUI
 - 3D viewport for inspecting selected items with rotation support.
@@ -252,6 +289,15 @@ When adding new equipment metadata:
 2. Decide whether it changes gameplay truth or only visual projection
 3. If it is visual-only, prefer emitting it through `get_equipped_visuals()` instead of making visuals query inventory internals directly
 
+When changing slot metadata:
+1. Update the shared slot catalog first
+2. Only override `InventoryComponent.slot_names` in a scene if you intentionally want a subset
+3. Let visuals and tuner inherit the change through `EquipmentSlotLibrary`
+
+Example:
+- to change `belt` accepted categories, edit the `belt` entry in `DefaultEquipmentSlotCatalog.tres`
+- do not duplicate that rule in `InventoryComponent` and `VisualsComponent`
+
 ## How To Test Inventory + Equipment Changes
 After changes in this layer, validate:
 1. Pickup into empty right hand
@@ -270,7 +316,6 @@ After changes in this layer, validate:
 - auto-stow is still heuristic rather than fully policy-driven
 
 ## Future Refactor Targets
-- data-driven slot definitions (move out of hardcoded dictionary)
 - data-driven action providers (item-specific actions like "Unload" or "Use")
 - richer runtime item state per item family
 - cleaner typing restoration after parser stability work

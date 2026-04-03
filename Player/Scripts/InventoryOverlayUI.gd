@@ -1,94 +1,82 @@
 ## InventoryOverlayUI
-## Renders 2D lines from attachment points with hover detection and click handling
+## Renders attachment-node dots and a single selected connector line.
 extends Control
-
 class_name InventoryOverlayUI
 
-## Emitted when a line/slot is hovered
-signal slot_line_hovered(slot_name: String)
-## Emitted when a line/slot is clicked
+signal slot_line_hovered(slot_name: String, screen_pos: Vector2)
+signal slot_line_unhovered
 signal slot_line_clicked(slot_name: String)
-## Emitted when the user clicks the open background area to close the active accordions
 signal deselected
 
 @export var line_width: float = 2.0
-@export var hover_line_width: float = 4.0
-@export var line_color_idle: Color = Color.DIM_GRAY
-@export var line_color_hover: Color = Color.WHITE
-@export var update_frequency: int = 60  # Updates per second
+@export var hover_line_width: float = 3.0
+@export var update_frequency: int = 60
+@export var dot_radius: float = 5.0
+@export var hover_dot_radius: float = 8.0
+@export var selected_dot_radius: float = 9.0
 
 var _character: Node3D
 var _camera: Camera3D
-var _attachment_lines: Array[Dictionary] = []
-var _selected_line: String = ""
+var _inventory_component: InventoryComponent
+var _visuals_component: VisualsComponent
+var _attachment_points: Array[Dictionary] = []
+var _hovered_slot: String = ""
+var _selected_slot: String = ""
+var _panel_anchor_screen_pos: Vector2 = Vector2.ZERO
 var _update_timer: float = 0.0
 var _update_interval: float = 1.0 / update_frequency
 
 var style_profile: UIStyleProfile
 var fade_controller: UIFadeController
 
-var _scroll_container: ScrollContainer
-var _slot_menu: VBoxContainer
-var _buttons: Dictionary = {}
-
 var _encumbrance_container: VBoxContainer
 var _weight_label: Label
 var _weight_bar: ProgressBar
-
 var _active_filter: String = ""
 
 func _ready() -> void:
-	# Make it full screen to capture background clicks
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_setup_ui()
 
 func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		_update_hover_state(event.position)
+		return
+
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		deselected.emit()
+		var clicked_slot := _find_slot_at_screen_position(event.position)
+		if clicked_slot.is_empty():
+			clear_selection()
+			deselected.emit()
+			return
+
+		_selected_slot = clicked_slot
+		slot_line_clicked.emit(clicked_slot)
+		queue_redraw()
 
 func _setup_ui() -> void:
-	_scroll_container = ScrollContainer.new()
-	_scroll_container.set_anchors_and_offsets_preset(Control.PRESET_LEFT_WIDE)
-	_scroll_container.offset_left = 50
-	_scroll_container.offset_right = 350
-	_scroll_container.offset_top = 50
-	_scroll_container.offset_bottom = -50
-	_scroll_container.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	# Stop scroll container from stealing all background clicks
-	_scroll_container.mouse_filter = Control.MOUSE_FILTER_PASS
-	add_child(_scroll_container)
-
-	_slot_menu = VBoxContainer.new()
-	_slot_menu.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_slot_menu.alignment = BoxContainer.ALIGNMENT_BEGIN
-	_slot_menu.add_theme_constant_override("separation", 15)
-	_scroll_container.add_child(_slot_menu)
-	
 	_encumbrance_container = VBoxContainer.new()
 	_encumbrance_container.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	_encumbrance_container.offset_left = -250
 	_encumbrance_container.offset_right = -50
 	_encumbrance_container.offset_top = -100
 	_encumbrance_container.offset_bottom = -50
-	
+
 	_weight_label = Label.new()
 	_weight_label.text = "Load: 0.0 / 20.0"
 	_weight_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_encumbrance_container.add_child(_weight_label)
-	
+
 	_weight_bar = ProgressBar.new()
 	_weight_bar.max_value = 1.0
 	_weight_bar.value = 0.0
 	_weight_bar.show_percentage = false
 	_weight_bar.custom_minimum_size = Vector2(200, 10)
 	_encumbrance_container.add_child(_weight_bar)
-	
-	add_child(_encumbrance_container)
 
+	add_child(_encumbrance_container)
 	_camera = get_viewport().get_camera_3d()
-	if not _camera:
-		push_error("InventoryOverlayUI: Could not find camera")
 
 func apply_style(style: UIStyleProfile) -> void:
 	style_profile = style
@@ -96,8 +84,7 @@ func apply_style(style: UIStyleProfile) -> void:
 		fade_controller = UIFadeController.new(self, style)
 	else:
 		fade_controller.style_profile = style
-	
-	# Style encumbrance elements
+
 	if _weight_label:
 		_weight_label.label_settings = style_profile.make_label_settings("meta")
 	if _weight_bar:
@@ -114,21 +101,18 @@ func set_visibility(make_visible: bool) -> void:
 	else:
 		fade_controller.fade_out()
 		set_process_input(false)
-		# Hide when fade is complete
 		if not fade_controller.fade_completed.is_connected(_on_fade_completed):
 			fade_controller.fade_completed.connect(_on_fade_completed)
 
 func _on_fade_completed(direction: String) -> void:
 	if direction == "out":
 		visible = false
-	mouse_filter = Control.MOUSE_FILTER_STOP
 
 func _process(delta: float) -> void:
 	_camera = get_viewport().get_camera_3d()
 	if not _character or not _camera:
 		return
-	
-	# Update attachment lines at fixed frequency
+
 	_update_timer += delta
 	if _update_timer >= _update_interval:
 		_update_timer = 0.0
@@ -136,246 +120,235 @@ func _process(delta: float) -> void:
 		queue_redraw()
 
 func _draw() -> void:
-	_camera = get_viewport().get_camera_3d()
-	if not _camera or style_profile == null:
+	if _camera == null or style_profile == null:
 		return
-	
-	var line_opacity = 1.0 if style_profile.presentation_tier == UIStyleProfile.PresentationTier.HIGH else 0.5
-	
-	for line_data in _attachment_lines:
-		var screen_pos: Vector2 = line_data.get("screen_pos", Vector2.ZERO)
-		var is_hovered: bool = line_data.get("is_hovered", false)
-		var btn: Button = line_data.get("button")
-		
-		# Skip if position is invalid or button is null/hidden via filter
-		if screen_pos == Vector2.ZERO or screen_pos.x < 0 or screen_pos.y < 0 or btn == null or not btn.visible:
-			continue
-		
-		var rect = btn.get_global_rect()
-		var start_pos = Vector2(rect.end.x + 10, rect.get_center().y)
-		
-		# Determine color/width
-		var color = line_color_hover if is_hovered else line_color_idle
-		color.a = line_opacity
-		var width = hover_line_width if is_hovered else line_width
-		
-		# Draw the leader line
-		draw_line(start_pos, screen_pos, color, width)
-		
-		# Draw a small circle directly under the start pos logic
-		var circle_radius = 5.0 if is_hovered else 3.0
-		draw_circle(start_pos, circle_radius, color)
-		# Draw a circle exactly where the 3D attachment node lives
-		draw_circle(screen_pos, circle_radius, color)
 
-## Set the character node to track attachment points from
+	for point_data in _attachment_points:
+		var screen_pos: Vector2 = point_data.get("screen_pos", Vector2.ZERO)
+		if screen_pos == Vector2.ZERO:
+			continue
+		if not point_data.get("visible_by_filter", true):
+			continue
+
+		var slot_name := str(point_data.get("slot_name", ""))
+		var has_item: bool = bool(point_data.get("has_item", false))
+		var is_hovered := slot_name == _hovered_slot
+		var is_selected := slot_name == _selected_slot
+		var base_color := _get_dot_color(point_data, has_item)
+		var radius := dot_radius
+
+		if is_selected:
+			radius = selected_dot_radius
+		elif is_hovered:
+			radius = hover_dot_radius
+
+		draw_circle(screen_pos, radius, Color(base_color.r, base_color.g, base_color.b, 0.22))
+		draw_circle(screen_pos, max(radius - 2.0, 2.0), base_color)
+		draw_arc(screen_pos, radius + 2.0, 0.0, TAU, 24, Color(base_color.r, base_color.g, base_color.b, 0.85), 1.5)
+
+	if _selected_slot.is_empty() or _panel_anchor_screen_pos == Vector2.ZERO:
+		return
+
+	var selected_point := _get_point_data(_selected_slot)
+	if selected_point.is_empty():
+		return
+	if not selected_point.get("visible_by_filter", true):
+		return
+
+	var start_pos: Vector2 = selected_point.get("screen_pos", Vector2.ZERO) as Vector2
+	if start_pos == Vector2.ZERO:
+		return
+
+	var color := style_profile.get_accent_color()
+	draw_line(_panel_anchor_screen_pos, start_pos, color, hover_line_width)
+	draw_circle(_panel_anchor_screen_pos, 4.0, color)
+
 func set_character(character: Node3D) -> void:
 	_character = character
-	_attachment_lines.clear()
-	_selected_line = ""
+	_inventory_component = character.get_node_or_null("InventoryComponent") as InventoryComponent if character != null else null
+	_visuals_component = character.get_node_or_null("VisualsComponent") as VisualsComponent if character != null else null
+	_attachment_points.clear()
+	_hovered_slot = ""
+	_selected_slot = ""
 
-## Query and update all attachment point positions
+func set_inventory_component(inventory: InventoryComponent) -> void:
+	_inventory_component = inventory
+
+func set_visuals_component(visuals_component: VisualsComponent) -> void:
+	_visuals_component = visuals_component
+
+func set_panel_anchor_global_position(global_pos: Vector2) -> void:
+	_panel_anchor_screen_pos = global_pos - global_position
+	queue_redraw()
+
+func clear_selection() -> void:
+	_selected_slot = ""
+	_panel_anchor_screen_pos = Vector2.ZERO
+	queue_redraw()
+
+func set_selected_slot(slot_name: String) -> void:
+	_selected_slot = slot_name
+	queue_redraw()
+
 func update_lines() -> void:
 	if not _character or not _camera:
 		return
-	
-	_attachment_lines.clear()
-	
-	var positions_dict: Dictionary = {}
-	var display_names: Dictionary = {}
-	var inv = _character.get_node_or_null("InventoryComponent")
-	var visuals_component = _character.get_node_or_null("VisualsComponent")
-	
-	# Connect weight signal once
+
+	_attachment_points.clear()
+
+	var inv = _inventory_component
+	var visuals_component = _visuals_component
+
 	if inv and not inv.weight_changed.is_connected(_on_weight_changed):
 		inv.weight_changed.connect(_on_weight_changed)
 		_on_weight_changed(inv.get_total_weight(), inv.get_load_factor())
-	
-	# Build positions from VisualsComponent if available
+	if inv and not inv.inventory_updated.is_connected(_on_inventory_updated):
+		inv.inventory_updated.connect(_on_inventory_updated)
+
 	var visual_positions: Dictionary = {}
 	if visuals_component and visuals_component.has_method("get_attachment_point_world_positions"):
 		visual_positions = visuals_component.get_attachment_point_world_positions()
-	
-	# Use InventoryComponent.slot_names as the authoritative slot list
+
 	if inv:
 		var char_pos = _character.global_position
-		for slot_name in inv.slot_names:
+		for node_data in inv.get_available_attachment_nodes():
+			var slot_name := str(node_data.get("node_id", ""))
+			if slot_name.is_empty():
+				continue
+
+			var world_pos: Vector3 = visual_positions.get(slot_name, char_pos + _get_fallback_offset(slot_name))
 			var cfg = inv.slot_configs.get(slot_name, {})
-			display_names[slot_name] = cfg.get("display_name", slot_name.replace("_", " ").capitalize())
-			
-			if visual_positions.has(slot_name):
-				positions_dict[slot_name] = visual_positions[slot_name]
-			else:
-				# Fallback offset so leader lines still render
-				positions_dict[slot_name] = char_pos + _get_fallback_offset(slot_name)
+			var accepted_categories = cfg.get("accepted_categories", PackedStringArray())
+			var slot_state = inv.get_slot_state(slot_name)
+			var main_item = slot_state.get("item", null) if not slot_state.is_empty() else null
+
+			_attachment_points.append({
+				"slot_name": slot_name,
+				"display_name": str(node_data.get("display_name", slot_name.replace("_", " ").capitalize())),
+				"screen_pos": project_attachment_point(world_pos),
+				"world_pos": world_pos,
+				"accepted_categories": accepted_categories,
+				"has_item": main_item != null,
+				"visible_by_filter": _passes_filter(accepted_categories)
+			})
 	else:
-		# No InventoryComponent at all — pure fallback
-		var char_pos = _character.global_position
-		positions_dict = {
-			"right_hand": char_pos + Vector3(0.4, 0.8, -0.1),
-			"left_hand": char_pos + Vector3(-0.4, 0.8, -0.1),
-			"lower_back": char_pos + Vector3(0, 1.0, -0.3)
+		var fallback_positions = {
+			"right_hand": _character.global_position + Vector3(0.4, 0.8, -0.1),
+			"left_hand": _character.global_position + Vector3(-0.4, 0.8, -0.1),
+			"lower_back": _character.global_position + Vector3(0, 1.0, -0.3)
 		}
-		for key in positions_dict.keys():
-			display_names[key] = key.replace("_", " ").capitalize()
-		
-	# Synchronize dynamically created UI buttons
-	_sync_menu_buttons(positions_dict.keys(), display_names)
-	
-	for attachment_name in positions_dict.keys():
-		var world_pos = positions_dict[attachment_name]
-		var screen_pos = project_attachment_point(world_pos)
-		
-		var line_data: Dictionary = {
-			"slot_name": attachment_name,
-			"world_pos": world_pos,
-			"screen_pos": screen_pos,
-			"is_hovered": (_selected_line == attachment_name),
-			"button": _buttons.get(attachment_name)
-		}
-		_attachment_lines.append(line_data)
+		for slot_name in fallback_positions.keys():
+			_attachment_points.append({
+				"slot_name": slot_name,
+				"display_name": slot_name.replace("_", " ").capitalize(),
+				"screen_pos": project_attachment_point(fallback_positions[slot_name]),
+				"world_pos": fallback_positions[slot_name],
+				"accepted_categories": PackedStringArray(),
+				"has_item": false,
+				"visible_by_filter": true
+			})
+
+	if not _selected_slot.is_empty():
+		var selected_exists := false
+		for point_data in _attachment_points:
+			if str(point_data.get("slot_name", "")) == _selected_slot:
+				selected_exists = true
+				break
+		if not selected_exists:
+			clear_selection()
+
+func _get_dot_color(point_data: Dictionary, has_item: bool) -> Color:
+	if style_profile == null:
+		return Color.WHITE
+	if has_item:
+		return style_profile.get_accent_color()
+	if point_data.get("visible_by_filter", true):
+		return Color(
+			style_profile.secondary_text_color.r,
+			style_profile.secondary_text_color.g,
+			style_profile.secondary_text_color.b,
+			0.9
+		)
+	return Color(0.35, 0.35, 0.35, 0.4)
+
+func _find_slot_at_screen_position(screen_pos: Vector2) -> String:
+	for point_data in _attachment_points:
+		if not point_data.get("visible_by_filter", true):
+			continue
+		var point_pos: Vector2 = point_data.get("screen_pos", Vector2.ZERO)
+		if point_pos == Vector2.ZERO:
+			continue
+		if point_pos.distance_to(screen_pos) <= hover_dot_radius + 4.0:
+			return str(point_data.get("slot_name", ""))
+	return ""
+
+func _update_hover_state(screen_pos: Vector2) -> void:
+	var hovered_slot := _find_slot_at_screen_position(screen_pos)
+	if hovered_slot == _hovered_slot:
+		return
+
+	_hovered_slot = hovered_slot
+	if _hovered_slot.is_empty():
+		slot_line_unhovered.emit()
+	else:
+		var point_data := _get_point_data(_hovered_slot)
+		slot_line_hovered.emit(_hovered_slot, point_data.get("screen_pos", screen_pos))
+	queue_redraw()
+
+func _get_point_data(slot_name: String) -> Dictionary:
+	for point_data in _attachment_points:
+		if str(point_data.get("slot_name", "")) == slot_name:
+			return point_data
+	return {}
+
+func _passes_filter(accepted_categories) -> bool:
+	if _active_filter.is_empty():
+		return true
+
+	var categories: PackedStringArray = PackedStringArray()
+	if accepted_categories is PackedStringArray:
+		categories = accepted_categories
+	elif accepted_categories is Array:
+		for category in accepted_categories:
+			categories.append(str(category))
+
+	return categories.has(_active_filter)
 
 func _get_fallback_offset(slot_name: String) -> Vector3:
 	match slot_name:
-		"left_hand": return Vector3(-0.4, 0.8, -0.1)
-		"right_hand": return Vector3(0.4, 0.8, -0.1)
-		"torso": return Vector3(0, 1.2, 0.15)
-		"lower_back": return Vector3(0, 1.0, -0.3)
-		"belt": return Vector3(0, 0.9, 0.1)
-		"left_pocket": return Vector3(-0.2, 0.85, 0.1)
-		"right_pocket": return Vector3(0.2, 0.85, 0.1)
-		"back_mount": return Vector3(0, 1.3, -0.25)
-		"shoulder_mount": return Vector3(-0.15, 1.4, 0.0)
-		_: return Vector3(0, 1.0, 0)
-
-func _sync_menu_buttons(keys: Array, display_names: Dictionary = {}) -> void:
-	if _buttons.size() == keys.size():
-		return
-		
-	for c in _slot_menu.get_children():
-		c.queue_free()
-	_buttons.clear()
-	
-	for key in keys:
-		var label_text = display_names.get(key, key.replace("_", " ").capitalize())
-		
-		var btn = Button.new()
-		btn.text = "  " + label_text
-		btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		btn.flat = true
-		btn.custom_minimum_size = Vector2(200, 36)
-		btn.mouse_filter = Control.MOUSE_FILTER_STOP
-		
-		# Apply native UIStyleProfile styling
-		if style_profile:
-			var font = style_profile.get_font()
-			if font:
-				btn.add_theme_font_override("font", font)
-			btn.add_theme_font_size_override("font_size", style_profile.base_font_size + 2)
-			btn.add_theme_color_override("font_color", style_profile.primary_text_color)
-			btn.add_theme_color_override("font_hover_color", style_profile.get_accent_color())
-			btn.add_theme_color_override("font_pressed_color", style_profile.get_accent_color())
-			
-			# Subtle panel background for readability
-			var normal_style = StyleBoxFlat.new()
-			normal_style.bg_color = Color(style_profile.panel_fill_color.r, style_profile.panel_fill_color.g, style_profile.panel_fill_color.b, 0.4)
-			normal_style.corner_radius_top_left = style_profile.panel_corner_radius
-			normal_style.corner_radius_top_right = style_profile.panel_corner_radius
-			normal_style.corner_radius_bottom_left = style_profile.panel_corner_radius
-			normal_style.corner_radius_bottom_right = style_profile.panel_corner_radius
-			normal_style.content_margin_left = style_profile.spacing_unit
-			normal_style.content_margin_right = style_profile.spacing_unit
-			btn.add_theme_stylebox_override("normal", normal_style)
-			
-			var hover_style = normal_style.duplicate()
-			hover_style.bg_color = Color(style_profile.elevated_panel_fill_color.r, style_profile.elevated_panel_fill_color.g, style_profile.elevated_panel_fill_color.b, 0.7)
-			hover_style.border_color = style_profile.get_accent_color()
-			hover_style.border_width_left = 2
-			btn.add_theme_stylebox_override("hover", hover_style)
-		
-		btn.button_down.connect(_on_slot_clicked.bind(key))
-		btn.mouse_entered.connect(_on_slot_hovered.bind(key))
-		btn.mouse_exited.connect(_on_slot_unhovered.bind(key))
-		
-		_slot_menu.add_child(btn)
-		_buttons[key] = btn
-	
-	_refresh_button_labels()
-
-## Refresh button labels with inline slot status (item names)
-func _refresh_button_labels() -> void:
-	var inv = _character.get_node_or_null("InventoryComponent") if _character else null
-	if inv == null:
-		return
-	
-	# Connect to inventory_updated once for live refresh
-	if not inv.inventory_updated.is_connected(_on_inventory_updated):
-		inv.inventory_updated.connect(_on_inventory_updated)
-	
-	for slot_name in _buttons.keys():
-		var btn: Button = _buttons[slot_name]
-		var cfg = inv.slot_configs.get(slot_name, {})
-		var display_name: String = cfg.get("display_name", slot_name.replace("_", " ").capitalize())
-		
-		var state = inv.get_slot_state(slot_name)
-		var main_item = state.get("item") if state else null
-		
-		if main_item != null:
-			var item_name = main_item.get_display_name() if main_item.has_method("get_display_name") else "Item"
-			if main_item.has_method("is_container") and main_item.is_container():
-				var count = main_item.contained_item_ids.size()
-				var capacity = main_item.definition.container_capacity if main_item.definition else 0
-				btn.text = "  %s — %s (%d/%d)" % [display_name, item_name, count, capacity]
-			else:
-				btn.text = "  %s — %s" % [display_name, item_name]
-			if style_profile:
-				btn.add_theme_color_override("font_color", style_profile.primary_text_color)
-		else:
-			btn.text = "  %s" % display_name
-			if style_profile:
-				btn.add_theme_color_override("font_color", style_profile.secondary_text_color)
+		"left_hand":
+			return Vector3(-0.4, 0.8, -0.1)
+		"right_hand":
+			return Vector3(0.4, 0.8, -0.1)
+		"torso":
+			return Vector3(0, 1.2, 0.15)
+		"lower_back":
+			return Vector3(0, 1.0, -0.3)
+		"belt":
+			return Vector3(0, 0.9, 0.1)
+		"left_pocket":
+			return Vector3(-0.2, 0.85, 0.1)
+		"right_pocket":
+			return Vector3(0.2, 0.85, 0.1)
+		"back_mount":
+			return Vector3(0, 1.3, -0.25)
+		"shoulder_mount":
+			return Vector3(-0.15, 1.4, 0.0)
+		_:
+			return Vector3(0, 1.0, 0)
 
 func _on_inventory_updated() -> void:
-	_refresh_button_labels()
-
-func _on_slot_clicked(slot_name: String) -> void:
-	slot_line_clicked.emit(slot_name)
-	
-func _on_slot_hovered(slot_name: String) -> void:
-	_selected_line = slot_name
-	slot_line_hovered.emit(slot_name)
-	
-func _on_slot_unhovered(_slot_name: String) -> void:
-	_selected_line = ""
-	
-## ACCORDION API
-
-func expand_slot(slot_name: String, panel: Control) -> void:
-	if panel.get_parent():
-		panel.get_parent().remove_child(panel)
-		
-	if _buttons.has(slot_name):
-		_slot_menu.add_child(panel)
-		var btn = _buttons[slot_name]
-		var target_index = btn.get_index() + 1
-		_slot_menu.move_child(panel, target_index)
-		
-func expand_action(menu: Control, panel: Control) -> void:
-	if menu.get_parent():
-		menu.get_parent().remove_child(menu)
-	
-	_slot_menu.add_child(menu)
-	if panel and panel.get_parent() == _slot_menu:
-		_slot_menu.move_child(menu, panel.get_index() + 1)
+	update_lines()
+	queue_redraw()
 
 func _on_weight_changed(new_weight: float, load_factor: float) -> void:
 	if _weight_label:
 		var capacity = 20.0
-		var inv = _character.get_node_or_null("InventoryComponent")
+		var inv = _inventory_component
 		if inv:
 			capacity = inv.get("base_capacity")
 		_weight_label.text = "Load: %.1f / %.1f" % [new_weight, capacity]
-		
+
 	if _weight_bar:
 		_weight_bar.value = load_factor
 		if load_factor > 0.9:
@@ -390,40 +363,27 @@ func _input(event: InputEvent) -> void:
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:
-			KEY_1: set_active_filter("weapon")
-			KEY_2: set_active_filter("medical")
-			KEY_3: set_active_filter("ammo")
-			KEY_4: set_active_filter("") # Show all
+			KEY_1:
+				set_active_filter("weapon")
+			KEY_2:
+				set_active_filter("medical")
+			KEY_3:
+				set_active_filter("ammo")
+			KEY_4:
+				set_active_filter("")
 
 func set_active_filter(cat: String) -> void:
 	_active_filter = cat
-	var inv = _character.get_node_or_null("InventoryComponent")
-	
-	for key in _buttons.keys():
-		var btn = _buttons[key] as Button
-		if cat == "":
-			btn.visible = true
-		else:
-			if inv and inv.get("slot_configs"):
-				var cfg = inv.get("slot_configs").get(key, {})
-				var accept = cfg.get("accepted_categories", [])
-				# Display if the specified filter category is explicitly accepted
-				btn.visible = accept.has(cat)
-			else:
-				btn.visible = true
+	update_lines()
+	queue_redraw()
 
-## Project a 3D world position to 2D screen coordinates
 func project_attachment_point(world_pos: Vector3) -> Vector2:
 	_camera = get_viewport().get_camera_3d()
 	if not _camera:
 		return Vector2.ZERO
-	
-	# Use official Godot 4.6 API
+
 	var screen_pos = _camera.unproject_position(world_pos)
-	
-	# Clamp to viewport bounds for safety
 	var viewport_size = get_viewport_rect().size
 	screen_pos.x = clamp(screen_pos.x, -50, viewport_size.x + 50)
 	screen_pos.y = clamp(screen_pos.y, -50, viewport_size.y + 50)
-	
 	return screen_pos

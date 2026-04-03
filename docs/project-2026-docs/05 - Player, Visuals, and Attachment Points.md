@@ -2,7 +2,7 @@
 type: system
 status: active
 owned_by: gameplay
-updated: 2026-03-28
+updated: 2026-04-03
 ---
 
 # 05 - Player, Visuals, and Attachment Points
@@ -50,25 +50,26 @@ This is the correct dependency direction:
 - visuals reflect inventory
 
 ## Current Attachment Support
-Right now there are explicit body attachment roots for:
+Gameplay attachment roots are now layout-driven for:
 - `right_hand`
 - `left_hand`
+- `torso`
+- `belt`
+- `back_mount`
 - `lower_back`
-- `back_mount` (backpacks)
-- `torso` (clothing/vests)
-- `head` (helmets/glasses)
-- `belt` (pouches/tools)
-- reserved support anchor: `gun_support`
+- `left_pocket`
+- `right_pocket`
+- `shoulder_mount`
 
-Current implementation uses `BoneAttachment3D` roots bound to:
-- `hand_r`
-- `hand_l`
-- `spine_01` (lower_back / belt)
-- `spine_02` (back_mount / torso)
-- `head` (head)
-- `ik_hand_gun`
+Visual-only helper anchor:
+- `gun_support`
 
-Current anchor lookup is still code-defined in `_get_slot_anchor(slot_name)`.
+Current implementation uses `BoneAttachment3D` roots created from active attachment nodes in the inventory graph plus one helper root for `gun_support`.
+
+Equipment can also contribute dynamic child nodes at runtime:
+- belts add belt-slot anchors
+- vests add torso child anchors
+- visuals consume those nodes exactly like default body nodes once `InventoryComponent` activates them
 
 ## Recursive Skeleton Resolution
 The `VisualsComponent` no longer requires a hardcoded path to the skeleton. On `_ready()`, it performs a recursive search starting from the `Rig` node to find the first `Skeleton3D`. This allows for flexible rig naming (e.g., "GeneralSkeleton", "Skeleton3D", or "Armature") without breaking the attachment system.
@@ -97,14 +98,18 @@ Held items intentionally do not get mounted interactables right now.
 
 ## How To Add A New Visible Attachment Point
 ### Logical side
-- add the new slot to the `ItemDefinition` enumeration in `ItemDefinition.gd`
-- add the new slot to the `InventoryComponent` `slot_names` in the inspector (if it should be a base character slot)
-- let item definitions opt into that slot through `allowed_slots`
+- add the new body node to the shared attachment layout
+- or add a child node through an `EquipmentAttachmentModifier`
+- let item definitions opt into that node through `allowed_slots` or compatible tags/categories
 
 ### Visual side
-- register the new attachment root in `VisualsComponent._ensure_attachment_roots()`
-- bind it to the desired bone name
-- ensure it is returned correctly from the internal anchor dictionary
+- set the node's anchor bone and local transform in the layout or modifier
+- verify the anchor appears in `VisualsComponent` debug gizmos
+
+Example:
+- to add `radio_mount`, create a body-node entry in the default attachment layout with its bone name and offsets
+- then assign `radio_mount` inside an item's `allowed_slots`
+- run the tuner or testing scene to confirm the new anchor projects correctly
 
 See also: [[09 - How To Add New Attachment Points]]
 
@@ -126,7 +131,6 @@ Validate:
 6. **Skinned Meshes**: Verify the vest moves with the spine during breath/idle animations.
 
 ## Current Limitations
-- slot-to-bone mapping is still defined in code, though bone names are exported
 - placeholder visual mesh generation is primitive
 - two-hand support is only reserved in data, not yet enforced visually or by animation
 

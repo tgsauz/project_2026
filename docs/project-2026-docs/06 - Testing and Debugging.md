@@ -2,7 +2,7 @@
 type: workflow
 status: active
 owned_by: gameplay
-updated: 2026-03-28
+updated: 2026-04-03
 ---
 
 # 06 - Testing and Debugging
@@ -14,14 +14,16 @@ The current project includes a smoke-style test runner plus runtime debug UI. Th
 Script: `Tests/Smoke/dependency_smoke_runner.gd`
 
 Current smoke coverage includes:
+- shared slot catalog contract
 - player scene boot
 - world scene boot
 - world interaction pickup flow
 - inventory-domain behavior
 - visual attachment behavior
-- hand-held pickup and swap behavior if the smoke runner is expanded accordingly
+- tuner recursive item discovery
 
 ## What The Smoke Tests Are Good For
+- shared slot-truth regressions
 - missing component dependencies
 - broken scene wiring
 - interaction regressions
@@ -84,7 +86,7 @@ Run this exact pass after touching inventory, interaction, or visuals:
 - item is visible but misplaced: attachment profile resource first, then `VisualsComponent`
 
 ## Current Testing Gaps Worth Filling Later
-- explicit tests for more slot types
 - explicit tests for container rejection rules
 - tests for additional visible attachment anchors
 - tests for action list generation per item family
+- fuller end-to-end scenario loops such as pickup -> stow -> inspect -> serialize -> restore

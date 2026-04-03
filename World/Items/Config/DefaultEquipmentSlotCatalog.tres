@@ -1,0 +1,107 @@
+[gd_resource type="Resource" script_class="EquipmentSlotCatalog" format=3]
+
+[ext_resource type="Script" path="res://World/Items/Scripts/EquipmentSlotCatalog.gd" id="1_catalog"]
+[ext_resource type="Script" path="res://World/Items/Scripts/EquipmentSlotDefinition.gd" id="2_slot"]
+
+[sub_resource type="Resource" id="EquipmentSlotDefinition_left_hand"]
+script = ExtResource("2_slot")
+slot_name = "left_hand"
+display_name = "Left Hand"
+accepted_categories = PackedStringArray("weapon", "ammo", "medical", "equipment", "clothing")
+visible = true
+anchor_bone_name = "hand_l"
+debug_color = Color(0.2, 0.9, 1, 1)
+is_hand_slot = true
+tuner_enabled = true
+
+[sub_resource type="Resource" id="EquipmentSlotDefinition_right_hand"]
+script = ExtResource("2_slot")
+slot_name = "right_hand"
+display_name = "Right Hand"
+accepted_categories = PackedStringArray("weapon", "ammo", "medical", "equipment", "clothing")
+visible = true
+anchor_bone_name = "hand_r"
+debug_color = Color(1, 0.75, 0.2, 1)
+is_hand_slot = true
+tuner_enabled = true
+
+[sub_resource type="Resource" id="EquipmentSlotDefinition_torso"]
+script = ExtResource("2_slot")
+slot_name = "torso"
+display_name = "Torso"
+accepted_categories = PackedStringArray("equipment", "clothing", "medical")
+visible = true
+anchor_bone_name = "spine_02"
+debug_color = Color(0.7, 0.9, 1, 1)
+tuner_enabled = true
+
+[sub_resource type="Resource" id="EquipmentSlotDefinition_lower_back"]
+script = ExtResource("2_slot")
+slot_name = "lower_back"
+display_name = "Lower Back"
+accepted_categories = PackedStringArray("equipment", "weapon")
+visible = true
+anchor_bone_name = "spine_01"
+anchor_local_position = Vector3(0, -0.0012, 0.002)
+anchor_local_rotation = Vector3(0, 3.1415927, 0)
+debug_color = Color(0.8, 0.35, 1, 1)
+tuner_enabled = true
+
+[sub_resource type="Resource" id="EquipmentSlotDefinition_belt"]
+script = ExtResource("2_slot")
+slot_name = "belt"
+display_name = "Belt"
+accepted_categories = PackedStringArray("equipment", "medical", "ammo")
+visible = true
+anchor_bone_name = "spine_01"
+debug_color = Color(1, 0.9, 0.4, 1)
+tuner_enabled = true
+
+[sub_resource type="Resource" id="EquipmentSlotDefinition_left_pocket"]
+script = ExtResource("2_slot")
+slot_name = "left_pocket"
+display_name = "Left Pocket"
+accepted_categories = PackedStringArray("ammo", "medical", "equipment")
+visible = false
+anchor_bone_name = "spine_01"
+anchor_local_position = Vector3(-0.12, -0.02, 0.08)
+debug_color = Color(0.45, 0.8, 1, 1)
+tuner_enabled = false
+
+[sub_resource type="Resource" id="EquipmentSlotDefinition_right_pocket"]
+script = ExtResource("2_slot")
+slot_name = "right_pocket"
+display_name = "Right Pocket"
+accepted_categories = PackedStringArray("ammo", "medical", "equipment")
+visible = false
+anchor_bone_name = "spine_01"
+anchor_local_position = Vector3(0.12, -0.02, 0.08)
+debug_color = Color(1, 0.65, 0.45, 1)
+tuner_enabled = false
+
+[sub_resource type="Resource" id="EquipmentSlotDefinition_back_mount"]
+script = ExtResource("2_slot")
+slot_name = "back_mount"
+display_name = "Back Mount"
+accepted_categories = PackedStringArray("equipment", "weapon")
+visible = true
+anchor_bone_name = "spine_02"
+anchor_local_position = Vector3(0, -0.0012, 0.012)
+anchor_local_rotation = Vector3(0, 3.1415927, 0)
+debug_color = Color(0.95, 0.65, 0.2, 1)
+tuner_enabled = true
+
+[sub_resource type="Resource" id="EquipmentSlotDefinition_shoulder_mount"]
+script = ExtResource("2_slot")
+slot_name = "shoulder_mount"
+display_name = "Shoulder Mount"
+accepted_categories = PackedStringArray("equipment", "weapon")
+visible = true
+anchor_bone_name = "clavicle_l"
+anchor_local_position = Vector3(-0.02, 0.06, 0)
+debug_color = Color(0.6, 1, 0.6, 1)
+tuner_enabled = true
+
+[resource]
+script = ExtResource("1_catalog")
+slots = Array[ExtResource("2_slot")]([SubResource("EquipmentSlotDefinition_left_hand"), SubResource("EquipmentSlotDefinition_right_hand"), SubResource("EquipmentSlotDefinition_torso"), SubResource("EquipmentSlotDefinition_lower_back"), SubResource("EquipmentSlotDefinition_belt"), SubResource("EquipmentSlotDefinition_left_pocket"), SubResource("EquipmentSlotDefinition_right_pocket"), SubResource("EquipmentSlotDefinition_back_mount"), SubResource("EquipmentSlotDefinition_shoulder_mount")])
