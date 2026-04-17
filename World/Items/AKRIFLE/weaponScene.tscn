@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://chkskygujk1rk"]
+
+[ext_resource type="PackedScene" uid="uid://bkugu2is8e7j2" path="res://World/Items/AKRIFLE/AKRIFLE.glb" id="1_4hyyj"]
+
+[node name="Weapon Node" unique_id=1235511362 instance=ExtResource("1_4hyyj")]
+
+[node name="AKRIFLE" parent="." index="0" unique_id=1826839734]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)

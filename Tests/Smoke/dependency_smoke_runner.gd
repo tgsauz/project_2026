@@ -19,6 +19,7 @@ func _run() -> void:
 	await _test_attachment_layout_contract()
 	await _test_player_scene_boot()
 	await _test_world_scene_boot()
+	await _test_weapon_animation_state_flow()
 	await _test_attachment_modifier_flow()
 	await _test_storage_capacity_flow()
 	await _test_visual_attachment_flow()
@@ -106,6 +107,32 @@ func _test_attachment_modifier_flow() -> void:
 	_assert(inventory.attach_item(vest, "torso"), "Vest should attach to torso.")
 	_assert(inventory.get_attachment_node("vest_pouch_left").get("node_id", "") == "vest_pouch_left", "Vest should contribute its left pouch node.")
 	_assert(not inventory.can_attach_item(ItemInstance.create_from_definition(TEST_WEAPON, 1), "vest_pouch_left"), "Weapon should be rejected from vest medical/pouch node.")
+
+	player.queue_free()
+	await process_frame
+
+func _test_weapon_animation_state_flow() -> void:
+	var player := PLAYER_SCENE.instantiate() as CharacterController
+	root.add_child(player)
+	await process_frame
+
+	var inventory := player.get_inventory_component()
+	var playback = player.animation_tree.get("parameters/playback")
+
+	player._update_animation()
+	await process_frame
+	_assert(playback != null and playback.get_current_node() == "Unarmed", "Player animation should default to Unarmed state.")
+
+	var weapon := ItemInstance.create_from_definition(TEST_WEAPON, 1)
+	_assert(inventory.attach_item(weapon, "right_hand"), "Weapon animation test requires weapon in right hand.")
+	player._update_animation()
+	await process_frame
+	_assert(playback != null and playback.get_current_node() == "Armed", "Weapon in main hand should drive Armed animation state.")
+
+	player.is_aiming = true
+	player._update_animation()
+	await process_frame
+	_assert(playback != null and playback.get_current_node() == "Aiming", "Aim input plus weapon in main hand should drive Aiming animation state.")
 
 	player.queue_free()
 	await process_frame

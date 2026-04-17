@@ -1,6 +1,7 @@
 extends Node3D
 
 @export var target: Node3D
+@export var camera_path: NodePath
 @export var distance: float = 2.5
 @export var orbit_speed: float = 0.5
 @export var pan_speed: float = 0.005
@@ -10,16 +11,21 @@ var rot_x: float = -0.2
 var rot_y: float = 0.0
 var anchor_pos: Vector3 = Vector3(0, 1, 0)
 
-@onready var camera: Camera3D = $Camera3D
+var camera: Camera3D = null
 
-func _ready():
-	if not camera:
-		camera = Camera3D.new()
-		add_child(camera)
+func _ready() -> void:
+	camera = _resolve_camera()
+	if camera == null:
+		push_error("TunerCamera could not resolve or create a Camera3D.")
+		set_process_input(false)
+		return
 	
 	_update_camera()
 
-func _input(event):
+func _input(event: InputEvent) -> void:
+	if camera == null:
+		return
+
 	if event is InputEventMouseMotion:
 		if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 			# Orbit
@@ -43,8 +49,30 @@ func _input(event):
 		distance = max(0.5, distance)
 		_update_camera()
 
-func _update_camera():
+func _update_camera() -> void:
+	if camera == null:
+		return
+
 	var rot = Quaternion.from_euler(Vector3(rot_x, rot_y, 0))
 	var offset = rot * Vector3(0, 0, distance)
 	camera.position = anchor_pos + offset
 	camera.look_at(anchor_pos)
+
+func _resolve_camera() -> Camera3D:
+	var resolved_camera: Camera3D = null
+
+	if not camera_path.is_empty():
+		resolved_camera = get_node_or_null(camera_path) as Camera3D
+
+	if resolved_camera == null:
+		for child in get_children():
+			if child is Camera3D:
+				resolved_camera = child as Camera3D
+				break
+
+	if resolved_camera == null:
+		resolved_camera = Camera3D.new()
+		resolved_camera.name = "Camera3D"
+		add_child(resolved_camera)
+
+	return resolved_camera

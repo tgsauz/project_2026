@@ -1,0 +1,2 @@
+extends TunerRigAdapter
+class_name DefaultTunerRigAdapter

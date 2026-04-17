@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="TunerRigProfile" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://Tools/CharacterTuner/TunerRigProfile.gd" id="1_profile_script"]
+[ext_resource type="Resource" path="res://World/Items/Config/DefaultPlayerAttachmentLayout.tres" id="2_layout"]
+
+[resource]
+script = ExtResource("1_profile_script")
+display_name = "Human Rig"
+visuals_host_path = NodePath(".")
+skeleton_path = NodePath("Armature/Skeleton3D")
+animation_tree_path = NodePath("AnimationTree")
+slot_source_mode = 0
+attachment_layout = ExtResource("2_layout")
+custom_tuner_points = Array[Resource]([])
+sort_points_by_order = true

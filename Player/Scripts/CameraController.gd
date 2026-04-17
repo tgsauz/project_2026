@@ -36,6 +36,8 @@ var using_fps: bool = true
 
 # Input blocking
 var _input_blocked: bool = false
+var _motor_warning_emitted: bool = false
+var _inventory_view_controller: InventoryViewController
 # ============================================================
 # READY
 # ============================================================
@@ -49,6 +51,8 @@ func _ready():
 	if not _validate_required_nodes():
 		set_process(false)
 		return
+
+	call_deferred("_finalize_motor_startup")
 	
 	fps_pitch = fps_pivot.rotation.x
 	tps_pitch = tps_pivot.rotation.x
@@ -62,10 +66,14 @@ func _ready():
 	_connect_inventory_view_controller()
 	
 func _process(_delta):
+	_ensure_inventory_view_controller_connected()
+
 	if not _is_valid_motor(motor):
 		motor = _resolve_motor()
 		if not _is_valid_motor(motor):
+			_emit_missing_motor_warning_once()
 			return
+		_motor_warning_emitted = false
 	
 	_apply_active_look()
 
@@ -107,11 +115,27 @@ func _validate_required_nodes() -> bool:
 	if tps_camera == null:
 		push_error("CameraController could not resolve TPSPIVOT/TPSCAMERA.")
 		valid = false
-	
-	if not _is_valid_motor(motor):
-		push_warning("No valid motor found at startup. CameraController will retry via parent traversal.")
 
 	return valid
+
+func _finalize_motor_startup() -> void:
+	if _is_valid_motor(motor):
+		return
+
+	motor = _resolve_motor()
+	if _is_valid_motor(motor):
+		fps_yaw = motor.rotation.y
+		tps_yaw = motor.rotation.y
+		_apply_active_look()
+		return
+
+	_emit_missing_motor_warning_once()
+
+func _emit_missing_motor_warning_once() -> void:
+	if _motor_warning_emitted:
+		return
+	_motor_warning_emitted = true
+	push_warning("No valid motor found for CameraController. Input look will stay disabled until a compatible parent is available.")
 
 # ============================================================
 # INPUT
@@ -161,13 +185,24 @@ func _apply_active_look():
 	motor.set_camera_mode(using_fps)
 
 func _connect_inventory_view_controller() -> void:
-	var inventory_view_controller = get_tree().root.find_child("InventoryViewController", true, false)
-	if inventory_view_controller and inventory_view_controller.has_signal("inventory_mode_changed"):
-		if not inventory_view_controller.inventory_mode_changed.is_connected(_on_inventory_mode_changed):
-			inventory_view_controller.inventory_mode_changed.connect(_on_inventory_mode_changed)
+	var inventory_view_controller := get_tree().root.find_child("InventoryViewController", true, false) as InventoryViewController
+	if inventory_view_controller == null:
+		return
+	if _inventory_view_controller == inventory_view_controller:
+		return
+
+	_inventory_view_controller = inventory_view_controller
+	if not _inventory_view_controller.inventory_mode_changed.is_connected(_on_inventory_mode_changed):
+		_inventory_view_controller.inventory_mode_changed.connect(_on_inventory_mode_changed)
+	_on_inventory_mode_changed(_inventory_view_controller.is_inventory_mode)
 
 func _on_inventory_mode_changed(is_active: bool) -> void:
 	_input_blocked = is_active
+
+func _ensure_inventory_view_controller_connected() -> void:
+	if _inventory_view_controller != null and is_instance_valid(_inventory_view_controller):
+		return
+	_connect_inventory_view_controller()
 
 # ============================================================
 # CAMERA MODE SWITCHING
@@ -184,6 +219,9 @@ func _set_camera_mode(enable_fps: bool):
 	
 	using_fps = enable_fps
 	
-	fps_camera.current = using_fps
-	tps_camera.current = not using_fps
+	if using_fps:
+		fps_camera.make_current()
+	else:
+		tps_camera.make_current()
+		
 	_apply_active_look()

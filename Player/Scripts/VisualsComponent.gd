@@ -9,6 +9,8 @@ class_name VisualsComponent
 @export_category("Helpers")
 @export var gun_support_bone_name: String = "ik_hand_gun"
 @export var attachment_content_scale_compensation: float = 1.0
+@export var fps_hidden_bone_names: PackedStringArray = PackedStringArray(["head", "Head"])
+@export var fps_hidden_bone_scale: Vector3 = Vector3(0.01, 0.01, 0.01)
 
 @export_category("Debug")
 @export var show_attachment_debug_gizmos: bool = false
@@ -22,20 +24,21 @@ var equipped_visuals: Dictionary = {}
 var mounted_interactables: Dictionary = {}
 var attachment_debug_gizmos: Dictionary = {}
 var attachment_node_data: Dictionary = {}
+var tuner_attachment_points: Dictionary = {}
 var bound_inventory: InventoryComponent
+var tuner_host_root: Node3D
+var tuner_skeleton_path: NodePath = NodePath()
+var _fps_hidden_bone_indices: Array[int] = []
+var _fps_head_hidden: bool = false
 
 var tilt: Vector2 = Vector2.ZERO
 
 func _ready():
-	var rig = get_node_or_null("Rig")
-	skeleton = _find_skeleton_recursive(rig) if rig else null
+	skeleton = _resolve_tuner_skeleton()
 	
 	if skeleton == null:
-		push_error("[VisualsComponent] Could not resolve Skeleton3D in Rig subtree.")
-		# Fallback: search the entire Visuals node if Rig fails
-		skeleton = _find_skeleton_recursive(self)
-		if skeleton == null:
-			return
+		push_error("[VisualsComponent] Could not resolve Skeleton3D in configured host subtree.")
+		return
 
 	var spine_slot := AttachmentLayoutLibrary.get_default_point("back_mount")
 	var tilt_bone_name := spine_slot.anchor_bone_name if spine_slot != null else "spine_02"
@@ -44,7 +47,51 @@ func _ready():
 		push_warning("VisualsComponent could not find bone '%s'." % tilt_bone_name)
 
 	_ensure_attachment_roots()
+	_refresh_fps_hidden_bone_cache()
 	_refresh_attachment_debug_gizmos()
+
+func configure_tuner_context(host_root: Node3D, skeleton_path: NodePath = NodePath()) -> void:
+	tuner_host_root = host_root
+	tuner_skeleton_path = skeleton_path
+
+func refresh_tuner_context() -> void:
+	skeleton = _resolve_tuner_skeleton()
+	if skeleton == null:
+		push_warning("[VisualsComponent] refresh_tuner_context failed: skeleton unresolved.")
+		return
+	_ensure_attachment_roots()
+	_refresh_fps_hidden_bone_cache()
+	_refresh_attachment_debug_gizmos()
+
+func set_first_person_head_hidden(hidden: bool) -> void:
+	_fps_head_hidden = hidden
+	_apply_first_person_head_visibility()
+
+func _resolve_tuner_skeleton() -> Skeleton3D:
+	var host: Node = tuner_host_root
+	if host == null:
+		var rig = get_node_or_null("Rig") as Node3D
+		if rig != null:
+			host = rig
+		else:
+			host = self
+
+	if not tuner_skeleton_path.is_empty():
+		var explicit := host.get_node_or_null(tuner_skeleton_path) as Skeleton3D
+		if explicit != null:
+			return explicit
+		push_warning("[VisualsComponent] skeleton_path could not be resolved: %s" % str(tuner_skeleton_path))
+
+	var found := _find_skeleton_recursive(host)
+	if found != null:
+		return found
+
+	if host != self:
+		found = _find_skeleton_recursive(self)
+		if found != null:
+			push_warning("[VisualsComponent] Falling back to self subtree skeleton discovery.")
+			return found
+	return null
 
 func _find_skeleton_recursive(node: Node) -> Skeleton3D:
 	if node is Skeleton3D:
@@ -54,6 +101,30 @@ func _find_skeleton_recursive(node: Node) -> Skeleton3D:
 		if found:
 			return found
 	return null
+
+func _refresh_fps_hidden_bone_cache() -> void:
+	_fps_hidden_bone_indices.clear()
+	if skeleton == null:
+		return
+
+	for bone_name in fps_hidden_bone_names:
+		var candidate := str(bone_name)
+		if candidate.is_empty():
+			continue
+		var bone_idx_candidate := skeleton.find_bone(candidate)
+		if bone_idx_candidate == -1:
+			continue
+		_fps_hidden_bone_indices.append(bone_idx_candidate)
+
+	_apply_first_person_head_visibility()
+
+func _apply_first_person_head_visibility() -> void:
+	if skeleton == null:
+		return
+
+	var target_scale := fps_hidden_bone_scale if _fps_head_hidden else Vector3.ONE
+	for bone_idx_candidate in _fps_hidden_bone_indices:
+		skeleton.set_bone_pose_scale(bone_idx_candidate, target_scale)
 
 func update_tilt(delta: float, velocity: Vector3, target_velocity: Vector3, global_basis: Basis):
 	var accel = target_velocity - velocity
@@ -90,6 +161,8 @@ func _apply():
 func set_runtime_visual(slot_name: String, entry: Dictionary) -> Node3D:
 	# This allows the tuner to force an item into a slot manually
 	_ensure_attachment_roots()
+	# Ensure the specific slot has an attachment root for tuner use cases
+	_ensure_attachment_root_for_tuner(slot_name)
 	_update_equipped_visual(slot_name, entry)
 	return get_active_visual(slot_name, str(entry.get("item_id", "")))
 
@@ -118,6 +191,13 @@ func get_active_visual(slot_name: String, item_id: String = "") -> Node3D:
 				break
 				
 	return equipped_visuals.get(visual_key, null)
+
+func register_tuner_attachment_points(points: Array[AttachmentPointDefinition]) -> void:
+	tuner_attachment_points.clear()
+	for point in points:
+		if point == null or point.node_id.is_empty():
+			continue
+		tuner_attachment_points[point.node_id] = point
 
 # ============================================================
 #  EQUIPMENT VISUALS
@@ -188,6 +268,38 @@ func _on_equipment_visuals_changed(visible_items: Array) -> void:
 		if is_instance_valid(interactable):
 			interactable.queue_free()
 		mounted_interactables.erase(slot_name)
+
+func _ensure_attachment_root_for_tuner(slot_name: String) -> void:
+	if skeleton == null or slot_name.is_empty():
+		return
+	
+	# Skip if already created
+	if attachment_roots.has(slot_name):
+		return
+	
+	# Resolve from explicitly injected tuner points first.
+	var point := tuner_attachment_points.get(slot_name, null) as AttachmentPointDefinition
+	if point == null and attachment_node_data.has(slot_name):
+		var node_data := attachment_node_data[slot_name] as Dictionary
+		var bone_name := str(node_data.get("anchor_bone_name", ""))
+		if bone_name.is_empty():
+			push_warning("[VisualsComponent] Missing anchor bone for tuner slot '%s'." % slot_name)
+			return
+		_ensure_attachment_root(
+			slot_name,
+			bone_name,
+			node_data.get("anchor_local_position", Vector3.ZERO),
+			node_data.get("anchor_local_rotation", Vector3.ZERO)
+		)
+		return
+	if point == null:
+		point = AttachmentLayoutLibrary.get_default_point(slot_name)
+	if point == null:
+		push_warning("[VisualsComponent] Could not resolve tuner attachment point for slot '%s'." % slot_name)
+		return
+	
+	# Create the attachment root for this slot
+	_ensure_attachment_root(slot_name, point.anchor_bone_name, point.anchor_local_position, point.anchor_local_rotation)
 
 func _ensure_attachment_roots() -> void:
 	if skeleton == null:

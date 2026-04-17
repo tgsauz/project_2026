@@ -16,6 +16,7 @@ Script: `Player/Scripts/CharacterController.gd`
 Owns:
 - movement input
 - sprinting and stamina
+- armed and aiming animation-state selection
 - load factor usage
 - quick action input and routing
 - tap-versus-hold interact timing
@@ -27,6 +28,12 @@ Should not own:
 - item container logic
 - visual attachment decisions
 
+Current weapon-state rule:
+- `CharacterController` reads the main-hand occupant from `InventoryComponent`
+- a main-hand item with category `weapon` drives the `Armed` state
+- held aim input plus a main-hand weapon drives the `Aiming` state
+- while aiming in third-person, facing follows camera yaw so strafe animations stay meaningful
+
 ## VisualsComponent Responsibilities
 Script: `Player/Scripts/VisualsComponent.gd`
 
@@ -37,6 +44,7 @@ Owns:
 - equipped proxy scene spawning
 - placeholder fallback visual creation
 - mounted interactable area creation
+- first-person head suppression so the camera does not clip through the player face
 
 ## Inventory-Driven Visual Flow
 1. `InventoryComponent` recalculates state.
@@ -133,6 +141,10 @@ Validate:
 ## Current Limitations
 - placeholder visual mesh generation is primitive
 - two-hand support is only reserved in data, not yet enforced visually or by animation
+
+## FPS Visibility Rule
+- during gameplay first-person mode, `VisualsComponent` hides the head contribution by shrinking configured head bones on the runtime skeleton
+- this suppression is disabled for third-person and inventory mode so the full body remains visible for inspection and orbit cameras
 
 ## Future Refactor Targets
 - data-driven slot anchor definitions

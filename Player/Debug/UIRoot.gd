@@ -217,6 +217,7 @@ func _initialize_inventory_ui() -> void:
 	inventory_overlay_ui.deselected.connect(_on_deselected)
 	inventory_slot_panel_ui.item_action_requested.connect(_on_item_action_selected)
 	inventory_slot_panel_ui.anchor_changed.connect(_on_inventory_panel_anchor_changed)
+	_on_inventory_mode_changed(false)
 
 func _initialize_debug_inventory_ui() -> void:
 	if debug_layer == null:

@@ -18,6 +18,7 @@ class_name CharacterController
 @export var stamina_drain_rate: float = 20.0
 @export var stamina_regen_rate: float = 15.0
 @export var interact_hold_threshold: float = 0.28
+@export var aim_speed_multiplier: float = 0.5
 
 # ============================================================
 #  INVENTORY SYSTEM (WIP)
@@ -70,6 +71,7 @@ var interact_pressed: bool = false
 var interact_press_time_ms: int = 0
 var interact_hold_consumed: bool = false
 var is_in_inventory: bool = false
+var is_aiming: bool = false
 
 # ============================================================
 #  READY
@@ -93,6 +95,8 @@ func _ready():
 	camera_yaw = rotation.y
 
 	_bind_ui()
+	_refresh_view_model_visibility()
+	call_deferred("_finalize_startup_input_state")
 
 func _process(_delta: float) -> void:
 	_check_interact_hold()
@@ -121,6 +125,12 @@ func _unhandled_input(event):
 		if stamina > 10.0:
 			is_sprinting = !is_sprinting
 
+	if event.is_action_pressed("aim"):
+		is_aiming = true
+
+	if event.is_action_released("aim"):
+		is_aiming = false
+
 	if event.is_action_pressed("quick_actions"):
 		if quick_action_menu_open:
 			_close_quick_action_menu()
@@ -145,6 +155,7 @@ func set_camera_yaw(new_yaw: float) -> void:
 
 func set_camera_mode(first_person: bool) -> void:
 	is_first_person = first_person
+	_refresh_view_model_visibility()
 
 func get_inventory_component() -> InventoryComponent:
 	return inventory
@@ -188,8 +199,11 @@ func _collect_input():
 	intent_direction.y = 0
 	intent_direction = intent_direction.normalized()
 	
-	if not is_first_person and intent_direction.length_squared() > 0.0:
-		target_yaw = atan2(intent_direction.x, intent_direction.z)
+	if not is_first_person:
+		if _is_effectively_aiming():
+			target_yaw = camera_yaw
+		elif intent_direction.length_squared() > 0.0:
+			target_yaw = atan2(intent_direction.x, intent_direction.z)
 		
 # ============================================================
 #  MOTOR (CORE SYSTEM)
@@ -197,7 +211,7 @@ func _collect_input():
 
 func _compute_motor(delta):
 
-	var speed := sprint_speed if is_sprinting else move_speed
+	var speed := _get_effective_move_speed()
 
 	# --- WEIGHT MODIFIERS ---
 	var accel_mult = lerp(1.0, 1.0 - accel_weight_penalty, load_factor)
@@ -263,6 +277,8 @@ func _apply_gravity(delta):
 # ============================================================
 
 func _update_sprint(delta):
+	if _is_effectively_aiming():
+		is_sprinting = false
 
 	if is_sprinting:
 		stamina -= stamina_drain_rate * delta
@@ -276,35 +292,49 @@ func _update_sprint(delta):
 func set_inventory_mode_active(is_active: bool) -> void:
 	is_in_inventory = is_active
 	if is_active:
+		is_aiming = false
 		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 	else:
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	_refresh_view_model_visibility()
 
 # ============================================================
 #  ANIMATION
 # ============================================================
 
 func _update_animation():
+	if animation_tree == null:
+		return
 
 	var horizontal_velocity = Vector3(velocity.x, 0, velocity.z)
 	var local_velocity = global_transform.basis.inverse() * horizontal_velocity
 
-	var max_speed = sprint_speed if is_sprinting else move_speed
+	var max_speed: float = max(_get_effective_move_speed(), 0.001)
 
 	var lateral := 0.0
 	var forward := 0.0
 
 	if horizontal_velocity.length() > 0.01:
-		lateral = local_velocity.x / max_speed
-		forward = -local_velocity.z / max_speed
+		if is_first_person:
+			lateral = local_velocity.x / max_speed
+			forward = -local_velocity.z / max_speed
+		else:
+			# Third-person movement orbits around camera intent, so authored strafe clips
+			# look wrong here. Mirror the unarmed feel by driving forward locomotion only.
+			lateral = 0.0
+			forward = horizontal_velocity.length() / max_speed
 
 	lateral = clamp(lateral, -1.0, 1.0)
 	forward = clamp(forward, -1.0, 1.0)
 
-	animation_tree.set(
-		"parameters/Locomotion/BlendSpace2D/blend_position",
-		Vector2(lateral, forward)
-	)
+	var blend_position := Vector2(lateral, forward)
+	for state_name in ["Unarmed", "Armed", "Aiming"]:
+		animation_tree.set("parameters/%s/BlendSpace2D/blend_position" % state_name, blend_position)
+
+	var playback: AnimationNodeStateMachinePlayback = animation_tree.get("parameters/playback") as AnimationNodeStateMachinePlayback
+	var target_state := _get_target_animation_state()
+	if playback != null and playback.get_current_node() != target_state:
+		playback.travel(target_state)
 
 # ============================================================
 #  VISUALS
@@ -451,12 +481,12 @@ func _resolve_dependencies() -> bool:
 	interaction = get_node_or_null("InteractionComponent") as InteractionComponent
 	visuals_component = get_node_or_null("Visuals") as VisualsComponent
 
+	camera_controller = get_node_or_null("CAMERARIG")
+
 	if visuals_component != null:
 		animation_tree = visuals_component.get_node_or_null("Rig/AnimationTree") as AnimationTree
-		camera_controller = visuals_component.get_node_or_null("Rig/CAMERARIG")
 	else:
 		animation_tree = null
-		camera_controller = null
 
 	var valid := true
 
@@ -477,7 +507,7 @@ func _resolve_dependencies() -> bool:
 		valid = false
 
 	if camera_controller == null:
-		push_error("CharacterController could not resolve Visuals/Rig/CAMERARIG.")
+		push_error("CharacterController could not resolve CAMERARIG.")
 		valid = false
 
 	return valid
@@ -486,3 +516,36 @@ func _bind_ui() -> void:
 	var ui_root := get_node_or_null("UIRoot")
 	if ui_root != null and ui_root.has_method("bind_character"):
 		ui_root.bind_character(self)
+
+func _finalize_startup_input_state() -> void:
+	if not is_in_inventory:
+		set_inventory_mode_active(false)
+
+func _refresh_view_model_visibility() -> void:
+	if visuals_component == null or not visuals_component.has_method("set_first_person_head_hidden"):
+		return
+	visuals_component.set_first_person_head_hidden(is_first_person and not is_in_inventory)
+
+func _has_main_hand_weapon() -> bool:
+	if inventory == null:
+		return false
+	var item = inventory.get_main_hand_item()
+	if item == null or item.definition == null:
+		return false
+	return item.definition.category == ItemDefinition.CATEGORY_WEAPON
+
+func _is_effectively_aiming() -> bool:
+	return is_aiming and not is_in_inventory and not quick_action_menu_open and _has_main_hand_weapon()
+
+func _get_effective_move_speed() -> float:
+	var speed := sprint_speed if is_sprinting else move_speed
+	if _is_effectively_aiming():
+		speed *= aim_speed_multiplier
+	return speed
+
+func _get_target_animation_state() -> String:
+	if _is_effectively_aiming():
+		return "Aiming"
+	if _has_main_hand_weapon():
+		return "Armed"
+	return "Unarmed"

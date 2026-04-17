@@ -37,6 +37,8 @@ var _active_filter: String = ""
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	visible = false
+	set_process_input(false)
 	_setup_ui()
 
 func _gui_input(event: InputEvent) -> void:

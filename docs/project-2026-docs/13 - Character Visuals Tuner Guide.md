@@ -11,8 +11,9 @@ Open and run: `res://Tools/CharacterTuner/CharacterTuner.tscn`
 2.  **Equip an Item**: Select an `ItemDefinition` from the list to preview it in the selected slot.
 3.  **Tune Transforms**: Use the sliders on the right to adjust `Position`, `Rotation`, and `Scale`.
 4.  **Preview Locomotion**: Use the `Lateral` and `Forward` sliders at the bottom to transition the character into walking/running animations. This is critical for checking **clipping** with the body or other items.
-5.  **Use Authoring Helpers**: `Copy`, `Paste`, `Mirror L/R`, `Rescan Items`, and `Anchor Debug` are available from the tuner UI.
-6.  **Save Changes**: Click **"Save To Resource"** to commit the current transform values directly to the item's `AttachmentProfile`.
+5.  **Preview Aim State**: Toggle `Aim Preview` when tuning a hand-held weapon to inspect the `Aiming` pose and strafe animations.
+6.  **Use Authoring Helpers**: `Copy`, `Paste`, `Mirror L/R`, `Rescan Items`, and `Anchor Debug` are available from the tuner UI.
+7.  **Save Changes**: Click **"Save To Resource"** to commit the current transform values directly to the item's `AttachmentProfile`.
 
 ## Technical Architecture
 
@@ -22,6 +23,7 @@ The Tuner uses the same `VisualsComponent` as the player character, but it injec
 -   **CharacterTunerController**: Bridges the UI and the character rig. It scans item definitions recursively through `ItemDefinitionRegistry`, derives tuneable nodes from the shared attachment layout plus equipment modifiers, and handles the `ResourceSaver` logic.
 -   **TunerCamera**: An orbit camera (`Left Click` to Orbit, `Right Click` to Pan, `Scroll` to Zoom) for close-up inspection.
 -   **VisualsComponent.set_runtime_visual()**: An external API added to support manual equipment forcing without an active `InventoryComponent`.
+-   Animation preview writes the same locomotion blend to `Unarmed`, `Armed`, and `Aiming`, then travels the state machine based on previewed hand-held weapon state and the `Aim Preview` toggle.
 
 ## Examples
 ### Rescan item definitions
@@ -52,6 +54,7 @@ Use `Rescan Items` after adding a new `.tres` under `res://World/Items/`, even i
 -   **Backpacks**: Align them while the character is in a "Walk" animation to ensure they don't clip into the spine during movement.
 -   **Vests/Clothing**: These are often `skinned_mesh` items. If they clip, you may need to adjust the baseline `CharacterTuner.tscn` rig or modify the `AttachmentProfile` scale.
 -   **Weapons**: Use the `Right Hand` slot and check the rotation against the `ik_hand_gun` bone.
+-   **Aiming Weapons**: Enable `Aim Preview` before saving a rifle or pistol profile so left/right strafe poses are checked against the character body.
 
 ## Troubleshooting
 

@@ -18,6 +18,7 @@ Current smoke coverage includes:
 - player scene boot
 - world scene boot
 - world interaction pickup flow
+- weapon-driven animation-state transitions
 - inventory-domain behavior
 - visual attachment behavior
 - tuner recursive item discovery
@@ -58,6 +59,8 @@ Current debug outputs include:
 5. Validate focus prompt, pickup, slot placement, weight changes, and mounted visuals
 6. Validate tap `F` versus hold `F`
 7. Validate hand swap and fallback storage behavior
+8. Equip a weapon in `right_hand` and confirm `Armed` state engages
+9. Hold aim and confirm `Aiming` state plus slower movement engages
 
 ## Recommended Manual Test Pass For Equipment Changes
 Run this exact pass after touching inventory, interaction, or visuals:
