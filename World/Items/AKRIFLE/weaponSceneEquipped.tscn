@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://ckxb142twhmoy"]
+
+[ext_resource type="PackedScene" uid="uid://db6kfnkfxiax7" path="res://World/Items/AKRIFLE/AKRIFLE.glb" id="1_vmusg"]
+[ext_resource type="Script" uid="uid://cqo0fk47k0jbt" path="res://Tools/Helpers/HandleGripPreview.gd" id="2_k4swb"]
+[ext_resource type="Resource" uid="uid://el2r4608mq3a" path="res://Tools/CharacterTuner/Config/HumanTunerRigPreset.tres" id="3_yo1kq"]
+
+[node name="Weapon Node" unique_id=1147402358 instance=ExtResource("1_vmusg")]
+
+[node name="Handle" type="Marker3D" parent="." index="0" unique_id=1715024226]
+transform = Transform3D(-0.98726636, 0.018407904, 0.15800756, 0.157846, -0.009930821, 0.9874138, 0.019745361, 0.99978125, 0.006898751, -0.035222866, 0.01609385, -0.0044172406)
+gizmo_extents = 1.0
+
+[node name="Node3D" type="Node3D" parent="Handle" index="0" unique_id=1845038823]
+script = ExtResource("2_k4swb")
+rig_preset = ExtResource("3_yo1kq")
+
+[node name="AKRIFLE Mesh" parent="." index="1" unique_id=280050179]
+transform = Transform3D(0.99999994, 0, 0, 0, 0.99999994, 0, 0, 0, 1.0000001, -0.020471439, 0.012676969, 0)

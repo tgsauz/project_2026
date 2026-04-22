@@ -63,6 +63,7 @@ func _test_player_scene_boot() -> void:
 	_assert(player.animation_tree != null and player.animation_tree.active, "CharacterController should resolve and activate AnimationTree.")
 	_assert(player.camera_controller != null, "CharacterController should resolve CameraController.")
 	_assert(player.visuals_component != null, "CharacterController should resolve VisualsComponent.")
+	_assert(player.get_node_or_null("Visuals/LeftHandIK") is LeftHandIKComponent, "Player scene should include the left-hand IK visual component.")
 	_assert(inventory.slot_names == AttachmentLayoutLibrary.get_default_root_node_ids(), "Default player inventory should initialize from the shared attachment layout.")
 
 	player.queue_free()
@@ -128,6 +129,8 @@ func _test_weapon_animation_state_flow() -> void:
 	player._update_animation()
 	await process_frame
 	_assert(playback != null and playback.get_current_node() == "Armed", "Weapon in main hand should drive Armed animation state.")
+	var left_hand_ik := player.get_node_or_null("Visuals/LeftHandIK") as LeftHandIKComponent
+	_assert(left_hand_ik != null and left_hand_ik.grip_target != null, "LeftHandIKComponent should resolve the equipped weapon grip target.")
 
 	player.is_aiming = true
 	player._update_animation()

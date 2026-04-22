@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://chkskygujk1rk"]
 
-[ext_resource type="PackedScene" uid="uid://bkugu2is8e7j2" path="res://World/Items/AKRIFLE/AKRIFLE.glb" id="1_4hyyj"]
+[ext_resource type="PackedScene" uid="uid://db6kfnkfxiax7" path="res://World/Items/AKRIFLE/AKRIFLE.glb" id="1_4hyyj"]
 
-[node name="Weapon Node" unique_id=1235511362 instance=ExtResource("1_4hyyj")]
+[node name="Weapon Node" unique_id=1147402358 instance=ExtResource("1_4hyyj")]
 
-[node name="AKRIFLE" parent="." index="0" unique_id=1826839734]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+[node name="AKRIFLE Mesh" parent="." index="0" unique_id=280050179]
+transform = Transform3D(0.2849794, 0.626669, 0.7253088, 0.0006940662, 0.75655067, -0.6539347, -0.9585333, 0.18686137, 0.21516642, -0.1276571, 1.1373056, 0.08483073)

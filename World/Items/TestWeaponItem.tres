@@ -1,10 +1,11 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://12ggde6tffjy"]
 
 [ext_resource type="Script" uid="uid://cgvv34qt43vdl" path="res://World/Items/Scripts/ItemResource.gd" id="1"]
-[ext_resource type="Resource" path="res://World/Items/Visuals/PrototypeRifleRightHandProfile.tres" id="3_right"]
+[ext_resource type="Resource" uid="uid://8sk31w5nm11w" path="res://World/Items/Visuals/PrototypeRifleRightHandProfile.tres" id="3_right"]
 [ext_resource type="Resource" uid="uid://5q00b5hufieq" path="res://World/Items/Visuals/PrototypeRifleLeftHandProfile.tres" id="4_left"]
-[ext_resource type="PackedScene" uid="uid://chkskygujk1rk" path="res://World/Items/AKRIFLE/weaponScene.tscn" id="4_ovls3"]
+[ext_resource type="PackedScene" uid="uid://ckxb142twhmoy" path="res://World/Items/AKRIFLE/weaponSceneEquipped.tscn" id="4_qwg5y"]
 [ext_resource type="Resource" path="res://World/Items/Visuals/PrototypeRifleLowerBackProfile.tres" id="5_lower"]
+[ext_resource type="PackedScene" uid="uid://dyag626mr0ay4" path="res://World/Items/AKRIFLE/weaponSceneWorld.tscn" id="6_5ex3n"]
 
 [resource]
 script = ExtResource("1")
@@ -17,7 +18,8 @@ allowed_slots = PackedStringArray("right_hand", "left_hand", "back_mount", "shou
 attachment_tags = PackedStringArray("weapon", "long_gun")
 visible_when_equipped = true
 preferred_slot = "right_hand"
-equipped_visual_scene = ExtResource("4_ovls3")
+equipped_visual_scene = ExtResource("4_qwg5y")
+world_visual_scene = ExtResource("6_5ex3n")
 visual_profile_id = "rifle_long_gun"
 attachment_profiles = [ExtResource("3_right"), ExtResource("4_left"), ExtResource("5_lower")]
 reserve_secondary_hand = true

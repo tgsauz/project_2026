@@ -1,12 +1,9 @@
-[gd_resource type="Resource" script_class="ItemVisualAttachmentProfile" format=3]
+[gd_resource type="Resource" script_class="ItemVisualAttachmentProfile" format=3 uid="uid://8sk31w5nm11w"]
 
-[ext_resource type="Script" path="res://World/Items/Scripts/ItemVisualAttachmentProfile.gd" id="1_profile"]
+[ext_resource type="Script" uid="uid://d2acu83ir08qt" path="res://World/Items/Scripts/ItemVisualAttachmentProfile.gd" id="1_profile"]
 
 [resource]
 script = ExtResource("1_profile")
 slot_name = "right_hand"
 visual_state = "held"
-position = Vector3(-0.028, 0.09, -0.025)
-rotation_degrees = Vector3(-10.75, 76, 102)
-scale = Vector3(1.1, 1.1, 1.1)
 secondary_slot_name = "left_hand"

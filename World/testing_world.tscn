@@ -2,13 +2,10 @@
 
 [ext_resource type="PackedScene" uid="uid://m62ijxeuosdk" path="res://Player/PlayerCharacter.tscn" id="1_7qfgn"]
 [ext_resource type="PackedScene" uid="uid://chkk4laksuify" path="res://Player/Debug/UIRoot.tscn" id="2_uay7f"]
-[ext_resource type="Script" uid="uid://5yq8nk5vvg62" path="res://World/Items/Scripts/WorldItem.gd" id="3_3umvx"]
 [ext_resource type="Resource" uid="uid://cbg4cqfn7gxe2" path="res://World/Items/TestMedicalItem.tres" id="4_1cs7u"]
 [ext_resource type="Resource" uid="uid://12ggde6tffjy" path="res://World/Items/TestWeaponItem.tres" id="4_fisen"]
-[ext_resource type="PackedScene" uid="uid://chkskygujk1rk" path="res://World/Items/AKRIFLE/weaponScene.tscn" id="5_bd0b7"]
-[ext_resource type="PackedScene" uid="uid://deoryykdwr3xr" path="res://World/Items/Bandage.fbx" id="5_ubkvh"]
-[ext_resource type="Resource" uid="uid://b2s6vfo1bxtyc" path="res://World/Items/simpleBackpack.tres" id="7_e3p3y"]
-[ext_resource type="PackedScene" uid="uid://wchrbesm6103" path="res://World/Items/simpleBackpack.glb" id="8_bd0b7"]
+[ext_resource type="Resource" uid="uid://b2s6vfo1bxtyc" path="res://World/Items/simpleBackpack/simpleBackpack.tres" id="7_e3p3y"]
+[ext_resource type="PackedScene" uid="uid://dtnyw1u4w6p" path="res://World/Items/WorldItem.tscn" id="ExtWorldItem"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_gpduo"]
 size = Vector3(25, 0.5, 25)
@@ -29,16 +26,6 @@ background_color = Color(0.09571245, 0.1937368, 0.27542377, 0.6156863)
 background_energy_multiplier = 1.5
 sky = SubResource("Sky_7qfgn")
 ambient_light_color = Color(1, 1, 1, 1)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_bf8ou"]
-size = Vector3(1.0001321, 0.28704113, 0.035815362)
-
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_fisen"]
-radius = 0.022460938
-height = 0.1099987
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_e3p3y"]
-size = Vector3(0.26831552, 0.30618927, 0.1733449)
 
 [node name="TestingWorld" type="Node3D" unique_id=1497402206]
 
@@ -103,6 +90,7 @@ mouse_filter = 2
 shape = SubResource("BoxShape3D_gpduo")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Plane/StaticBody3D/CollisionShape3D" unique_id=1715481229]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.002156973, 0.006234646, -0.00040626526)
 mesh = SubResource("BoxMesh_7qfgn")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=976082212]
@@ -110,47 +98,25 @@ environment = SubResource("Environment_7qfgn")
 
 [node name="Items" type="Node3D" parent="." unique_id=1201531693]
 
-[node name="Gun" type="RigidBody3D" parent="Items" unique_id=1694522457]
+[node name="Gun" parent="Items" unique_id=826401534 instance=ExtResource("ExtWorldItem")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3657718, 1.4235078)
-script = ExtResource("3_3umvx")
+mass = 3.5
 item_definition = ExtResource("4_fisen")
-metadata/_custom_type_script = "uid://5yq8nk5vvg62"
+metadata/world_visual_applied = false
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Items/Gun" unique_id=993217036]
-transform = Transform3D(1.0000001, 0, 0, 0, 1, 0, 0, 0, 1, 0.18704702, 0.016738221, -0.0010191239)
-shape = SubResource("BoxShape3D_bf8ou")
-
-[node name="Weapon Node" parent="Items/Gun" unique_id=1235511362 instance=ExtResource("5_bd0b7")]
-
-[node name="Bandage" type="RigidBody3D" parent="Items" unique_id=1190855316]
+[node name="Bandage" parent="Items" unique_id=1906457377 instance=ExtResource("ExtWorldItem")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6851126, 2.9605255)
-script = ExtResource("3_3umvx")
+mass = 0.2
 item_definition = ExtResource("4_1cs7u")
-metadata/_custom_type_script = "uid://5yq8nk5vvg62"
+metadata/world_visual_applied = false
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Items/Bandage" unique_id=631669213]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0010499954, 0)
-shape = SubResource("CapsuleShape3D_fisen")
-
-[node name="Bandage" parent="Items/Bandage" unique_id=1930216214 instance=ExtResource("5_ubkvh")]
-
-[node name="Bandage_LOD0" parent="Items/Bandage/Bandage" index="0" unique_id=284270595]
-transform = Transform3D(-42.62276, 90.46159, 3.954202e-06, 0, -4.371139e-06, 100, 90.461586, 42.622765, 1.8631001e-06, 0, 0, 0)
-
-[node name="Backpack" type="RigidBody3D" parent="Items" unique_id=502547712]
+[node name="Backpack" parent="Items" unique_id=1881490120 instance=ExtResource("ExtWorldItem")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.7557735, 0.8212156, -1.7164879)
-script = ExtResource("3_3umvx")
+mass = 0.5
 item_definition = ExtResource("7_e3p3y")
 prompt_title = "BPWI"
-metadata/_custom_type_script = "uid://5yq8nk5vvg62"
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Items/Backpack" unique_id=97283457]
-transform = Transform3D(1, 0, 0, 0, 0.9958868, 0.090606086, 0, -0.090606086, 0.9958868, -0.00022733212, -0.0010279417, 0.11174083)
-shape = SubResource("BoxShape3D_e3p3y")
-
-[node name="simpleBackpack" parent="Items/Backpack" unique_id=1481509700 instance=ExtResource("8_bd0b7")]
+metadata/world_visual_applied = false
 
 [editable path="CharacterBody3D"]
 [editable path="CharacterBody3D/UIRoot"]
-[editable path="Items/Bandage/Bandage"]
-[editable path="Items/Backpack/simpleBackpack"]
+[editable path="Items/Bandage"]

@@ -36,6 +36,18 @@ const CATEGORY_CLOTHING := "clothing"
 @export var visible_when_equipped: bool = false
 @export var preferred_slot: String = "torso"
 @export var equipped_visual_scene: PackedScene
+
+@export_category("World Spawn")
+## Separate scene used when this item is a physics object lying in the world.
+## If null, WorldItem falls back to its editor-placed child nodes (legacy path).
+@export var world_visual_scene: PackedScene
+@export_enum("auto_convex", "box", "sphere", "manual") var world_collision_mode: String = "auto_convex"
+@export var world_collision_margin: float = 0.04
+
+## Name of the child Node3D inside equipped_visual_scene that aligns to the
+## attachment bone. The system offsets the scene root so this node sits exactly
+## at the bone socket. If empty or not found, the scene origin is used instead.
+@export var handle_node_name: String = "Handle"
 @export var is_skinned_mesh: bool = false
 @export var visual_profile_id: String = ""
 @export var attachment_profiles: Array = []

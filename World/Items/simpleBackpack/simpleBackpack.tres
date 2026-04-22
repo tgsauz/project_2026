@@ -2,6 +2,7 @@
 
 [ext_resource type="Resource" path="res://World/Items/Visuals/BackpackBackProfile.tres" id="1_kgypb"]
 [ext_resource type="Script" uid="uid://cgvv34qt43vdl" path="res://World/Items/Scripts/ItemResource.gd" id="1_ox2nt"]
+[ext_resource type="PackedScene" uid="uid://wchrbesm6103" path="res://World/Items/simpleBackpack/simpleBackpack.glb" id="3_x5mrj"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_t8hhd"]
 resource_name = "M_Char"
@@ -93,6 +94,7 @@ attachment_tags = PackedStringArray("backpack", "container")
 visible_when_equipped = true
 preferred_slot = "back_mount"
 equipped_visual_scene = SubResource("PackedScene_ox2nt")
+world_visual_scene = ExtResource("3_x5mrj")
 attachment_profiles = [ExtResource("1_kgypb")]
 is_container = true
 container_allowed_categories = PackedStringArray("ammo", "medical", "equipment")

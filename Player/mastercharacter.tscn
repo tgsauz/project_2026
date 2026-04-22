@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://vxgi8ggmn2p1"]
 
-[ext_resource type="PackedScene" uid="uid://cg3ncj3tsbru5" path="res://Player/GLBs/mastercharacter.glb" id="1_rn3rv"]
+[ext_resource type="PackedScene" uid="uid://dly0idfbbbic0" path="res://Player/GLBs/mastercharacter.glb" id="1_rn3rv"]
 
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_aim0"]
 animation = &"holding_aim"
@@ -25,7 +25,7 @@ blend_point_4/pos = Vector2(-1, 0)
 snap = Vector2(0.5, 0.5)
 
 [sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_aiming"]
-graph_offset = Vector2(-23.119476, 76.36027)
+graph_offset = Vector2(0, 155.61778)
 nodes/BlendSpace2D/node = SubResource("AnimationNodeBlendSpace2D_aiming")
 nodes/BlendSpace2D/position = Vector2(80, 140)
 node_connections = [&"output", 0, &"BlendSpace2D"]
@@ -37,7 +37,7 @@ animation = &"walking_holding_gun"
 animation = &"right_strafe_walk_holding_gun"
 
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_inon4"]
-animation = &"left_strafe_walk"
+animation = &"left_strafe_walk_holding_gun"
 
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_v7h3y"]
 animation = &"holding_gun"
@@ -59,7 +59,7 @@ blend_point_4/pos = Vector2(0, -1)
 snap = Vector2(0.5, 0.5)
 
 [sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_2xuop"]
-graph_offset = Vector2(-23.119476, 76.36027)
+graph_offset = Vector2(-74.447815, 173.26959)
 nodes/BlendSpace2D/node = SubResource("AnimationNodeBlendSpace2D_tvhbt")
 nodes/BlendSpace2D/position = Vector2(80, 140)
 node_connections = [&"output", 0, &"BlendSpace2D"]
@@ -126,6 +126,9 @@ advance_mode = 0
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_aim_to_unarmed"]
 advance_mode = 0
 
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_bwcmg"]
+advance_mode = 2
+
 [sub_resource type="AnimationNodeStateMachine" id="AnimationNodeStateMachine_navmy"]
 states/Aiming/node = SubResource("AnimationNodeBlendTree_aiming")
 states/Aiming/position = Vector2(461, 292)
@@ -135,10 +138,10 @@ states/StateMachine/node = SubResource("AnimationNodeStateMachine_vbkxh")
 states/StateMachine/position = Vector2(316.68268, 100)
 states/Unarmed/node = SubResource("AnimationNodeBlendTree_p0ugx")
 states/Unarmed/position = Vector2(461, 100)
-transitions = ["Start", "StateMachine", SubResource("AnimationNodeStateMachineTransition_cpkj0"), "StateMachine", "Unarmed", SubResource("AnimationNodeStateMachineTransition_oa16g"), "StateMachine", "Armed", SubResource("AnimationNodeStateMachineTransition_ymedq"), "Unarmed", "Armed", SubResource("AnimationNodeStateMachineTransition_8u26g"), "Armed", "Unarmed", SubResource("AnimationNodeStateMachineTransition_armed_out"), "Armed", "Aiming", SubResource("AnimationNodeStateMachineTransition_aim_in"), "Aiming", "Armed", SubResource("AnimationNodeStateMachineTransition_aim_out"), "Unarmed", "Aiming", SubResource("AnimationNodeStateMachineTransition_unarmed_aim_in"), "Aiming", "Unarmed", SubResource("AnimationNodeStateMachineTransition_aim_to_unarmed")]
-graph_offset = Vector2(102.68267, 0)
+transitions = ["Start", "StateMachine", SubResource("AnimationNodeStateMachineTransition_cpkj0"), "StateMachine", "Unarmed", SubResource("AnimationNodeStateMachineTransition_oa16g"), "StateMachine", "Armed", SubResource("AnimationNodeStateMachineTransition_ymedq"), "Unarmed", "Armed", SubResource("AnimationNodeStateMachineTransition_8u26g"), "Armed", "Unarmed", SubResource("AnimationNodeStateMachineTransition_armed_out"), "Armed", "Aiming", SubResource("AnimationNodeStateMachineTransition_aim_in"), "Aiming", "Armed", SubResource("AnimationNodeStateMachineTransition_aim_out"), "Unarmed", "Aiming", SubResource("AnimationNodeStateMachineTransition_unarmed_aim_in"), "Aiming", "Unarmed", SubResource("AnimationNodeStateMachineTransition_aim_to_unarmed"), "StateMachine", "Aiming", SubResource("AnimationNodeStateMachineTransition_bwcmg")]
+graph_offset = Vector2(102.68267, 27.347284)
 
-[node name="Rig" unique_id=381671599 instance=ExtResource("1_rn3rv")]
+[node name="Rig" unique_id=1501587126 instance=ExtResource("1_rn3rv")]
 
 [node name="AnimationTree" type="AnimationTree" parent="." index="2" unique_id=113289983]
 tree_root = SubResource("AnimationNodeStateMachine_navmy")

@@ -1,6 +1,9 @@
 extends Node
 class_name VisualsComponent
 
+signal equipped_visual_attached(slot_name: String, item_id: String, visual: Node3D, entry: Dictionary)
+signal equipped_visual_detached(slot_name: String, item_id: String)
+
 @export_category("Tilt")
 @export var tilt_strength: float = 0.08
 @export var tilt_smoothing: float = 6.0
@@ -21,6 +24,7 @@ var bone_idx: int = -1
 var attachment_roots: Dictionary = {}
 var attachment_content_roots: Dictionary = {}
 var equipped_visuals: Dictionary = {}
+var equipped_visual_entries: Dictionary = {}
 var mounted_interactables: Dictionary = {}
 var attachment_debug_gizmos: Dictionary = {}
 var attachment_node_data: Dictionary = {}
@@ -49,6 +53,9 @@ func _ready():
 	_ensure_attachment_roots()
 	_refresh_fps_hidden_bone_cache()
 	_refresh_attachment_debug_gizmos()
+
+func _process(_delta: float) -> void:
+	_refresh_dynamic_equipped_visual_transforms()
 
 func configure_tuner_context(host_root: Node3D, skeleton_path: NodePath = NodePath()) -> void:
 	tuner_host_root = host_root
@@ -174,9 +181,13 @@ func clear_runtime_visual(slot_name: String) -> void:
 			
 	for visual_key in keys_to_remove:
 		var visual = equipped_visuals[visual_key]
+		var removed_entry: Dictionary = equipped_visual_entries.get(visual_key, {}) as Dictionary
+		var removed_item_id: String = str(removed_entry.get("item_id", ""))
 		if is_instance_valid(visual):
 			visual.queue_free()
 		equipped_visuals.erase(visual_key)
+		equipped_visual_entries.erase(visual_key)
+		emit_signal("equipped_visual_detached", slot_name, removed_item_id)
 		_remove_slot_interactable(slot_name)
 
 func get_active_visual(slot_name: String, item_id: String = "") -> Node3D:
@@ -191,6 +202,19 @@ func get_active_visual(slot_name: String, item_id: String = "") -> Node3D:
 				break
 				
 	return equipped_visuals.get(visual_key, null)
+
+func get_active_visual_entry(slot_name: String, item_id: String = "") -> Dictionary:
+	var visual_key: String = slot_name
+	if not item_id.is_empty():
+		visual_key = slot_name + "_" + item_id
+	else:
+		for k in equipped_visual_entries.keys():
+			if k.begins_with(slot_name + "_"):
+				visual_key = k
+				break
+
+	var entry: Dictionary = equipped_visual_entries.get(visual_key, {}) as Dictionary
+	return entry.duplicate(true)
 
 func register_tuner_attachment_points(points: Array[AttachmentPointDefinition]) -> void:
 	tuner_attachment_points.clear()
@@ -245,10 +269,15 @@ func _on_equipment_visuals_changed(visible_items: Array) -> void:
 			
 	for visual_key in keys_to_remove:
 		var visual := equipped_visuals[visual_key] as Node3D
+		var removed_entry: Dictionary = equipped_visual_entries.get(visual_key, {}) as Dictionary
+		var removed_slot_name: String = str(removed_entry.get("slot_name", ""))
+		var removed_item_id: String = str(removed_entry.get("item_id", ""))
 		if is_instance_valid(visual):
 			print_debug("[VisualsComponent] Removing visual for key: %s" % visual_key)
 			visual.queue_free()
 		equipped_visuals.erase(visual_key)
+		equipped_visual_entries.erase(visual_key)
+		emit_signal("equipped_visual_detached", removed_slot_name, removed_item_id)
 
 	# Clean up interactables that are no longer active (using same logic)
 	var interactable_keys_to_remove = []
@@ -444,7 +473,7 @@ func _update_equipped_visual(slot_name: String, entry: Dictionary) -> void:
 	var visual_key: String = "%s_%s" % [slot_name, item_id]
 	var visual := equipped_visuals.get(visual_key, null) as Node3D
 	var desired_scene: PackedScene = entry.get("equipped_visual_scene", null)
-	
+
 	if visual == null or not _matches_equipped_scene(visual, desired_scene):
 		if is_instance_valid(visual):
 			visual.queue_free()
@@ -454,6 +483,11 @@ func _update_equipped_visual(slot_name: String, entry: Dictionary) -> void:
 			print_debug("[VisualsComponent] ERROR: Failed to instantiate visual for %s" % item_id)
 			return
 
+		# Apply handle-socket alignment before adding to the tree so the node
+		# joins at the correct local offset (no frame delay, no global-transform
+		# dependency). The profile offset is applied on top afterward.
+		_apply_handle_alignment(visual, definition)
+
 		anchor.add_child(visual)
 		equipped_visuals[visual_key] = visual
 
@@ -462,6 +496,8 @@ func _update_equipped_visual(slot_name: String, entry: Dictionary) -> void:
 
 	visual.visible = true
 	_apply_visual_profile(visual, entry)
+	equipped_visual_entries[visual_key] = entry.duplicate(true)
+	emit_signal("equipped_visual_attached", slot_name, item_id, visual, equipped_visual_entries[visual_key].duplicate(true))
 
 func _instantiate_equipped_visual(entry: Dictionary) -> Node3D:
 	var equipped_scene: PackedScene = entry.get("equipped_visual_scene", null)
@@ -489,16 +525,92 @@ func _matches_equipped_scene(visual: Node3D, equipped_scene: PackedScene) -> boo
 		return visual is MeshInstance3D
 	return str(visual.get_meta("equipped_scene_path", "")) == equipped_scene.resource_path
 
-func _apply_visual_profile(visual: Node3D, entry: Dictionary) -> void:
-	var profile: ItemVisualAttachmentProfile = entry.get("attachment_profile", null)
-	if profile == null:
-		# If no profile is found, we do NOT reset the transform to zero.
-		# This allows the scene's internal origin/transform to take effect.
+func _refresh_dynamic_equipped_visual_transforms() -> void:
+	for visual_key_variant in equipped_visuals.keys():
+		var visual_key: String = str(visual_key_variant)
+		var visual: Node3D = equipped_visuals.get(visual_key, null) as Node3D
+		if visual == null or not is_instance_valid(visual):
+			continue
+
+		var entry: Dictionary = equipped_visual_entries.get(visual_key, {}) as Dictionary
+		if entry.is_empty():
+			continue
+
+		_apply_visual_profile(visual, entry)
+
+# ============================================================
+#  HANDLE ALIGNMENT
+# ============================================================
+
+## Offsets the visual root so that the semantic "Handle" node inside it sits
+## at the bone attachment origin instead of the scene's geometric origin.
+##
+## Rationale: A weapon's GLB origin may not coincide with the grip — this is
+## common when artists export at world-space coordinates. By declaring a child
+## node named `handle_node_name` at the intended grip position, we can
+## compute its local offset and invert it onto the root, eliminating the need
+## to edit the .glb file or use large counter-offsets in the profile.
+##
+## Composition order:
+##   handle_alignment_offset (this function) ← applied first at instantiation
+##   + profile_offset (_apply_visual_profile) ← applied on top each frame
+##
+## If no Handle node is found the root transform is left at identity, which
+## reproduces the original origin-based behavior exactly.
+func _apply_handle_alignment(visual: Node3D, definition: ItemDefinition) -> void:
+	if definition == null or definition.handle_node_name.is_empty():
 		return
 
-	visual.position = profile.position
-	visual.rotation_degrees = profile.rotation_degrees
-	visual.scale = profile.scale
+	# We search WITHOUT requiring ownership so the node can be any depth inside
+	# the scene, matching the convention used by LeftHandIKComponent for LGRIP.
+	var handle := visual.find_child(definition.handle_node_name, true, false) as Node3D
+	if handle == null:
+		# No handle node declared — origin-based attachment is intentional.
+		return
+
+	# Compute the handle's local transform relative to the visual root.
+	# Inverting it shifts the root so the handle lands exactly at (0,0,0)
+	# of the parent bone attachment, which is what "grip at bone" means.
+	var handle_local: Transform3D = handle.transform
+	var parent: Node3D = handle.get_parent() as Node3D
+	while parent != null and parent != visual:
+		handle_local = parent.transform * handle_local
+		parent = parent.get_parent() as Node3D
+
+	visual.transform = handle_local.affine_inverse()
+	visual.set_meta("handle_alignment_applied", true)
+
+func _apply_visual_profile(visual: Node3D, entry: Dictionary) -> void:
+	var profile: ItemVisualAttachmentProfile = entry.get("attachment_profile", null)
+
+	# If a handle alignment was applied, the profile offset layers on top of it.
+	# We must restore the alignment base first, then add the profile delta so
+	# that repeated calls to _apply_visual_profile remain idempotent.
+	var has_handle: bool = visual.get_meta("handle_alignment_applied", false)
+	if has_handle:
+		var definition: ItemDefinition = entry.get("definition", null)
+		_apply_handle_alignment(visual, definition)
+
+	if profile == null:
+		# No profile: leave the current transform (handle-aligned or origin-based).
+		return
+
+	if has_handle:
+		# Compose: apply profile as an additional local offset on the aligned root.
+		visual.position += visual.basis * profile.position
+		# Use Basis math instead of adding Euler angles to avoid Gimbal Lock and offset swizzling.
+		var profile_rot := Basis.from_euler(Vector3(
+			deg_to_rad(profile.rotation_degrees.x),
+			deg_to_rad(profile.rotation_degrees.y),
+			deg_to_rad(profile.rotation_degrees.z)
+		))
+		visual.basis = visual.basis * profile_rot
+		visual.scale *= profile.scale
+	else:
+		# Legacy path: profile fully overrides the transform (original behavior).
+		visual.position = profile.position
+		visual.rotation_degrees = profile.rotation_degrees
+		visual.scale = profile.scale
 
 func _update_slot_interactable(slot_name: String, entry: Dictionary) -> void:
 	var inventory := _resolve_inventory()

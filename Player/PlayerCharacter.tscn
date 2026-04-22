@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://dkue2j3r6w56m" path="res://Player/Scripts/CharacterController.gd" id="1_ay0dg"]
 [ext_resource type="Script" uid="uid://cugcfuh4swrqi" path="res://Player/Scripts/VisualsComponent.gd" id="3_5dj55"]
 [ext_resource type="PackedScene" uid="uid://vxgi8ggmn2p1" path="res://Player/mastercharacter.tscn" id="3_pxyys"]
+[ext_resource type="Script" uid="uid://cf4d516qdgd84" path="res://Player/Scripts/LeftHandIKComponent.gd" id="4_lhik"]
 [ext_resource type="Script" uid="uid://dkq2hvbf4rmq0" path="res://World/Items/Scripts/InteractionComponent.gd" id="4_mg46b"]
 [ext_resource type="Script" uid="uid://brjbff4dvpvw8" path="res://Player/Scripts/CameraController.gd" id="5_cam"]
 
@@ -18,6 +19,14 @@ script = ExtResource("1_ay0dg")
 script = ExtResource("3_5dj55")
 
 [node name="Rig" parent="Visuals" unique_id=381671599 instance=ExtResource("3_pxyys")]
+
+[node name="LeftHandIK" type="Node" parent="Visuals" unique_id=230066408]
+script = ExtResource("4_lhik")
+root_bone_candidates = PackedStringArray("arm_l")
+tip_bone_candidates = PackedStringArray("hand_l")
+ik_in_speed = 20.0
+hand_rotation_offset = Vector3(-90, 0, 0)
+debug_draw_gizmos = true
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=2018647733]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.88413084, 0)
