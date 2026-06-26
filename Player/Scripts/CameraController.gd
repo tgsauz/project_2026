@@ -1,4 +1,5 @@
 extends Node3D
+class_name CameraController
 
 # ============================================================
 # CAMERA CONTROLLER
@@ -7,6 +8,7 @@ extends Node3D
 # - Independent FPS/TPS look state
 # - Sending yaw target to Motor
 # - Switching between FPS and TPS cameras
+# - ADS camera displacement toward weapon SIGHT_BACK node
 # ============================================================
 
 @export_category("Mouse Settings")
@@ -17,6 +19,14 @@ extends Node3D
 @export var tps_orbit_distance: float = 3.0
 @export var tps_shoulder_offset: float = 0.2
 @export var tps_height_offset: float = 0.25
+
+@export_category("ADS Camera Displacement")
+@export var enable_ads_displacement: bool = true
+
+@export_category("Head-Bone Anchoring")
+## Path to the VisualsComponent node for reading head-bone eye position.
+## Leave empty to use the legacy fixed FPS pivot position.
+@export var visuals_component_path: NodePath = NodePath()
 
 var fps_pivot: Node3D
 var tps_pivot: Node3D
@@ -33,11 +43,33 @@ var tps_yaw: float = 0.0
 
 # Current mode
 var using_fps: bool = true
+var is_debug_free: bool = false
+var debug_camera: Camera3D
+var debug_fly_speed: float = 5.0
+var debug_fly_accel: float = 10.0
+var _debug_velocity: Vector3 = Vector3.ZERO
 
 # Input blocking
 var _input_blocked: bool = false
 var _motor_warning_emitted: bool = false
 var _inventory_view_controller: InventoryViewController
+
+# Head-bone anchoring
+var _visuals_component: VisualsComponent
+var _head_bone_warning_emitted: bool = false
+
+# ============================================================
+# ADS DISPLACEMENT STATE
+# ============================================================
+## World-space target for the FPS pivot during ADS.
+## Set each frame by AimController via set_ads_position_target().
+var _ads_position_target: Vector3 = Vector3.ZERO
+## Blend weight: 0 = default hip pivot, 1 = fully displaced to SIGHT_BACK.
+## Driven by AimController via set_ads_weight().
+var _ads_pivot_weight: float = 0.0
+## Default local position of fps_pivot, captured once in _ready().
+var _fps_pivot_default_local_position: Vector3 = Vector3.ZERO
+
 # ============================================================
 # READY
 # ============================================================
@@ -52,20 +84,32 @@ func _ready():
 		set_process(false)
 		return
 
+	if fps_pivot != null:
+		_fps_pivot_default_local_position = fps_pivot.position
+
+	if not visuals_component_path.is_empty():
+		_visuals_component = get_node_or_null(visuals_component_path) as VisualsComponent
+		if _visuals_component == null and not _head_bone_warning_emitted:
+			_head_bone_warning_emitted = true
+			push_warning("[CameraController] visuals_component_path '%s' did not resolve to a VisualsComponent." % visuals_component_path)
+
+	_setup_debug_camera()
+
 	call_deferred("_finalize_motor_startup")
-	
+
 	fps_pitch = fps_pivot.rotation.x
 	tps_pitch = tps_pivot.rotation.x
 	if _is_valid_motor(motor):
 		fps_yaw = motor.rotation.y
 		tps_yaw = motor.rotation.y
 
-	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
-	_set_camera_mode(true)
-	
+	if is_multiplayer_authority():
+		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+		_set_camera_mode(true)
+
 	_connect_inventory_view_controller()
-	
-func _process(_delta):
+
+func _process(delta: float):
 	_ensure_inventory_view_controller_connected()
 
 	if not _is_valid_motor(motor):
@@ -74,14 +118,23 @@ func _process(_delta):
 			_emit_missing_motor_warning_once()
 			return
 		_motor_warning_emitted = false
-	
-	_apply_active_look()
+
+	if is_debug_free:
+		_process_debug_fly(delta)
+	else:
+		_apply_active_look()
+
+func _setup_debug_camera() -> void:
+	debug_camera = Camera3D.new()
+	debug_camera.name = "DEBUG_CAMERA"
+	add_child(debug_camera)
+	debug_camera.top_level = true
 
 func set_motor(new_motor: CharacterBody3D) -> void:
 	if not _is_valid_motor(new_motor):
 		push_warning("CameraController.set_motor received an invalid motor reference.")
 		return
-		
+
 	motor = new_motor
 	fps_yaw = motor.rotation.y
 	tps_yaw = motor.rotation.y
@@ -93,7 +146,6 @@ func _resolve_motor() -> CharacterBody3D:
 		if _is_valid_motor(node):
 			return node as CharacterBody3D
 		node = node.get_parent()
-
 	return null
 
 func _is_valid_motor(node: Node) -> bool:
@@ -115,14 +167,12 @@ func _validate_required_nodes() -> bool:
 	if tps_camera == null:
 		push_error("CameraController could not resolve TPSPIVOT/TPSCAMERA.")
 		valid = false
-
 	return valid
 
 func _finalize_motor_startup() -> void:
-	if _is_valid_motor(motor):
-		return
+	if not _is_valid_motor(motor):
+		motor = _resolve_motor()
 
-	motor = _resolve_motor()
 	if _is_valid_motor(motor):
 		fps_yaw = motor.rotation.y
 		tps_yaw = motor.rotation.y
@@ -138,24 +188,75 @@ func _emit_missing_motor_warning_once() -> void:
 	push_warning("No valid motor found for CameraController. Input look will stay disabled until a compatible parent is available.")
 
 # ============================================================
+# ADS CAMERA DISPLACEMENT — PUBLIC API
+# ============================================================
+
+## Called each frame by AimController when a weapon with a SIGHT_BACK node
+## is equipped and the player is in ADS stance.
+## world_pos is the computed position behind the weapon's iron sight.
+func set_ads_position_target(world_pos: Vector3) -> void:
+	_ads_position_target = world_pos
+
+## Called by AimController each frame.
+## weight: 1.0 = fully displaced to SIGHT_BACK, 0.0 = default hip pivot.
+func set_ads_weight(weight: float) -> void:
+	if enable_ads_displacement:
+		_ads_pivot_weight = clampf(weight, 0.0, 1.0)
+	else:
+		_ads_pivot_weight = 0.0
+
+## Called by AimController each frame. Applies FOV to both cameras.
+func set_current_fov(fov: float) -> void:
+	if fps_camera != null:
+		fps_camera.fov = fov
+	if tps_camera != null:
+		tps_camera.fov = fov
+
+# ============================================================
 # INPUT
 # ============================================================
 
 func _unhandled_input(event):
+	if not is_multiplayer_authority():
+		return
+
 	if event is InputEventMouseMotion and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED and not _input_blocked:
 		_handle_mouse_motion(event)
 
-	if event.is_action_pressed("toggle_camera"):
+	if event.is_action_pressed("toggle_camera") and not is_debug_free:
 		_set_camera_mode(!using_fps)
+
+	if event.is_action_pressed("toggle_debug"):
+		_toggle_debug_free()
+
+	if is_debug_free and event.is_action_pressed("aim"):
+		if motor.has_method("toggle_ads_debug"):
+			motor.toggle_ads_debug()
 
 	if event.is_action_pressed("ui_cancel"):
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+
+func apply_recoil(pitch_kick: float, yaw_kick: float) -> void:
+	if using_fps:
+		fps_pitch += pitch_kick
+		fps_pitch = clamp(fps_pitch, -max_pitch, max_pitch)
+		fps_yaw += yaw_kick
+	else:
+		tps_pitch += pitch_kick
+		tps_pitch = clamp(tps_pitch, -max_pitch, max_pitch)
+		tps_yaw += yaw_kick
 
 # ============================================================
 # MOUSE HANDLING
 # ============================================================
 
 func _handle_mouse_motion(event: InputEventMouseMotion):
+	if is_debug_free:
+		debug_camera.rotation.y -= event.relative.x * mouse_sensitivity
+		debug_camera.rotation.x -= event.relative.y * mouse_sensitivity
+		debug_camera.rotation.x = clamp(debug_camera.rotation.x, -PI/2, PI/2)
+		return
+
 	if using_fps:
 		fps_yaw -= event.relative.x * mouse_sensitivity
 		fps_pitch -= event.relative.y * mouse_sensitivity
@@ -172,17 +273,35 @@ func _apply_active_look():
 		return
 
 	fps_pivot.rotation.x = fps_pitch
-	
+
+	# Base position: head-bone-anchored eye level in FPS, fixed editor position as fallback.
+	var base_local: Vector3 = _fps_pivot_default_local_position
+	if using_fps and _visuals_component != null:
+		var eye_world: Vector3 = _visuals_component.get_eye_world_position()
+		if not eye_world.is_zero_approx():
+			base_local = to_local(eye_world)
+
+	# ADS displacement: slide the FPS pivot toward the weapon's rear iron sight.
+	# Only applied in FPS mode; camera rotation remains purely mouse-driven.
+	if enable_ads_displacement and using_fps and _ads_pivot_weight > 0.001 and _ads_position_target != Vector3.ZERO:
+		var sight_local: Vector3 = to_local(_ads_position_target)
+		fps_pivot.position = base_local.lerp(sight_local, _ads_pivot_weight)
+	else:
+		fps_pivot.position = base_local
+
 	# Keep TPS orbit independent from character yaw by compensating parent rotation.
 	tps_pivot.rotation.x = tps_pitch
 	tps_pivot.rotation.y = tps_yaw - motor.rotation.y
 	tps_camera.position = Vector3(tps_shoulder_offset, tps_height_offset, tps_orbit_distance)
-	
+
 	if using_fps:
 		motor.set_target_yaw(fps_yaw)
-	
+
 	motor.set_camera_yaw(tps_yaw if not using_fps else fps_yaw)
 	motor.set_camera_mode(using_fps)
+
+func get_active_aim_pivot() -> Node3D:
+	return fps_pivot if using_fps else tps_pivot
 
 func _connect_inventory_view_controller() -> void:
 	var inventory_view_controller := get_tree().root.find_child("InventoryViewController", true, false) as InventoryViewController
@@ -216,12 +335,47 @@ func _set_camera_mode(enable_fps: bool):
 		else:
 			tps_yaw = fps_yaw
 			tps_pitch = fps_pitch
-	
+
 	using_fps = enable_fps
-	
+
 	if using_fps:
 		fps_camera.make_current()
 	else:
 		tps_camera.make_current()
-		
+
 	_apply_active_look()
+
+func _toggle_debug_free() -> void:
+	is_debug_free = !is_debug_free
+
+	if is_debug_free:
+		var active_cam = get_viewport().get_camera_3d()
+		if active_cam:
+			debug_camera.global_transform = active_cam.global_transform
+		debug_camera.make_current()
+		_debug_velocity = Vector3.ZERO
+
+		if motor:
+			motor.debug_input_locked = true
+	else:
+		if using_fps:
+			fps_camera.make_current()
+		else:
+			tps_camera.make_current()
+
+		if motor:
+			motor.debug_input_locked = false
+
+func _process_debug_fly(delta: float) -> void:
+	var move_dir = Vector3.ZERO
+	if Input.is_key_pressed(KEY_W): move_dir -= debug_camera.global_transform.basis.z
+	if Input.is_key_pressed(KEY_S): move_dir += debug_camera.global_transform.basis.z
+	if Input.is_key_pressed(KEY_A): move_dir -= debug_camera.global_transform.basis.x
+	if Input.is_key_pressed(KEY_D): move_dir += debug_camera.global_transform.basis.x
+	if Input.is_key_pressed(KEY_E): move_dir += Vector3.UP
+	if Input.is_key_pressed(KEY_Q): move_dir -= Vector3.UP
+
+	var multiplier = 3.0 if Input.is_key_pressed(KEY_SHIFT) else 1.0
+	var target_vel = move_dir.normalized() * debug_fly_speed * multiplier
+	_debug_velocity = _debug_velocity.move_toward(target_vel, debug_fly_accel * delta)
+	debug_camera.global_position += _debug_velocity * delta

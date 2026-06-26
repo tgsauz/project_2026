@@ -1,10 +1,9 @@
-[gd_resource type="Resource" script_class="ItemVisualAttachmentProfile" format=3]
+[gd_resource type="Resource" script_class="ItemVisualAttachmentProfile" format=3 uid="uid://b742mlko4wx1f"]
 
-[ext_resource type="Script" path="res://World/Items/Scripts/ItemVisualAttachmentProfile.gd" id="1_profile"]
+[ext_resource type="Script" uid="uid://d2acu83ir08qt" path="res://World/Items/Scripts/ItemVisualAttachmentProfile.gd" id="1_profile"]
 
 [resource]
 script = ExtResource("1_profile")
 slot_name = "lower_back"
-visual_state = "mounted"
 position = Vector3(0, -0.06, 0.02)
 rotation_degrees = Vector3(0, 0, 90)

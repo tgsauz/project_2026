@@ -1,8 +1,10 @@
 # 🧠 Project 2026 — AI Agent Engineering Guidelines
 
+## 📌 TECH STACK: Godot 4.6.1 · GDScript · CharacterBody3D + CameraController + InteractionComponent
+
 ## Core Facts
 
-**Engine:** Godot 4.6 | **Language:** GDScript | **Architecture:** CharacterController + CameraController + InteractionComponent  
+**Engine:** Godot 4.6.1 | **Language:** GDScript | **Architecture:** CharacterController + CameraController + InteractionComponent  
 **Roadmap:** Single-player → multiplayer  
 **Optimize for:** Scalability · Modularity · Efficiency · Robustness · Long-term maintainability
 
@@ -93,6 +95,10 @@
 
 ## AI Agent Behavior
 
+### Session Start
+At the start of every conversation, output:
+> **Project 2026 (Godot 4.6.1, GDScript)** — ready.
+
 **Default mode:** Do NOT explain unless asked. Minimize token waste. Answer directly.
 
 **If user asks for analysis only:**
@@ -136,3 +142,27 @@
 - [ ] Affected systems validated with clear checks
 - [ ] Change scope minimal and documented
 - [ ] Known tradeoffs explicitly listed
+
+### Godot 4.6.1 — API Guardrails
+
+| ❌ Wrong (Godot 3 / Other) | ✅ Correct (Godot 4.6.1) |
+|---|---|
+| `export var` | `@export var` |
+| `onready var` | `@onready var` |
+| `KinematicBody` | `CharacterBody3D` |
+| `Spatial` | `Node3D` |
+| `is_network_master()` | `is_multiplayer_authority()` |
+| `.instance()` | `.instantiate()` |
+| `rand_range()` | `randf_range()` |
+| `.connect("sig", obj, "method")` | `sig.connect(method)` |
+| `randomize()` (unnecessary) | `RandomNumberGenerator` instance |
+
+## graphify
+
+This project has a graphify knowledge graph at graphify-out/.
+
+Rules:
+- Before answering architecture or codebase questions, read graphify-out/GRAPH_REPORT.md for god nodes and community structure
+- If graphify-out/wiki/index.md exists, navigate it instead of reading raw files
+- For cross-module "how does X relate to Y" questions, prefer `graphify query "<question>"`, `graphify path "<A>" "<B>"`, or `graphify explain "<concept>"` over grep — these traverse the graph's EXTRACTED + INFERRED edges instead of scanning files
+- After modifying code files in this session, run `graphify update .` to keep the graph current (AST-only, no API cost)

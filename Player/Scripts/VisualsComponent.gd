@@ -4,27 +4,25 @@ class_name VisualsComponent
 signal equipped_visual_attached(slot_name: String, item_id: String, visual: Node3D, entry: Dictionary)
 signal equipped_visual_detached(slot_name: String, item_id: String)
 
-@export_category("Tilt")
-@export var tilt_strength: float = 0.08
-@export var tilt_smoothing: float = 6.0
-@export var max_tilt_angle: float = 0.35
-
 @export_category("Helpers")
 @export var gun_support_bone_name: String = "ik_hand_gun"
 @export var attachment_content_scale_compensation: float = 1.0
-@export var fps_hidden_bone_names: PackedStringArray = PackedStringArray(["head", "Head"])
-@export var fps_hidden_bone_scale: Vector3 = Vector3(0.01, 0.01, 0.01)
+## Visual layer assigned to character body meshes in first-person mode.
+## The FPS camera's cull_mask must exclude this layer (set once in the editor).
+## Default layer 2. Layer 1 = visible to all cameras.
+@export var fps_hidden_visual_layer: int = 2
+@export var right_shoulder_bone_candidates: PackedStringArray = PackedStringArray(["upperarm_r", "arm_r", "shoulder_r", "clavicle_r"])
 
 @export_category("Debug")
 @export var show_attachment_debug_gizmos: bool = false
 @export var attachment_debug_gizmo_size: float = 0.06
 
 var skeleton: Skeleton3D
-var bone_idx: int = -1
 var attachment_roots: Dictionary = {}
 var attachment_content_roots: Dictionary = {}
 var equipped_visuals: Dictionary = {}
 var equipped_visual_entries: Dictionary = {}
+var equipped_visual_markers: Dictionary = {}
 var mounted_interactables: Dictionary = {}
 var attachment_debug_gizmos: Dictionary = {}
 var attachment_node_data: Dictionary = {}
@@ -32,10 +30,13 @@ var tuner_attachment_points: Dictionary = {}
 var bound_inventory: InventoryComponent
 var tuner_host_root: Node3D
 var tuner_skeleton_path: NodePath = NodePath()
-var _fps_hidden_bone_indices: Array[int] = []
 var _fps_head_hidden: bool = false
 
-var tilt: Vector2 = Vector2.ZERO
+var _debug_xray: bool = false
+var _right_shoulder_bone_idx: int = -1
+var _head_bone_idx: int = -1
+
+const EYE_HEIGHT_OFFSET: float = 0.08
 
 func _ready():
 	skeleton = _resolve_tuner_skeleton()
@@ -44,15 +45,11 @@ func _ready():
 		push_error("[VisualsComponent] Could not resolve Skeleton3D in configured host subtree.")
 		return
 
-	var spine_slot := AttachmentLayoutLibrary.get_default_point("back_mount")
-	var tilt_bone_name := spine_slot.anchor_bone_name if spine_slot != null else "spine_02"
-	bone_idx = skeleton.find_bone(tilt_bone_name)
-	if bone_idx == -1:
-		push_warning("VisualsComponent could not find bone '%s'." % tilt_bone_name)
-
 	_ensure_attachment_roots()
-	_refresh_fps_hidden_bone_cache()
+	_apply_first_person_head_visibility()
 	_refresh_attachment_debug_gizmos()
+	_resolve_right_shoulder_bone()
+	_head_bone_idx = skeleton.find_bone("head")
 
 func _process(_delta: float) -> void:
 	_refresh_dynamic_equipped_visual_transforms()
@@ -67,12 +64,90 @@ func refresh_tuner_context() -> void:
 		push_warning("[VisualsComponent] refresh_tuner_context failed: skeleton unresolved.")
 		return
 	_ensure_attachment_roots()
-	_refresh_fps_hidden_bone_cache()
+	_apply_first_person_head_visibility()
 	_refresh_attachment_debug_gizmos()
 
 func set_first_person_head_hidden(hidden: bool) -> void:
 	_fps_head_hidden = hidden
 	_apply_first_person_head_visibility()
+
+func toggle_debug_mesh_visibility() -> void:
+	_toggle_xray()
+
+func print_bone_chain_diagnostic() -> void:
+	if skeleton == null:
+		push_warning("[BoneDiagnostic] No skeleton.")
+		return
+
+	var bone_name := "ik_hand_gun"
+	var socket_bone_idx := skeleton.find_bone(bone_name)
+	if socket_bone_idx == -1:
+		push_warning("[BoneDiagnostic] Bone '%s' not found." % bone_name)
+		return
+
+	print("\n========== BONE CHAIN DIAGNOSTIC ==========")
+	var chain: Array[Dictionary] = []
+	var current_idx := socket_bone_idx
+	while current_idx != -1:
+		var bname: String = skeleton.get_bone_name(current_idx)
+		var rest: Transform3D = skeleton.get_bone_rest(current_idx)
+		var pose: Transform3D = skeleton.get_bone_global_pose(current_idx)
+		var parent_idx: int = skeleton.get_bone_parent(current_idx)
+		chain.append({
+			"name": bname,
+			"parent": skeleton.get_bone_name(parent_idx) if parent_idx != -1 else "<root>",
+			"rest_euler": _basis_to_degrees(rest.basis),
+			"pose_euler": _basis_to_degrees(pose.basis),
+		})
+		current_idx = parent_idx
+
+	chain.reverse()
+	print("  %-22s %-22s %-28s %-28s" % ["Bone", "Parent", "Rest Euler (deg)", "Pose Euler (deg)"])
+	print("  " + "-".repeat(100))
+	for e in chain:
+		print("  %-22s %-22s %-28s %-28s" % [
+			e["name"],
+			e["parent"],
+			_v3_to_str(e["rest_euler"] as Vector3),
+			_v3_to_str(e["pose_euler"] as Vector3)
+		])
+
+	print("")
+	var rest_t := skeleton.get_bone_rest(socket_bone_idx)
+	print("  ik_hand_gun local rest: origin=%s  basis=%s" % [
+		str(rest_t.origin),
+		_v3_to_str(_basis_to_degrees(rest_t.basis))
+	])
+
+	for key in equipped_visuals:
+		if "right_hand" in key:
+			var v := equipped_visuals[key] as Node3D
+			if v != null:
+				print("  Equipped weapon global basis: %s" % _v3_to_str(_basis_to_degrees(v.global_transform.basis)))
+			break
+	print("============================================\n")
+
+func _resolve_right_shoulder_bone() -> void:
+	if skeleton == null:
+		return
+	for candidate in right_shoulder_bone_candidates:
+		_right_shoulder_bone_idx = skeleton.find_bone(candidate)
+		if _right_shoulder_bone_idx != -1:
+			break
+
+func get_right_shoulder_global_pose() -> Transform3D:
+	if skeleton == null or _right_shoulder_bone_idx == -1:
+		return Transform3D.IDENTITY
+	return skeleton.global_transform * skeleton.get_bone_global_pose(_right_shoulder_bone_idx)
+
+## Returns world position of the head bone with an eye-height offset.
+## Used by CameraController to anchor the FPS camera pivot to the character's eye level.
+## Returns Vector3.ZERO if skeleton or head bone is unavailable.
+func get_eye_world_position() -> Vector3:
+	if skeleton == null or _head_bone_idx == -1:
+		return Vector3.ZERO
+	var bone_pose: Transform3D = skeleton.get_bone_global_pose(_head_bone_idx)
+	return skeleton.to_global(bone_pose.origin + Vector3(0.0, EYE_HEIGHT_OFFSET, 0.0))
 
 func _resolve_tuner_skeleton() -> Skeleton3D:
 	var host: Node = tuner_host_root
@@ -109,57 +184,35 @@ func _find_skeleton_recursive(node: Node) -> Skeleton3D:
 			return found
 	return null
 
-func _refresh_fps_hidden_bone_cache() -> void:
-	_fps_hidden_bone_indices.clear()
-	if skeleton == null:
-		return
-
-	for bone_name in fps_hidden_bone_names:
-		var candidate := str(bone_name)
-		if candidate.is_empty():
-			continue
-		var bone_idx_candidate := skeleton.find_bone(candidate)
-		if bone_idx_candidate == -1:
-			continue
-		_fps_hidden_bone_indices.append(bone_idx_candidate)
-
-	_apply_first_person_head_visibility()
-
+## Assigns character body MeshInstance3D nodes to either the normal render layer
+## (layer 1) or the FPS-hidden layer so the FPS camera can cull them via
+## cull_mask — no bone scaling required, fully multiplayer-safe.
+##
+## One-time editor setup required:
+##   - FPSPIVOT/FPSCAMERA: set cull_mask to exclude layer fps_hidden_visual_layer (default 2)
+##   - TPSPIVOT/TPSCAMERA: leave cull_mask at default (includes all layers)
 func _apply_first_person_head_visibility() -> void:
 	if skeleton == null:
 		return
+	# In FPS gameplay mode, move character meshes to the hidden layer.
+	# In TPS or inventory mode, restore them to the visible layer.
+	var target_layer: int = fps_hidden_visual_layer if _fps_head_hidden else 1
+	for child in skeleton.get_children():
+		if child is MeshInstance3D:
+			(child as MeshInstance3D).layers = target_layer
 
-	var target_scale := fps_hidden_bone_scale if _fps_head_hidden else Vector3.ONE
-	for bone_idx_candidate in _fps_hidden_bone_indices:
-		skeleton.set_bone_pose_scale(bone_idx_candidate, target_scale)
 
-func update_tilt(delta: float, velocity: Vector3, target_velocity: Vector3, global_basis: Basis):
-	var accel = target_velocity - velocity
-	var local_accel = global_basis.inverse() * accel
 
-	var target_tilt = Vector2(
-		-local_accel.x,
-		local_accel.z
-	) * tilt_strength
-
-	target_tilt.x = clamp(target_tilt.x, -max_tilt_angle, max_tilt_angle)
-	target_tilt.y = clamp(target_tilt.y, -max_tilt_angle, max_tilt_angle)
-	tilt = tilt.lerp(target_tilt, tilt_smoothing * delta)
-
-	_apply()
-
-func _apply():
-	if skeleton == null or bone_idx == -1:
+func _toggle_xray() -> void:
+	_debug_xray = !_debug_xray
+	if skeleton == null:
 		return
 
-	var pose = skeleton.get_bone_global_pose(bone_idx)
-
-	var rot = Basis()
-	rot = rot.rotated(Vector3.RIGHT, tilt.y)
-	rot = rot.rotated(Vector3.FORWARD, tilt.x)
-
-	pose.basis = rot * pose.basis
-	skeleton.set_bone_global_pose(bone_idx, pose)
+	# Character meshes are typically MeshInstance3D nodes directly under the Skeleton.
+	# Weapons are nested under BoneAttachment3D nodes, so they remain visible.
+	for child in skeleton.get_children():
+		if child is MeshInstance3D:
+			child.visible = !_debug_xray
 
 # ============================================================
 #  TUNER API
@@ -187,6 +240,7 @@ func clear_runtime_visual(slot_name: String) -> void:
 			visual.queue_free()
 		equipped_visuals.erase(visual_key)
 		equipped_visual_entries.erase(visual_key)
+		equipped_visual_markers.erase(visual_key)
 		emit_signal("equipped_visual_detached", slot_name, removed_item_id)
 		_remove_slot_interactable(slot_name)
 
@@ -202,6 +256,17 @@ func get_active_visual(slot_name: String, item_id: String = "") -> Node3D:
 				break
 				
 	return equipped_visuals.get(visual_key, null)
+
+func get_active_visual_marker(slot_name: String, marker_name: String, item_id: String = "") -> Node3D:
+	var visual_key: String = _get_active_visual_key(slot_name, item_id)
+	if visual_key.is_empty():
+		return null
+
+	var markers: Dictionary = equipped_visual_markers.get(visual_key, {}) as Dictionary
+	var marker: Node3D = markers.get(marker_name, null) as Node3D
+	if marker != null and is_instance_valid(marker):
+		return marker
+	return null
 
 func get_active_visual_entry(slot_name: String, item_id: String = "") -> Dictionary:
 	var visual_key: String = slot_name
@@ -277,6 +342,7 @@ func _on_equipment_visuals_changed(visible_items: Array) -> void:
 			visual.queue_free()
 		equipped_visuals.erase(visual_key)
 		equipped_visual_entries.erase(visual_key)
+		equipped_visual_markers.erase(visual_key)
 		emit_signal("equipped_visual_detached", removed_slot_name, removed_item_id)
 
 	# Clean up interactables that are no longer active (using same logic)
@@ -477,17 +543,15 @@ func _update_equipped_visual(slot_name: String, entry: Dictionary) -> void:
 	if visual == null or not _matches_equipped_scene(visual, desired_scene):
 		if is_instance_valid(visual):
 			visual.queue_free()
+		equipped_visual_markers.erase(visual_key)
 
 		visual = _instantiate_equipped_visual(entry)
 		if visual == null:
 			print_debug("[VisualsComponent] ERROR: Failed to instantiate visual for %s" % item_id)
 			return
 
-		# Apply handle-socket alignment before adding to the tree so the node
-		# joins at the correct local offset (no frame delay, no global-transform
-		# dependency). The profile offset is applied on top afterward.
-		_apply_handle_alignment(visual, definition)
-
+		# The visual uses its scene-file transform directly.
+		# Profile offset is applied after adding to the tree.
 		anchor.add_child(visual)
 		equipped_visuals[visual_key] = visual
 
@@ -497,6 +561,7 @@ func _update_equipped_visual(slot_name: String, entry: Dictionary) -> void:
 	visual.visible = true
 	_apply_visual_profile(visual, entry)
 	equipped_visual_entries[visual_key] = entry.duplicate(true)
+	_cache_equipped_visual_markers(visual_key, visual, definition)
 	emit_signal("equipped_visual_attached", slot_name, item_id, visual, equipped_visual_entries[visual_key].duplicate(true))
 
 func _instantiate_equipped_visual(entry: Dictionary) -> Node3D:
@@ -525,6 +590,34 @@ func _matches_equipped_scene(visual: Node3D, equipped_scene: PackedScene) -> boo
 		return visual is MeshInstance3D
 	return str(visual.get_meta("equipped_scene_path", "")) == equipped_scene.resource_path
 
+func _cache_equipped_visual_markers(visual_key: String, visual: Node3D, _definition: ItemDefinition) -> void:
+	var markers: Dictionary = {}
+	var marker_names: PackedStringArray = PackedStringArray(["LGRIP", "RGRIP", "SIGHT_BACK", "SIGHT_FRONT", "MUZZLE"])
+	for marker_name in marker_names:
+		var marker: Node3D = _find_visual_marker(visual, marker_name)
+		if marker != null:
+			markers[marker_name] = marker
+
+	equipped_visual_markers[visual_key] = markers
+
+func _find_visual_marker(visual: Node3D, marker_name: String) -> Node3D:
+	if visual == null or marker_name.is_empty():
+		return null
+	if visual.name == marker_name:
+		return visual
+	return visual.find_child(marker_name, true, false) as Node3D
+
+func _get_active_visual_key(slot_name: String, item_id: String = "") -> String:
+	if not item_id.is_empty():
+		var explicit_key: String = slot_name + "_" + item_id
+		return explicit_key if equipped_visuals.has(explicit_key) else ""
+
+	for key_variant in equipped_visuals.keys():
+		var key: String = str(key_variant)
+		if key.begins_with(slot_name + "_"):
+			return key
+	return slot_name if equipped_visuals.has(slot_name) else ""
+
 func _refresh_dynamic_equipped_visual_transforms() -> void:
 	for visual_key_variant in equipped_visuals.keys():
 		var visual_key: String = str(visual_key_variant)
@@ -538,79 +631,16 @@ func _refresh_dynamic_equipped_visual_transforms() -> void:
 
 		_apply_visual_profile(visual, entry)
 
-# ============================================================
-#  HANDLE ALIGNMENT
-# ============================================================
-
-## Offsets the visual root so that the semantic "Handle" node inside it sits
-## at the bone attachment origin instead of the scene's geometric origin.
-##
-## Rationale: A weapon's GLB origin may not coincide with the grip — this is
-## common when artists export at world-space coordinates. By declaring a child
-## node named `handle_node_name` at the intended grip position, we can
-## compute its local offset and invert it onto the root, eliminating the need
-## to edit the .glb file or use large counter-offsets in the profile.
-##
-## Composition order:
-##   handle_alignment_offset (this function) ← applied first at instantiation
-##   + profile_offset (_apply_visual_profile) ← applied on top each frame
-##
-## If no Handle node is found the root transform is left at identity, which
-## reproduces the original origin-based behavior exactly.
-func _apply_handle_alignment(visual: Node3D, definition: ItemDefinition) -> void:
-	if definition == null or definition.handle_node_name.is_empty():
-		return
-
-	# We search WITHOUT requiring ownership so the node can be any depth inside
-	# the scene, matching the convention used by LeftHandIKComponent for LGRIP.
-	var handle := visual.find_child(definition.handle_node_name, true, false) as Node3D
-	if handle == null:
-		# No handle node declared — origin-based attachment is intentional.
-		return
-
-	# Compute the handle's local transform relative to the visual root.
-	# Inverting it shifts the root so the handle lands exactly at (0,0,0)
-	# of the parent bone attachment, which is what "grip at bone" means.
-	var handle_local: Transform3D = handle.transform
-	var parent: Node3D = handle.get_parent() as Node3D
-	while parent != null and parent != visual:
-		handle_local = parent.transform * handle_local
-		parent = parent.get_parent() as Node3D
-
-	visual.transform = handle_local.affine_inverse()
-	visual.set_meta("handle_alignment_applied", true)
 
 func _apply_visual_profile(visual: Node3D, entry: Dictionary) -> void:
 	var profile: ItemVisualAttachmentProfile = entry.get("attachment_profile", null)
 
-	# If a handle alignment was applied, the profile offset layers on top of it.
-	# We must restore the alignment base first, then add the profile delta so
-	# that repeated calls to _apply_visual_profile remain idempotent.
-	var has_handle: bool = visual.get_meta("handle_alignment_applied", false)
-	if has_handle:
-		var definition: ItemDefinition = entry.get("definition", null)
-		_apply_handle_alignment(visual, definition)
-
 	if profile == null:
-		# No profile: leave the current transform (handle-aligned or origin-based).
 		return
 
-	if has_handle:
-		# Compose: apply profile as an additional local offset on the aligned root.
-		visual.position += visual.basis * profile.position
-		# Use Basis math instead of adding Euler angles to avoid Gimbal Lock and offset swizzling.
-		var profile_rot := Basis.from_euler(Vector3(
-			deg_to_rad(profile.rotation_degrees.x),
-			deg_to_rad(profile.rotation_degrees.y),
-			deg_to_rad(profile.rotation_degrees.z)
-		))
-		visual.basis = visual.basis * profile_rot
-		visual.scale *= profile.scale
-	else:
-		# Legacy path: profile fully overrides the transform (original behavior).
-		visual.position = profile.position
-		visual.rotation_degrees = profile.rotation_degrees
-		visual.scale = profile.scale
+	visual.position = profile.position
+	visual.rotation_degrees = profile.rotation_degrees
+	visual.scale = profile.scale
 
 func _update_slot_interactable(slot_name: String, entry: Dictionary) -> void:
 	var inventory := _resolve_inventory()
@@ -685,3 +715,10 @@ func _fix_skinned_visuals(root: Node) -> void:
 		root.skeleton = root.get_path_to(skeleton)
 	for child in root.get_children():
 		_fix_skinned_visuals(child)
+
+static func _basis_to_degrees(p_basis: Basis) -> Vector3:
+	var euler := p_basis.orthonormalized().get_euler()
+	return Vector3(rad_to_deg(euler.x), rad_to_deg(euler.y), rad_to_deg(euler.z))
+
+static func _v3_to_str(v: Vector3) -> String:
+	return "(%.2f, %.2f, %.2f)" % [v.x, v.y, v.z]

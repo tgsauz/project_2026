@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="ItemResource" format=4 uid="uid://b2s6vfo1bxtyc"]
 
-[ext_resource type="Resource" path="res://World/Items/Visuals/BackpackBackProfile.tres" id="1_kgypb"]
-[ext_resource type="Script" uid="uid://cgvv34qt43vdl" path="res://World/Items/Scripts/ItemResource.gd" id="1_ox2nt"]
+[ext_resource type="Resource" uid="uid://cesqn45yo5moj" path="res://World/Items/Visuals/BackpackBackProfile.tres" id="1_kgypb"]
+[ext_resource type="Script" uid="uid://dtbhcphvg3ji3" path="res://World/Items/Scripts/ItemResource.gd" id="1_ox2nt"]
 [ext_resource type="PackedScene" uid="uid://wchrbesm6103" path="res://World/Items/simpleBackpack/simpleBackpack.glb" id="3_x5mrj"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_t8hhd"]
@@ -102,4 +102,4 @@ item_size = 3
 storage_capacity_units = 8
 storage_allowed_categories = PackedStringArray("ammo", "medical", "equipment")
 storage_allowed_tags = PackedStringArray()
-metadata/_custom_type_script = "uid://cgvv34qt43vdl"
+metadata/_custom_type_script = "uid://dtbhcphvg3ji3"

@@ -39,6 +39,9 @@ var visuals_component: VisualsComponent
 var animation_tree: AnimationTree
 var camera_controller: Node
 
+@export var ik_controller_path: NodePath
+var ik_controller: FullBodyIKController
+
 signal quick_action_menu_changed(prompt_data: Dictionary, actions: Array, selected_index: int, is_open: bool)
 
 # ============================================================
@@ -73,6 +76,8 @@ var interact_hold_consumed: bool = false
 var is_in_inventory: bool = false
 var is_aiming: bool = false
 
+var debug_input_locked: bool = false
+
 # ============================================================
 #  READY
 # ============================================================
@@ -106,6 +111,8 @@ func _process(_delta: float) -> void:
 # ============================================================
 
 func _unhandled_input(event):
+	if not is_multiplayer_authority():
+		return
 
 	if event is InputEventMouseButton and event.is_pressed() and not is_in_inventory:
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -143,6 +150,12 @@ func _unhandled_input(event):
 	if quick_action_menu_open and event.is_action_pressed("ui_up"):
 		_select_next_quick_action(-1)
 
+	if event.is_action_pressed("debug_ik"):
+		_toggle_ik_debug()
+
+	if event.is_action_pressed("toggle_mesh_visibility"):
+		_toggle_mesh_visibility()
+
 # ============================================================
 #  EXTERNAL ROTATION
 # ============================================================
@@ -166,13 +179,12 @@ func get_inventory_component() -> InventoryComponent:
 
 func _physics_process(delta):
 
-	_collect_input()
-	_update_sprint(delta)
+	if is_multiplayer_authority():
+		_collect_input()
+		_update_sprint(delta)
+		_compute_motor(delta)
 
 	_update_rotation(delta)
-
-	_compute_motor(delta)
-
 	_apply_gravity(delta)
 	move_and_slide()
 
@@ -185,12 +197,12 @@ func _physics_process(delta):
 
 func _collect_input():
 
-	if is_in_inventory:
+	if is_in_inventory or debug_input_locked:
 		input_vector = Vector2.ZERO
 		intent_direction = Vector3.ZERO
 		return
 
-	input_vector = Input.get_vector("right", "left", "backward", "forward")
+	input_vector = Input.get_vector("left", "right", "forward", "backward")
 
 	var move_yaw = rotation.y if is_first_person else camera_yaw
 	var move_basis = Basis(Vector3.UP, move_yaw)
@@ -203,7 +215,7 @@ func _collect_input():
 		if _is_effectively_aiming():
 			target_yaw = camera_yaw
 		elif intent_direction.length_squared() > 0.0:
-			target_yaw = atan2(intent_direction.x, intent_direction.z)
+			target_yaw = atan2(-intent_direction.x, -intent_direction.z)
 		
 # ============================================================
 #  MOTOR (CORE SYSTEM)
@@ -340,14 +352,11 @@ func _update_animation():
 #  VISUALS
 # ============================================================
 
-func _update_visuals(delta):
+func _update_visuals(_delta: float) -> void:
+	pass
 
-	visuals_component.update_tilt(
-		delta,
-		velocity,
-		target_velocity,
-		global_transform.basis
-	)
+func toggle_ads_debug() -> void:
+	is_aiming = !is_aiming
 
 func _on_weight_changed(_new_weight: float, new_load_factor: float):
 	load_factor = new_load_factor
@@ -479,7 +488,7 @@ func _spawn_dropped_world_item(item: ItemInstance) -> void:
 func _resolve_dependencies() -> bool:
 	inventory = get_node_or_null("InventoryComponent") as InventoryComponent
 	interaction = get_node_or_null("InteractionComponent") as InteractionComponent
-	visuals_component = get_node_or_null("Visuals") as VisualsComponent
+	visuals_component = get_node_or_null("VisualsComponent") as VisualsComponent
 
 	camera_controller = get_node_or_null("CAMERARIG")
 
@@ -510,6 +519,12 @@ func _resolve_dependencies() -> bool:
 		push_error("CharacterController could not resolve CAMERARIG.")
 		valid = false
 
+	if ik_controller_path != NodePath():
+		ik_controller = get_node_or_null(ik_controller_path) as FullBodyIKController
+		if ik_controller == null:
+			push_error("CharacterController could not resolve FullBodyIKController from path: ", ik_controller_path)
+			valid = false
+
 	return valid
 
 func _bind_ui() -> void:
@@ -526,7 +541,7 @@ func _refresh_view_model_visibility() -> void:
 		return
 	visuals_component.set_first_person_head_hidden(is_first_person and not is_in_inventory)
 
-func _has_main_hand_weapon() -> bool:
+func has_main_hand_weapon() -> bool:
 	if inventory == null:
 		return false
 	var item = inventory.get_main_hand_item()
@@ -534,8 +549,14 @@ func _has_main_hand_weapon() -> bool:
 		return false
 	return item.definition.category == ItemDefinition.CATEGORY_WEAPON
 
+func is_effectively_aiming() -> bool:
+	return is_aiming and not is_in_inventory and not quick_action_menu_open and has_main_hand_weapon()
+
+func _has_main_hand_weapon() -> bool:
+	return has_main_hand_weapon()
+
 func _is_effectively_aiming() -> bool:
-	return is_aiming and not is_in_inventory and not quick_action_menu_open and _has_main_hand_weapon()
+	return is_effectively_aiming()
 
 func _get_effective_move_speed() -> float:
 	var speed := sprint_speed if is_sprinting else move_speed
@@ -549,3 +570,26 @@ func _get_target_animation_state() -> String:
 	if _has_main_hand_weapon():
 		return "Armed"
 	return "Unarmed"
+
+func _toggle_ik_debug() -> void:
+	if not is_multiplayer_authority():
+		return
+	var existing := get_node_or_null("DebugIKVisualizer") as DebugIKVisualizer
+	if existing != null:
+		existing.queue_free()
+		prints("IK Debug: OFF")
+		return
+
+	if ik_controller == null:
+		push_error("Cannot create IK debug visualizer: FullBodyIKController not found.")
+		prints("IK Debug: FAILED")
+		return
+	var viz := DebugIKVisualizer.new()
+	viz.name = "DebugIKVisualizer"
+	viz.set_ik_controller(ik_controller)
+	add_child(viz)
+	prints("IK Debug: ON")
+
+func _toggle_mesh_visibility() -> void:
+	if visuals_component != null and visuals_component.has_method("toggle_debug_mesh_visibility"):
+		visuals_component.toggle_debug_mesh_visibility()

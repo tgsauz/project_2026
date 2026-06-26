@@ -1,0 +1,486 @@
+{
+  "G:\\Developing\\project-2026\\AGENTS.md": {
+    "mtime": 1781574592.927302,
+    "hash": "42372ccdaad76c1fa5f2897ac8758d20"
+  },
+  "G:\\Developing\\project-2026\\3DModularProps Assets\\License.txt": {
+    "mtime": 1781574592.8756056,
+    "hash": "26d2cff84ad21d2f831e39d11bbe5816"
+  },
+  "G:\\Developing\\project-2026\\Player\\GLBs\\_gltf_json.txt": {
+    "mtime": 1781574592.9363573,
+    "hash": "89adce2fcc7fff47a9d49ee37ed0d097"
+  },
+  "G:\\Developing\\project-2026\\project-docs\\docs\\00 - Start Here.md": {
+    "mtime": 1781574593.1038985,
+    "hash": "b445cb61879995d2a147afc3075798c5"
+  },
+  "G:\\Developing\\project-2026\\project-docs\\docs\\01 - Architecture Overview.md": {
+    "mtime": 1781574593.104904,
+    "hash": "754f13ce57613ac64d1a7bccc77a7b28"
+  },
+  "G:\\Developing\\project-2026\\project-docs\\docs\\02 - Game Systems Overview.md": {
+    "mtime": 1781574593.104904,
+    "hash": "c1f14efc36e16a29254871657bbf5415"
+  },
+  "G:\\Developing\\project-2026\\project-docs\\docs\\03 - Inventory and Item System.md": {
+    "mtime": 1781574593.104904,
+    "hash": "c551b2d98f56ee900edf882109f39b5c"
+  },
+  "G:\\Developing\\project-2026\\project-docs\\docs\\04 - Interaction System.md": {
+    "mtime": 1781574593.104904,
+    "hash": "6da6ac9256e5e31167c0da5892a4c3da"
+  },
+  "G:\\Developing\\project-2026\\project-docs\\docs\\05 - Player, Visuals, and Attachment Points.md": {
+    "mtime": 1781574593.1059089,
+    "hash": "84c8e8c39868022314d5fa800a407c67"
+  },
+  "G:\\Developing\\project-2026\\project-docs\\docs\\06 - Testing and Debugging.md": {
+    "mtime": 1781574593.1059089,
+    "hash": "b00d14f2df747e387e1cfa4347eb0efd"
+  },
+  "G:\\Developing\\project-2026\\project-docs\\docs\\08 - How To Add New Items.md": {
+    "mtime": 1781574593.1059089,
+    "hash": "3e4bdcc7613fc79155e662345445e365"
+  },
+  "G:\\Developing\\project-2026\\project-docs\\docs\\09 - How To Add New Attachment Points.md": {
+    "mtime": 1781574593.1069088,
+    "hash": "03c1b08f3a8d5faa3c75ff43af525e69"
+  },
+  "G:\\Developing\\project-2026\\project-docs\\docs\\10 - Control Point Roadmap.md": {
+    "mtime": 1781574593.1069088,
+    "hash": "24b9cdcb68b0561ee53282a34290e05e"
+  },
+  "G:\\Developing\\project-2026\\project-docs\\docs\\11 - Tone and Design Guardrails.md": {
+    "mtime": 1781574593.1069088,
+    "hash": "1ab8612ced7eebc6957ba6fdbbc5d809"
+  },
+  "G:\\Developing\\project-2026\\project-docs\\docs\\12 - How To Modify UI.md": {
+    "mtime": 1781574593.1069088,
+    "hash": "aee03aa47f6b4750626eacdd62d59e86"
+  },
+  "G:\\Developing\\project-2026\\project-docs\\docs\\13 - Character Visuals Tuner Guide.md": {
+    "mtime": 1781574593.1079085,
+    "hash": "8f1b45b67db92baafc86403506aeb0a4"
+  },
+  "G:\\Developing\\project-2026\\project-docs\\docs\\14 - UI + Inventory System Branch Refactor Plan.md": {
+    "mtime": 1781574593.1079085,
+    "hash": "11ab5077639abe2473bb48d4ba3669c9"
+  },
+  "G:\\Developing\\project-2026\\project-docs\\docs\\15 - Aiming and Weapon States.md": {
+    "mtime": 1781574593.1079085,
+    "hash": "1fbae33efe7bc5d9dba3f4da4d7ad8e8"
+  },
+  "G:\\Developing\\project-2026\\project-docs\\docs\\17 - Engine Coordinate Standards.md": {
+    "mtime": 1781574593.1089091,
+    "hash": "0d30e9a377f96f7514586c5b659a9334"
+  },
+  "G:\\Developing\\project-2026\\project-docs\\docs\\19 - AI Agent Handbook.md": {
+    "mtime": 1782403038.3668888,
+    "hash": "30c086d17981afcf2d80dbd2686e5d56"
+  },
+  "G:\\Developing\\project-2026\\project-docs\\docs\\20 - Debug Diagnostics.md": {
+    "mtime": 1782415070.0349438,
+    "hash": "5e8cd7df951723e3e0febed77585a5c4"
+  },
+  "G:\\Developing\\project-2026\\project-docs\\docs\\TODO.md": {
+    "mtime": 1781574593.1099107,
+    "hash": "60e7b9742ec0d5f9c9fcd50112a8c910"
+  },
+  "G:\\Developing\\project-2026\\project-docs\\docs\\Welcome.md": {
+    "mtime": 1781574593.1099107,
+    "hash": "bd3c5550459c2d45b5fd9656b5740d9c"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\License.txt": {
+    "mtime": 1781574592.997014,
+    "hash": "4420b7c21fa27d71f7295352a8b692ad"
+  },
+  "G:\\Developing\\project-2026\\icon.svg": {
+    "mtime": 1781574593.1038985,
+    "hash": "a16f2eed1b4496c4abf03d329708ba09"
+  },
+  "G:\\Developing\\project-2026\\3DModularProps Assets\\texture.png": {
+    "mtime": 1781574592.927302,
+    "hash": "4a6f0a32f836971b4f4433105a75c5ef"
+  },
+  "G:\\Developing\\project-2026\\Player\\mastercharacterReWep_UVTEXTUREDPROCESSED.png": {
+    "mtime": 1781574592.9950094,
+    "hash": "8c707676ffcb9cc31d0ec2f2a2f895d7"
+  },
+  "G:\\Developing\\project-2026\\Player\\GLBs\\mastercharacter_UVTEXTUREDPROCESSED.png": {
+    "mtime": 1781574592.9784214,
+    "hash": "8c707676ffcb9cc31d0ec2f2a2f895d7"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\Preview.png": {
+    "mtime": 1781574593.0305588,
+    "hash": "ceb5d87cfc1b99029e29e8398a0d81e8"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\Sample.png": {
+    "mtime": 1781574593.0315576,
+    "hash": "1b41725917be8b1ea2b782861f944b38"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Dark\\texture_01.png": {
+    "mtime": 1781574592.997014,
+    "hash": "a6af615bb38b6c2fee78ab04fa233325"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Dark\\texture_02.png": {
+    "mtime": 1781574592.997014,
+    "hash": "aedac19fa4e36c414eb2afa98698f44e"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Dark\\texture_03.png": {
+    "mtime": 1781574592.9980145,
+    "hash": "c731a68f3b940157e72539c24a340d25"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Dark\\texture_04.png": {
+    "mtime": 1781574592.9980145,
+    "hash": "5cef1f615fcefeaf26d0a20e20cc11bc"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Dark\\texture_05.png": {
+    "mtime": 1781574592.9980145,
+    "hash": "8a81ce18511e15b5fc17f9ed0bb55f38"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Dark\\texture_06.png": {
+    "mtime": 1781574592.999014,
+    "hash": "bb2e71c01a932c64f90112e1950ab25c"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Dark\\texture_07.png": {
+    "mtime": 1781574592.999014,
+    "hash": "743dcb3bb1c8223887c17997b772ff69"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Dark\\texture_08.png": {
+    "mtime": 1781574592.999014,
+    "hash": "a14462ba8f850219af39a32d7e86591f"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Dark\\texture_09.png": {
+    "mtime": 1781574592.999014,
+    "hash": "7eabdf840ced24d1083618ca092c768a"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Dark\\texture_10.png": {
+    "mtime": 1781574593.0000138,
+    "hash": "c4fe044960b5e954d608bcf834fa09b2"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Dark\\texture_11.png": {
+    "mtime": 1781574593.0000138,
+    "hash": "a18349fee0befe3b76d3b3abbde7f8d4"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Dark\\texture_12.png": {
+    "mtime": 1781574593.0000138,
+    "hash": "881af245a8bc9e5fceae784cce2c3f24"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Dark\\texture_13.png": {
+    "mtime": 1781574593.0010135,
+    "hash": "3b505364b2691af250f9587f59547bbd"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Green\\texture_01.png": {
+    "mtime": 1781574593.0010135,
+    "hash": "45e2c41f8b1c329c157491cef82a4026"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Green\\texture_02.png": {
+    "mtime": 1781574593.0010135,
+    "hash": "bf3e1f5ebe6244e9f777c3be2250028e"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Green\\texture_03.png": {
+    "mtime": 1781574593.0020154,
+    "hash": "00268252f8cb4ca30e2987b989329cd4"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Green\\texture_04.png": {
+    "mtime": 1781574593.0020154,
+    "hash": "43c39773d927edd64f3ea59107fa488c"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Green\\texture_05.png": {
+    "mtime": 1781574593.0020154,
+    "hash": "a7f31da1728ef1e55820caf1b9db6bf2"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Green\\texture_06.png": {
+    "mtime": 1781574593.0020154,
+    "hash": "fb5b2f3109c445ec8c3aceda28b97b14"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Green\\texture_07.png": {
+    "mtime": 1781574593.0020154,
+    "hash": "8cc582343454419b2745391dc7283c73"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Green\\texture_08.png": {
+    "mtime": 1781574593.0035214,
+    "hash": "eb837d81f0096ed6753a831dc4b73512"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Green\\texture_09.png": {
+    "mtime": 1781574593.0035214,
+    "hash": "9cb1ebb5c188684eefa343f2e2f75054"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Green\\texture_10.png": {
+    "mtime": 1781574593.0035214,
+    "hash": "423e3803418e54012134f532ffe2081e"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Green\\texture_11.png": {
+    "mtime": 1781574593.0045297,
+    "hash": "1f89ffef424c67118fe97a98fe195e2b"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Green\\texture_12.png": {
+    "mtime": 1781574593.0045297,
+    "hash": "b50f795ea071564b98c59af4d6e5912a"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Green\\texture_13.png": {
+    "mtime": 1781574593.0045297,
+    "hash": "4aadc4a4f6ef59e697e6e75d28f20288"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Light\\texture_01.png": {
+    "mtime": 1781574593.0125268,
+    "hash": "de435bdf56d06837e5bdb4d21ba4bc17"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Light\\texture_02.png": {
+    "mtime": 1781574593.0140398,
+    "hash": "5d69d3683f042ccb0bbbeea2496fc27d"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Light\\texture_03.png": {
+    "mtime": 1781574593.0140398,
+    "hash": "f87aa4cb60decd86ee22f43d1bcf7e86"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Light\\texture_04.png": {
+    "mtime": 1781574593.0140398,
+    "hash": "8cd4df98b448aa32d3b86076e89cb0a0"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Light\\texture_05.png": {
+    "mtime": 1781574593.015041,
+    "hash": "b657bab6a9129a8e260ebc5bef3b2f6e"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Light\\texture_06.png": {
+    "mtime": 1781574593.015041,
+    "hash": "63c6e6a7dd1bdd9b691eb69b1c85e517"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Light\\texture_07.png": {
+    "mtime": 1781574593.015041,
+    "hash": "e47fdd0ed9bc48a18abf616b6e7ed27d"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Light\\texture_08.png": {
+    "mtime": 1781574593.015041,
+    "hash": "bdb36b515fe8ac20d9995451d25d71ea"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Light\\texture_09.png": {
+    "mtime": 1781574593.0160403,
+    "hash": "a30d952761e14cdcb90bc4a52ebd4638"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Light\\texture_10.png": {
+    "mtime": 1781574593.0160403,
+    "hash": "a998975421e9e6b7d8ffc68418167ee5"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Light\\texture_11.png": {
+    "mtime": 1781574593.0160403,
+    "hash": "66978ba0c84d44f7cb6987603f7b6faa"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Light\\texture_12.png": {
+    "mtime": 1781574593.017043,
+    "hash": "1410f4b1658b08f91518023e002ceafc"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Light\\texture_13.png": {
+    "mtime": 1781574593.017043,
+    "hash": "c53606d77c657f09e151cc2e7e7b9e20"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Orange\\texture_01.png": {
+    "mtime": 1781574593.017043,
+    "hash": "cbe2349de8f2bb28e077ab6cffe7287f"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Orange\\texture_02.png": {
+    "mtime": 1781574593.0180404,
+    "hash": "13d9a2a451b3f7183d3bce09e9fcb863"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Orange\\texture_03.png": {
+    "mtime": 1781574593.0180404,
+    "hash": "a281abe99f2f57b7bb8d7fedf93eeb50"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Orange\\texture_04.png": {
+    "mtime": 1781574593.0180404,
+    "hash": "c3afeb900e7026b6ffa027f73d2b68cd"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Orange\\texture_05.png": {
+    "mtime": 1781574593.0190406,
+    "hash": "0e78bf42417d13b6785a7bf9efd7cbc5"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Orange\\texture_06.png": {
+    "mtime": 1781574593.0190406,
+    "hash": "8b71cc457bd3a77d34027a21005f2a55"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Orange\\texture_07.png": {
+    "mtime": 1781574593.0190406,
+    "hash": "d7adb4d64db57f6963bd6797c5431354"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Orange\\texture_08.png": {
+    "mtime": 1781574593.0190406,
+    "hash": "4063e8c4b68999bf22a97a9136c6f35e"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Orange\\texture_09.png": {
+    "mtime": 1781574593.0200408,
+    "hash": "460626afa86eae274c5914e894da7d8a"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Orange\\texture_10.png": {
+    "mtime": 1781574593.0200408,
+    "hash": "7f693656c00c5c1b76eb04011064e1fb"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Orange\\texture_11.png": {
+    "mtime": 1781574593.0200408,
+    "hash": "d5602ef65c11291b041212313146c084"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Orange\\texture_12.png": {
+    "mtime": 1781574593.0210397,
+    "hash": "eb58d164d38bde27ea0be7aee6df749c"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Orange\\texture_13.png": {
+    "mtime": 1781574593.0210397,
+    "hash": "a276352a56779c622c10a1050516651d"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Purple\\texture_01.png": {
+    "mtime": 1781574593.0210397,
+    "hash": "7af85fcbf87f43b8ee7c2e5268e64167"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Purple\\texture_02.png": {
+    "mtime": 1781574593.0220408,
+    "hash": "d2c5570b467f6ff1e79b8de03bb8faef"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Purple\\texture_03.png": {
+    "mtime": 1781574593.0220408,
+    "hash": "94e7c9d98610bfbabac7b71dc02352bd"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Purple\\texture_04.png": {
+    "mtime": 1781574593.0220408,
+    "hash": "17ef401f0704659a84150172d452ec86"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Purple\\texture_05.png": {
+    "mtime": 1781574593.0220408,
+    "hash": "bcb8985249c11976fe40042c75237ea2"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Purple\\texture_06.png": {
+    "mtime": 1781574593.0220408,
+    "hash": "9708041ce574542bdc4887d1bb6f98cf"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Purple\\texture_07.png": {
+    "mtime": 1781574593.0235465,
+    "hash": "4dd699a3691acf4bf471acbc3fda184d"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Purple\\texture_08.png": {
+    "mtime": 1781574593.0235465,
+    "hash": "70200c5db3f83204467cead93eb92c50"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Purple\\texture_09.png": {
+    "mtime": 1781574593.0235465,
+    "hash": "696c154709e9875e26ae3424c2fd2e92"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Purple\\texture_10.png": {
+    "mtime": 1781574593.0235465,
+    "hash": "19929c2d90346eb81294699b126e97a9"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Purple\\texture_11.png": {
+    "mtime": 1781574593.0245526,
+    "hash": "de63a4c52eec7766f1138de23a85ef71"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Purple\\texture_12.png": {
+    "mtime": 1781574593.0245526,
+    "hash": "5573f302df8c0b8716e7ef354d20f7b8"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Purple\\texture_13.png": {
+    "mtime": 1781574593.0245526,
+    "hash": "1c983da3109505898411e352d44fb32b"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Red\\texture_01.png": {
+    "mtime": 1781574593.0255575,
+    "hash": "f5e8d2591666788854ae84e035598185"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Red\\texture_02.png": {
+    "mtime": 1781574593.0255575,
+    "hash": "5189bb40096f8749109040d447d0aff9"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Red\\texture_03.png": {
+    "mtime": 1781574593.0255575,
+    "hash": "eeba8d46f1277bdf5b6dd7010fc2cf66"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Red\\texture_04.png": {
+    "mtime": 1781574593.0265596,
+    "hash": "7195206a2adc88c8d0c061b714440543"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Red\\texture_05.png": {
+    "mtime": 1781574593.0265596,
+    "hash": "d1790a3014fffb2ec5cbb3ef73889179"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Red\\texture_06.png": {
+    "mtime": 1781574593.0265596,
+    "hash": "800e433fa68790006d24931ab5331216"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Red\\texture_07.png": {
+    "mtime": 1781574593.0275588,
+    "hash": "77e470d1133c84856b090d2fe9d6f952"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Red\\texture_08.png": {
+    "mtime": 1781574593.0275588,
+    "hash": "e12eacc3592e7d5b3a96211abd5c6092"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Red\\texture_09.png": {
+    "mtime": 1781574593.0275588,
+    "hash": "a9f094459fa9d0cabea31256e91cfa3d"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Red\\texture_10.png": {
+    "mtime": 1781574593.0285575,
+    "hash": "cd82c40ac62253b050ebafefa6977fc0"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Red\\texture_11.png": {
+    "mtime": 1781574593.0285575,
+    "hash": "1b9d8eb0aa4c46e20efb5d7f85c796cd"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Red\\texture_12.png": {
+    "mtime": 1781574593.0285575,
+    "hash": "abb9808d5ad08168ff3e9149a87457f1"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\PNG\\Red\\texture_13.png": {
+    "mtime": 1781574593.0295572,
+    "hash": "f4e8bc94b9e3ad81468a773cc52eec57"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\Vector\\texture_01.svg": {
+    "mtime": 1781574593.0315576,
+    "hash": "124c2c9424f5b3a2198e9f7950c64028"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\Vector\\texture_02.svg": {
+    "mtime": 1781574593.0315576,
+    "hash": "78da35c1999d8f5cfba074840168bed9"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\Vector\\texture_03.svg": {
+    "mtime": 1781574593.032558,
+    "hash": "70613a6972165a48c6ef3173cc7c770c"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\Vector\\texture_04.svg": {
+    "mtime": 1781574593.033558,
+    "hash": "cac7fa6baa32e5a2a0f0e0c9fb74a2db"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\Vector\\texture_05.svg": {
+    "mtime": 1781574593.033558,
+    "hash": "1739fd97108fd5b136881949df00b002"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\Vector\\texture_06.svg": {
+    "mtime": 1781574593.0346596,
+    "hash": "54178d9956773b12e32c5f297e52abef"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\Vector\\texture_07.svg": {
+    "mtime": 1781574593.0346596,
+    "hash": "869a53acb86313a639187e293d42a38c"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\Vector\\texture_08.svg": {
+    "mtime": 1781574593.0356615,
+    "hash": "e4103a324a57be37ccf930dbc0cb973f"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\Vector\\texture_09.svg": {
+    "mtime": 1781574593.0356615,
+    "hash": "68b19a7bd4b56b5d101a855d5a355dee"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\Vector\\texture_10.svg": {
+    "mtime": 1781574593.036658,
+    "hash": "d320ba28dd946cbaa3770b05835edb54"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\Vector\\texture_11.svg": {
+    "mtime": 1781574593.036658,
+    "hash": "6a37a9aa35b56d9b9289d680360e4777"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\Vector\\texture_12.svg": {
+    "mtime": 1781574593.0376577,
+    "hash": "1bb2eaa0e09239898297f1404c2e28b6"
+  },
+  "G:\\Developing\\project-2026\\PrototypeTextures\\Vector\\texture_13.svg": {
+    "mtime": 1781574593.0386581,
+    "hash": "06ffb3b200898f48b3557b27421283a7"
+  }
+}

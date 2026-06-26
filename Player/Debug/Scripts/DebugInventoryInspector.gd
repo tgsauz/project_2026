@@ -10,6 +10,7 @@ var _slot_table: RichTextLabel
 var _actions_row: HBoxContainer
 var _last_serialized: Dictionary = {}
 var _inventory_component: InventoryComponent
+var _visuals_component: VisualsComponent
 
 var style_profile: UIStyleProfile
 
@@ -52,6 +53,7 @@ func _ready() -> void:
 	_add_action_button("Add Test", _on_add_test)
 	_add_action_button("Serialize", _on_serialize)
 	_add_action_button("Deserialize", _on_deserialize)
+	_add_action_button("Print Bone Chain", _on_print_bone_chain)
 
 func apply_style(style: UIStyleProfile) -> void:
 	style_profile = style
@@ -68,6 +70,9 @@ func apply_style(style: UIStyleProfile) -> void:
 
 func set_inventory_component(inventory: InventoryComponent) -> void:
 	_inventory_component = inventory
+
+func set_visuals_component(visuals: VisualsComponent) -> void:
+	_visuals_component = visuals
 
 func _process(_delta: float) -> void:
 	if not visible:
@@ -163,3 +168,9 @@ func _on_deserialize() -> void:
 		return
 	inv.deserialize(_last_serialized)
 	print("[DebugInv] Deserialized inventory from snapshot.")
+
+func _on_print_bone_chain() -> void:
+	if _visuals_component == null:
+		print("[BoneDiagnostic] No VisualsComponent bound.")
+		return
+	_visuals_component.print_bone_chain_diagnostic()

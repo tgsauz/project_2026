@@ -1,11 +1,11 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://12ggde6tffjy"]
 
-[ext_resource type="Script" uid="uid://cgvv34qt43vdl" path="res://World/Items/Scripts/ItemResource.gd" id="1"]
-[ext_resource type="Resource" uid="uid://8sk31w5nm11w" path="res://World/Items/Visuals/PrototypeRifleRightHandProfile.tres" id="3_right"]
+[ext_resource type="Script" uid="uid://dtbhcphvg3ji3" path="res://World/Items/Scripts/ItemResource.gd" id="1"]
+[ext_resource type="Resource" uid="uid://c8ewj0h4crrv2" path="res://World/Items/Visuals/PrototypeRifleRightHandProfile.tres" id="3_right"]
 [ext_resource type="Resource" uid="uid://5q00b5hufieq" path="res://World/Items/Visuals/PrototypeRifleLeftHandProfile.tres" id="4_left"]
-[ext_resource type="PackedScene" uid="uid://ckxb142twhmoy" path="res://World/Items/AKRIFLE/weaponSceneEquipped.tscn" id="4_qwg5y"]
-[ext_resource type="Resource" path="res://World/Items/Visuals/PrototypeRifleLowerBackProfile.tres" id="5_lower"]
-[ext_resource type="PackedScene" uid="uid://dyag626mr0ay4" path="res://World/Items/AKRIFLE/weaponSceneWorld.tscn" id="6_5ex3n"]
+[ext_resource type="PackedScene" uid="uid://ckxb142twhmoy" path="res://World/Items/M4RIFLE/weaponSceneEquipped.tscn" id="4_qwg5y"]
+[ext_resource type="Resource" uid="uid://b742mlko4wx1f" path="res://World/Items/Visuals/PrototypeRifleLowerBackProfile.tres" id="5_lower"]
+[ext_resource type="PackedScene" uid="uid://dyag626mr0ay4" path="res://World/Items/M4RIFLE/weaponSceneWorld.tscn" id="6_5ex3n"]
 
 [resource]
 script = ExtResource("1")

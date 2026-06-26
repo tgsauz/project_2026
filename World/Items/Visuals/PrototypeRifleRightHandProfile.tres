@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="ItemVisualAttachmentProfile" format=3 uid="uid://8sk31w5nm11w"]
+[gd_resource type="Resource" script_class="ItemVisualAttachmentProfile" format=3 uid="uid://c8ewj0h4crrv2"]
 
 [ext_resource type="Script" uid="uid://d2acu83ir08qt" path="res://World/Items/Scripts/ItemVisualAttachmentProfile.gd" id="1_profile"]
 

@@ -1,32 +1,41 @@
 [gd_scene format=3 uid="uid://m62ijxeuosdk"]
 
-[ext_resource type="Script" uid="uid://ckaet3rbw2rrp" path="res://World/Items/Scripts/InventoryComponent.gd" id="1_2nw4y"]
-[ext_resource type="Script" uid="uid://dkue2j3r6w56m" path="res://Player/Scripts/CharacterController.gd" id="1_ay0dg"]
-[ext_resource type="Script" uid="uid://cugcfuh4swrqi" path="res://Player/Scripts/VisualsComponent.gd" id="3_5dj55"]
-[ext_resource type="PackedScene" uid="uid://vxgi8ggmn2p1" path="res://Player/mastercharacter.tscn" id="3_pxyys"]
-[ext_resource type="Script" uid="uid://cf4d516qdgd84" path="res://Player/Scripts/LeftHandIKComponent.gd" id="4_lhik"]
-[ext_resource type="Script" uid="uid://dkq2hvbf4rmq0" path="res://World/Items/Scripts/InteractionComponent.gd" id="4_mg46b"]
-[ext_resource type="Script" uid="uid://brjbff4dvpvw8" path="res://Player/Scripts/CameraController.gd" id="5_cam"]
+[ext_resource type="Script" uid="uid://dhuh4t6w4cyqn" path="res://World/Items/Scripts/InventoryComponent.gd" id="1_2nw4y"]
+[ext_resource type="Script" uid="uid://b13x2jiav3w8x" path="res://Player/Scripts/CharacterController.gd" id="1_ay0dg"]
+[ext_resource type="Script" uid="uid://dvm6nlpktho52" path="res://Player/Scripts/VisualsComponent.gd" id="3_5dj55"]
+[ext_resource type="PackedScene" uid="uid://vxgi8ggmn2p1" path="res://Player/mastercharacter.tscn" id="3_6f781"]
+[ext_resource type="Script" uid="uid://cb6df4o0xh02u" path="res://World/Items/Scripts/InteractionComponent.gd" id="4_mg46b"]
+[ext_resource type="Script" uid="uid://01gl5dbi1kb6" path="res://Player/Scripts/CameraController.gd" id="5_cam"]
+[ext_resource type="Script" uid="uid://dbvf3coa6supw" path="res://Player/Scripts/WeaponActionController.gd" id="6_weapon"]
+[ext_resource type="Script" uid="uid://0770tqdraevn" path="res://Player/Scripts/AimController.gd" id="8_aimcontroller"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_jdwmw"]
 radius = 0.33154297
 height = 1.8227539
 
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_player"]
+properties/0/path = NodePath(".:intent_direction")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath(".:target_yaw")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath(".:load_factor")
+properties/2/spawn = true
+properties/2/replication_mode = 2
+properties/3/path = NodePath(".:velocity")
+properties/3/spawn = true
+properties/3/replication_mode = 1
+
 [node name="CharacterBody3D" type="CharacterBody3D" unique_id=1321391257 groups=["Player"]]
 script = ExtResource("1_ay0dg")
+ik_controller_path = NodePath("VisualsComponent/Rig/Armature/Skeleton3D/FullBodyIKController")
 
-[node name="Visuals" type="Node3D" parent="." unique_id=1722711644]
+[node name="VisualsComponent" type="Node3D" parent="." unique_id=1722711644]
 script = ExtResource("3_5dj55")
 
-[node name="Rig" parent="Visuals" unique_id=381671599 instance=ExtResource("3_pxyys")]
-
-[node name="LeftHandIK" type="Node" parent="Visuals" unique_id=230066408]
-script = ExtResource("4_lhik")
-root_bone_candidates = PackedStringArray("arm_l")
-tip_bone_candidates = PackedStringArray("hand_l")
-ik_in_speed = 20.0
-hand_rotation_offset = Vector3(-90, 0, 0)
-debug_draw_gizmos = true
+[node name="Rig" parent="VisualsComponent" unique_id=432564184 instance=ExtResource("3_6f781")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=2018647733]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.88413084, 0)
@@ -34,14 +43,15 @@ shape = SubResource("CapsuleShape3D_jdwmw")
 
 [node name="InventoryComponent" type="Node" parent="." unique_id=446658261]
 script = ExtResource("1_2nw4y")
-metadata/_custom_type_script = "uid://ckaet3rbw2rrp"
+metadata/_custom_type_script = "uid://dhuh4t6w4cyqn"
 
 [node name="InteractionComponent" type="Node" parent="." unique_id=765704100]
 script = ExtResource("4_mg46b")
 
 [node name="CAMERARIG" type="Node3D" parent="." unique_id=629580240]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 1.6838841, 0.10873391)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6838841, 0.10873391)
 script = ExtResource("5_cam")
+visuals_component_path = NodePath("../VisualsComponent")
 
 [node name="TPSPIVOT" type="Node3D" parent="CAMERARIG" unique_id=1171395783]
 
@@ -49,4 +59,16 @@ script = ExtResource("5_cam")
 
 [node name="FPSPIVOT" type="Node3D" parent="CAMERARIG" unique_id=1661205752]
 
+[node name="AimTarget" type="Node3D" parent="CAMERARIG/FPSPIVOT" unique_id=1284683472]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.18, -0.12, -1.4)
+
 [node name="FPSCAMERA" type="Camera3D" parent="CAMERARIG/FPSPIVOT" unique_id=432016729]
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=848472128]
+replication_config = SubResource("SceneReplicationConfig_player")
+
+[node name="WeaponActionController" type="Node" parent="." unique_id=734489649]
+script = ExtResource("6_weapon")
+
+[node name="AimController" type="Node" parent="." unique_id=1670919205]
+script = ExtResource("8_aimcontroller")

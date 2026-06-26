@@ -32,8 +32,11 @@ ambient_light_color = Color(1, 1, 1, 1)
 [node name="CharacterBody3D" parent="." unique_id=1321391257 instance=ExtResource("1_7qfgn")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4648862, 0)
 
-[node name="Visuals" parent="CharacterBody3D" index="0" unique_id=1722711644]
-show_attachment_debug_gizmos = true
+[node name="AimTarget" parent="CharacterBody3D/CAMERARIG/FPSPIVOT" parent_id_path=PackedInt32Array(1321391257, 1661205752) index="0" unique_id=1284683472]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.12, -1.4)
+
+[node name="FPSCAMERA" parent="CharacterBody3D/CAMERARIG/FPSPIVOT" parent_id_path=PackedInt32Array(1321391257, 1661205752) index="1" unique_id=432016729]
+cull_mask = 1048573
 
 [node name="UIRoot" parent="CharacterBody3D" unique_id=1321403690 instance=ExtResource("2_uay7f")]
 presentation_tier = 1
@@ -99,13 +102,13 @@ environment = SubResource("Environment_7qfgn")
 [node name="Items" type="Node3D" parent="." unique_id=1201531693]
 
 [node name="Gun" parent="Items" unique_id=826401534 instance=ExtResource("ExtWorldItem")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3657718, 1.4235078)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3657718, -2.187511)
 mass = 3.5
 item_definition = ExtResource("4_fisen")
 metadata/world_visual_applied = false
 
 [node name="Bandage" parent="Items" unique_id=1906457377 instance=ExtResource("ExtWorldItem")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6851126, 2.9605255)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.70235413, 0.6851126, -2.1565814)
 mass = 0.2
 item_definition = ExtResource("4_1cs7u")
 metadata/world_visual_applied = false
@@ -118,5 +121,6 @@ prompt_title = "BPWI"
 metadata/world_visual_applied = false
 
 [editable path="CharacterBody3D"]
+[editable path="CharacterBody3D/VisualsComponent/Rig"]
 [editable path="CharacterBody3D/UIRoot"]
 [editable path="Items/Bandage"]

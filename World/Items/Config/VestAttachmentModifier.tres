@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="EquipmentAttachmentModifier" format=3]
+[gd_resource type="Resource" script_class="EquipmentAttachmentModifier" format=3 uid="uid://dknmbyscklxnt"]
 
-[ext_resource type="Script" path="res://World/Items/Scripts/EquipmentAttachmentModifier.gd" id="1_modifier"]
-[ext_resource type="Script" path="res://World/Items/Scripts/AttachmentPointDefinition.gd" id="2_point"]
+[ext_resource type="Script" uid="uid://bi22w4nh75e2m" path="res://World/Items/Scripts/EquipmentAttachmentModifier.gd" id="1_modifier"]
+[ext_resource type="Script" uid="uid://2u4rgm3fuwua" path="res://World/Items/Scripts/AttachmentPointDefinition.gd" id="2_point"]
 
 [sub_resource type="Resource" id="AttachmentPointDefinition_vest_pouch_left"]
 script = ExtResource("2_point")
@@ -10,11 +10,9 @@ display_name = "Vest Pouch Left"
 parent_node_id = "torso"
 accepted_categories = PackedStringArray("equipment", "medical")
 accepted_item_tags = PackedStringArray("pouch", "medical")
-visible = true
 anchor_bone_name = "spine_02"
 anchor_local_position = Vector3(-0.1, 0.08, 0.14)
 debug_color = Color(0.5, 0.9, 1, 1)
-tuner_enabled = true
 sort_order = 40
 
 [sub_resource type="Resource" id="AttachmentPointDefinition_vest_utility_right"]
@@ -24,11 +22,9 @@ display_name = "Vest Utility Right"
 parent_node_id = "torso"
 accepted_categories = PackedStringArray("equipment", "medical", "ammo")
 accepted_item_tags = PackedStringArray("medical", "grenade", "magazine", "pouch")
-visible = true
 anchor_bone_name = "spine_02"
 anchor_local_position = Vector3(0.1, 0.08, 0.14)
 debug_color = Color(0.4, 1, 0.7, 1)
-tuner_enabled = true
 sort_order = 41
 
 [resource]

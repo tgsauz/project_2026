@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://bc44fi8bkvw2b"]
 
-[ext_resource type="Script" uid="uid://cgvv34qt43vdl" path="res://World/Items/Scripts/ItemResource.gd" id="1_ib5ee"]
-[ext_resource type="Resource" path="res://World/Items/Config/VestAttachmentModifier.tres" id="2_modifier"]
+[ext_resource type="Script" uid="uid://dtbhcphvg3ji3" path="res://World/Items/Scripts/ItemResource.gd" id="1_ib5ee"]
+[ext_resource type="Resource" uid="uid://dknmbyscklxnt" path="res://World/Items/Config/VestAttachmentModifier.tres" id="2_modifier"]
 
 [resource]
 script = ExtResource("1_ib5ee")
@@ -11,8 +11,9 @@ tooltip_text = "Protects you from incoming kinetic projectiles."
 category = "clothing"
 allowed_slots = PackedStringArray("torso")
 attachment_tags = PackedStringArray("vest")
-preferred_slot = "torso"
 is_skinned_mesh = true
 attachment_modifier = ExtResource("2_modifier")
 container_allowed_categories = null
-metadata/_custom_type_script = "uid://cgvv34qt43vdl"
+storage_allowed_categories = null
+storage_allowed_tags = null
+metadata/_custom_type_script = "uid://dtbhcphvg3ji3"

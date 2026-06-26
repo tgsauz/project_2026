@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://bevuprx3uli6x"]
 
-[ext_resource type="Script" uid="uid://cgvv34qt43vdl" path="res://World/Items/Scripts/ItemResource.gd" id="1_2jh6t"]
+[ext_resource type="Script" uid="uid://dtbhcphvg3ji3" path="res://World/Items/Scripts/ItemResource.gd" id="1_2jh6t"]
 
 [resource]
 script = ExtResource("1_2jh6t")
@@ -9,4 +9,4 @@ attachment_tags = null
 container_allowed_categories = null
 storage_allowed_categories = null
 storage_allowed_tags = null
-metadata/_custom_type_script = "uid://cgvv34qt43vdl"
+metadata/_custom_type_script = "uid://dtbhcphvg3ji3"

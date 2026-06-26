@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://cbg4cqfn7gxe2"]
 
-[ext_resource type="Script" uid="uid://cgvv34qt43vdl" path="res://World/Items/Scripts/ItemResource.gd" id="1"]
+[ext_resource type="Script" uid="uid://dtbhcphvg3ji3" path="res://World/Items/Scripts/ItemResource.gd" id="1"]
 [ext_resource type="PackedScene" uid="uid://deoryykdwr3xr" path="res://World/Items/bandage/Bandage.fbx" id="2_xu5ty"]
 
 [resource]

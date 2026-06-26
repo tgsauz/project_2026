@@ -6,7 +6,7 @@ const TUNER_SCENE := preload("res://Tools/CharacterTuner/CharacterTuner.tscn")
 const TEST_POUCH := preload("res://World/Items/simplePouch.tres")
 const TEST_BELT := preload("res://World/Items/simpleBelt.tres")
 const TEST_VEST := preload("res://World/Items/simpleBPVest.tres")
-const TEST_BACKPACK := preload("res://World/Items/simpleBackpack.tres")
+const TEST_BACKPACK := preload("res://World/Items/simpleBackpack/simpleBackpack.tres")
 const TEST_MEDICAL := preload("res://World/Items/TestMedicalItem.tres")
 const TEST_WEAPON := preload("res://World/Items/TestWeaponItem.tres")
 
@@ -55,7 +55,7 @@ func _test_player_scene_boot() -> void:
 	root.add_child(player)
 	await process_frame
 
-	var inventory := player.get_inventory_component()
+	var inventory: InventoryComponent = player.get_inventory_component() as InventoryComponent
 
 	_assert(player is CharacterController, "Player root should use CharacterController.")
 	_assert(inventory != null, "CharacterController should resolve InventoryComponent.")
@@ -63,11 +63,45 @@ func _test_player_scene_boot() -> void:
 	_assert(player.animation_tree != null and player.animation_tree.active, "CharacterController should resolve and activate AnimationTree.")
 	_assert(player.camera_controller != null, "CharacterController should resolve CameraController.")
 	_assert(player.visuals_component != null, "CharacterController should resolve VisualsComponent.")
-	_assert(player.get_node_or_null("Visuals/LeftHandIK") is LeftHandIKComponent, "Player scene should include the left-hand IK visual component.")
 	_assert(inventory.slot_names == AttachmentLayoutLibrary.get_default_root_node_ids(), "Default player inventory should initialize from the shared attachment layout.")
+	_assert(player.has_main_hand_weapon() == false, "CharacterController should expose public has_main_hand_weapon().")
+	_assert(player.is_effectively_aiming() == false, "CharacterController should expose public is_effectively_aiming().")
+	_assert(player.ik_controller != null, "Player scene should resolve FullBodyIKController via cached reference.")
+	_assert(player.get_node_or_null("AimController") is AimController, "Player scene should include AimController.")
+	_test_player_ik_layout_contract(player)
 
 	player.queue_free()
 	await process_frame
+
+func _test_player_ik_layout_contract(player: CharacterController) -> void:
+	var visuals: VisualsComponent = player.visuals_component
+	_assert(visuals != null, "IK layout test requires VisualsComponent.")
+	if visuals == null:
+		return
+
+	var rig: Node3D = visuals.get_node_or_null("Rig") as Node3D
+	_assert(rig != null, "IK layout should expose VisualsComponent/Rig.")
+	if rig == null:
+		return
+
+	var armature: Node3D = rig.get_node_or_null("Armature") as Node3D
+	var skeleton: Skeleton3D = rig.get_node_or_null("Armature/Skeleton3D") as Skeleton3D
+	_assert(armature != null, "IK layout should expose Rig/Armature.")
+	_assert(skeleton != null, "IK layout should expose Rig/Armature/Skeleton3D.")
+	if armature == null or skeleton == null:
+		return
+
+	var target_names: PackedStringArray = PackedStringArray(["AimIKTarget", "RightHandIKTarget", "LeftHandIKTarget"])
+	for target_name in target_names:
+		_assert(armature.get_node_or_null(target_name) is Node3D, "IK layout missing target node '%s'." % target_name)
+
+	var expected_order: Array[String] = ["WeaponOffsetCache", "SpineLookAtController", "CCDIK", "WeaponPositionController", "FullBodyIKController", "RightArmIK", "LeftArmIK", "HeadCCDIK"]
+	var actual_order: Array[String] = []
+	for child in skeleton.get_children():
+		if child is SkeletonModifier3D:
+			actual_order.append(str(child.name))
+
+	_assert(actual_order == expected_order, "IK modifier order mismatch. Expected %s, got %s." % [str(expected_order), str(actual_order)])
 
 func _test_world_scene_boot() -> void:
 	var world := WORLD_SCENE.instantiate()
@@ -94,7 +128,7 @@ func _test_attachment_modifier_flow() -> void:
 	root.add_child(player)
 	await process_frame
 
-	var inventory := player.get_inventory_component()
+	var inventory: InventoryComponent = player.get_inventory_component() as InventoryComponent
 	var belt := ItemInstance.create_from_definition(TEST_BELT, 1)
 	var vest := ItemInstance.create_from_definition(TEST_VEST, 1)
 	var pouch := ItemInstance.create_from_definition(TEST_POUCH, 1)
@@ -117,7 +151,7 @@ func _test_weapon_animation_state_flow() -> void:
 	root.add_child(player)
 	await process_frame
 
-	var inventory := player.get_inventory_component()
+	var inventory: InventoryComponent = player.get_inventory_component() as InventoryComponent
 	var playback = player.animation_tree.get("parameters/playback")
 
 	player._update_animation()
@@ -129,8 +163,6 @@ func _test_weapon_animation_state_flow() -> void:
 	player._update_animation()
 	await process_frame
 	_assert(playback != null and playback.get_current_node() == "Armed", "Weapon in main hand should drive Armed animation state.")
-	var left_hand_ik := player.get_node_or_null("Visuals/LeftHandIK") as LeftHandIKComponent
-	_assert(left_hand_ik != null and left_hand_ik.grip_target != null, "LeftHandIKComponent should resolve the equipped weapon grip target.")
 
 	player.is_aiming = true
 	player._update_animation()
@@ -145,7 +177,7 @@ func _test_storage_capacity_flow() -> void:
 	root.add_child(player)
 	await process_frame
 
-	var inventory := player.get_inventory_component()
+	var inventory: InventoryComponent = player.get_inventory_component() as InventoryComponent
 	var pouch := ItemInstance.create_from_definition(TEST_POUCH, 1)
 	var medical_a := ItemInstance.create_from_definition(TEST_MEDICAL, 1)
 	var medical_b := ItemInstance.create_from_definition(TEST_MEDICAL, 1)
@@ -171,7 +203,7 @@ func _test_visual_attachment_flow() -> void:
 	root.add_child(player)
 	await process_frame
 
-	var inventory := player.get_inventory_component()
+	var inventory: InventoryComponent = player.get_inventory_component() as InventoryComponent
 	var visuals := player.visuals_component
 	var belt := ItemInstance.create_from_definition(TEST_BELT, 1)
 	var pouch := ItemInstance.create_from_definition(TEST_POUCH, 1)
@@ -198,7 +230,7 @@ func _test_serialization_flow() -> void:
 	root.add_child(player)
 	await process_frame
 
-	var inventory := player.get_inventory_component()
+	var inventory: InventoryComponent = player.get_inventory_component() as InventoryComponent
 	var belt := ItemInstance.create_from_definition(TEST_BELT, 1)
 	var pouch := ItemInstance.create_from_definition(TEST_POUCH, 1)
 	var medical := ItemInstance.create_from_definition(TEST_MEDICAL, 1)

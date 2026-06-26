@@ -1,10 +1,10 @@
 [gd_scene format=3 uid="uid://chkk4laksuify"]
 
-[ext_resource type="Script" uid="uid://ib6tgshf1dmu" path="res://Player/Debug/UIRoot.gd" id="1_mgb65"]
-[ext_resource type="Script" uid="uid://b41go6yfp3pd4" path="res://Player/Debug/Scripts/DebugStatsUI.gd" id="2_j6l5c"]
-[ext_resource type="Script" uid="uid://clgcxflstc2ux" path="res://Player/Debug/Scripts/CrosshairUI.gd" id="3_rij77"]
+[ext_resource type="Script" uid="uid://bfp6tepedju06" path="res://Player/Debug/UIRoot.gd" id="1_mgb65"]
+[ext_resource type="Script" uid="uid://c5eldubw8xpgw" path="res://Player/Debug/Scripts/DebugStatsUI.gd" id="2_j6l5c"]
+[ext_resource type="Script" uid="uid://b0jo6ct134hnv" path="res://Player/Debug/Scripts/CrosshairUI.gd" id="3_rij77"]
 [ext_resource type="Script" uid="uid://42wvec1476am" path="res://Player/Debug/Scripts/InteractionPromptUI.gd" id="4_4cvli"]
-[ext_resource type="Script" uid="uid://pydlhueko71k" path="res://Player/Debug/Scripts/StatusClusterUI.gd" id="5_b5qb5"]
+[ext_resource type="Script" uid="uid://bajxjlcb72vek" path="res://Player/Debug/Scripts/StatusClusterUI.gd" id="5_b5qb5"]
 [ext_resource type="Script" uid="uid://8htdgrejfs3y" path="res://Player/Debug/Scripts/QuickActionPanelUI.gd" id="6_q5jgh"]
 [ext_resource type="Resource" path="res://Player/Debug/Theme/Project2026UIStyle.tres" id="7_sffta"]
 

@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://jrausd3f6pyn"]
 
-[ext_resource type="Script" uid="uid://dgkua3xiudieb" path="res://Tools/CharacterTuner/CharacterTunerController.gd" id="2_ctrl"]
-[ext_resource type="Script" uid="uid://duhiucd08hrjr" path="res://Tools/CharacterTuner/TunerCamera.gd" id="3_cam"]
-[ext_resource type="Script" uid="uid://crjh2n0ublvve" path="res://Tools/CharacterTuner/CharacterTunerUI.gd" id="4_ui"]
+[ext_resource type="Script" uid="uid://dfictjt1s6yr5" path="res://Tools/CharacterTuner/CharacterTunerController.gd" id="2_ctrl"]
+[ext_resource type="Script" uid="uid://7oh16muurksy" path="res://Tools/CharacterTuner/TunerCamera.gd" id="3_cam"]
+[ext_resource type="Script" uid="uid://bxv2iu547t8qo" path="res://Tools/CharacterTuner/CharacterTunerUI.gd" id="4_ui"]
 
 [sub_resource type="PhysicalSkyMaterial" id="PhysicalSkyMaterial_xafna"]
 

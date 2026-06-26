@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="ItemVisualAttachmentProfile" format=3]
+[gd_resource type="Resource" script_class="ItemVisualAttachmentProfile" format=3 uid="uid://cesqn45yo5moj"]
 
-[ext_resource type="Script" path="res://World/Items/Scripts/ItemVisualAttachmentProfile.gd" id="1_ts2s5"]
+[ext_resource type="Script" uid="uid://d2acu83ir08qt" path="res://World/Items/Scripts/ItemVisualAttachmentProfile.gd" id="1_ts2s5"]
 
 [resource]
 script = ExtResource("1_ts2s5")

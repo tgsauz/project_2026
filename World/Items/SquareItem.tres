@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://c37mpbgyx5b7k"]
 
-[ext_resource type="Script" uid="uid://cgvv34qt43vdl" path="res://World/Items/Scripts/ItemResource.gd" id="1_sh0kd"]
+[ext_resource type="Script" uid="uid://dtbhcphvg3ji3" path="res://World/Items/Scripts/ItemResource.gd" id="1_sh0kd"]
 [ext_resource type="PackedScene" path="res://World/Items/Visuals/SecuredContainerEquipped.tscn" id="2_scene"]
 [ext_resource type="Resource" path="res://World/Items/Visuals/SecuredContainerLowerBackProfile.tres" id="3_lower"]
 
@@ -27,4 +27,4 @@ storage_allowed_categories = PackedStringArray("ammo", "medical", "equipment")
 container_allowed_categories = PackedStringArray("ammo", "medical", "equipment")
 placeholder_visual_size = Vector3(0.32, 0.18, 0.12)
 placeholder_visual_color = Color(0.202, 0.278, 0.35, 1)
-metadata/_custom_type_script = "uid://cgvv34qt43vdl"
+metadata/_custom_type_script = "uid://dtbhcphvg3ji3"

@@ -226,6 +226,7 @@ func _initialize_debug_inventory_ui() -> void:
 	debug_inventory_inspector.name = "DebugInventoryInspector"
 	debug_layer.add_child(debug_inventory_inspector)
 	debug_inventory_inspector.set_inventory_component(_get_inventory_component())
+	debug_inventory_inspector.set_visuals_component(_get_visuals_component())
 	if runtime_ui_style:
 		debug_inventory_inspector.apply_style(runtime_ui_style)
 

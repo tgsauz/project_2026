@@ -1,22 +1,22 @@
-[gd_resource type="Resource" script_class="ItemResource" format=3]
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://dogopiuelpv8g"]
 
-[ext_resource type="Script" path="res://World/Items/Scripts/ItemResource.gd" id="1_item"]
+[ext_resource type="Script" uid="uid://dtbhcphvg3ji3" path="res://World/Items/Scripts/ItemResource.gd" id="1_item"]
 
 [resource]
 script = ExtResource("1_item")
 id = "simple_pouch"
 display_name = "Utility Pouch"
 tooltip_text = "Small belt-mounted pouch with 3 size units of storage."
-category = "equipment"
 weight = 0.35
 allowed_slots = PackedStringArray()
 attachment_tags = PackedStringArray("pouch", "medical")
 visible_when_equipped = true
 preferred_slot = "belt"
 is_container = true
-item_size = 1
+container_allowed_categories = null
 storage_capacity_units = 3
 storage_allowed_categories = PackedStringArray("ammo", "medical", "equipment")
+storage_allowed_tags = null
 placeholder_visual_shape = "pouch"
 placeholder_visual_size = Vector3(0.2, 0.16, 0.08)
 placeholder_visual_color = Color(0.32, 0.38, 0.28, 1)

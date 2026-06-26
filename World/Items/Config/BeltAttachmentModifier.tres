@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="EquipmentAttachmentModifier" format=3]
+[gd_resource type="Resource" script_class="EquipmentAttachmentModifier" format=3 uid="uid://7qht3jtsb4bl"]
 
-[ext_resource type="Script" path="res://World/Items/Scripts/EquipmentAttachmentModifier.gd" id="1_modifier"]
-[ext_resource type="Script" path="res://World/Items/Scripts/AttachmentPointDefinition.gd" id="2_point"]
+[ext_resource type="Script" uid="uid://bi22w4nh75e2m" path="res://World/Items/Scripts/EquipmentAttachmentModifier.gd" id="1_modifier"]
+[ext_resource type="Script" uid="uid://2u4rgm3fuwua" path="res://World/Items/Scripts/AttachmentPointDefinition.gd" id="2_point"]
 
 [sub_resource type="Resource" id="AttachmentPointDefinition_belt_slot_01"]
 script = ExtResource("2_point")
@@ -10,11 +10,9 @@ display_name = "Belt Slot 01"
 parent_node_id = "belt"
 accepted_categories = PackedStringArray("equipment", "medical", "ammo")
 accepted_item_tags = PackedStringArray("pouch", "tool", "magazine", "medical")
-visible = true
 anchor_bone_name = "spine_01"
 anchor_local_position = Vector3(-0.18, 0.01, 0.1)
 debug_color = Color(0.8, 0.8, 0.35, 1)
-tuner_enabled = true
 sort_order = 20
 
 [sub_resource type="Resource" id="AttachmentPointDefinition_belt_slot_02"]
@@ -24,11 +22,9 @@ display_name = "Belt Slot 02"
 parent_node_id = "belt"
 accepted_categories = PackedStringArray("equipment", "medical", "ammo")
 accepted_item_tags = PackedStringArray("pouch", "tool", "magazine", "medical")
-visible = true
 anchor_bone_name = "spine_01"
 anchor_local_position = Vector3(-0.09, 0.02, 0.11)
 debug_color = Color(0.8, 0.8, 0.35, 1)
-tuner_enabled = true
 sort_order = 21
 
 [sub_resource type="Resource" id="AttachmentPointDefinition_belt_slot_03"]
@@ -38,11 +34,9 @@ display_name = "Belt Slot 03"
 parent_node_id = "belt"
 accepted_categories = PackedStringArray("equipment", "medical", "ammo")
 accepted_item_tags = PackedStringArray("pouch", "tool", "magazine", "medical")
-visible = true
 anchor_bone_name = "spine_01"
 anchor_local_position = Vector3(0, 0.02, 0.11)
 debug_color = Color(0.8, 0.8, 0.35, 1)
-tuner_enabled = true
 sort_order = 22
 
 [sub_resource type="Resource" id="AttachmentPointDefinition_belt_slot_04"]
@@ -52,11 +46,9 @@ display_name = "Belt Slot 04"
 parent_node_id = "belt"
 accepted_categories = PackedStringArray("equipment", "medical", "ammo")
 accepted_item_tags = PackedStringArray("pouch", "tool", "magazine", "medical")
-visible = true
 anchor_bone_name = "spine_01"
 anchor_local_position = Vector3(0.09, 0.02, 0.11)
 debug_color = Color(0.8, 0.8, 0.35, 1)
-tuner_enabled = true
 sort_order = 23
 
 [sub_resource type="Resource" id="AttachmentPointDefinition_belt_slot_05"]
@@ -66,11 +58,9 @@ display_name = "Belt Slot 05"
 parent_node_id = "belt"
 accepted_categories = PackedStringArray("equipment", "medical", "ammo")
 accepted_item_tags = PackedStringArray("pouch", "tool", "magazine", "medical")
-visible = true
 anchor_bone_name = "spine_01"
 anchor_local_position = Vector3(0.18, 0.01, 0.1)
 debug_color = Color(0.8, 0.8, 0.35, 1)
-tuner_enabled = true
 sort_order = 24
 
 [sub_resource type="Resource" id="AttachmentPointDefinition_belt_slot_06"]
@@ -80,11 +70,9 @@ display_name = "Belt Slot 06"
 parent_node_id = "belt"
 accepted_categories = PackedStringArray("equipment", "medical", "ammo")
 accepted_item_tags = PackedStringArray("pouch", "tool", "magazine", "medical")
-visible = true
 anchor_bone_name = "spine_01"
 anchor_local_position = Vector3(-0.16, -0.03, 0)
 debug_color = Color(0.8, 0.8, 0.35, 1)
-tuner_enabled = true
 sort_order = 25
 
 [sub_resource type="Resource" id="AttachmentPointDefinition_belt_slot_07"]
@@ -94,11 +82,9 @@ display_name = "Belt Slot 07"
 parent_node_id = "belt"
 accepted_categories = PackedStringArray("equipment", "medical", "ammo")
 accepted_item_tags = PackedStringArray("pouch", "tool", "magazine", "medical")
-visible = true
 anchor_bone_name = "spine_01"
 anchor_local_position = Vector3(0, -0.05, -0.03)
 debug_color = Color(0.8, 0.8, 0.35, 1)
-tuner_enabled = true
 sort_order = 26
 
 [sub_resource type="Resource" id="AttachmentPointDefinition_belt_slot_08"]
@@ -108,11 +94,9 @@ display_name = "Belt Slot 08"
 parent_node_id = "belt"
 accepted_categories = PackedStringArray("equipment", "medical", "ammo")
 accepted_item_tags = PackedStringArray("pouch", "tool", "magazine", "medical")
-visible = true
 anchor_bone_name = "spine_01"
 anchor_local_position = Vector3(0.16, -0.03, 0)
 debug_color = Color(0.8, 0.8, 0.35, 1)
-tuner_enabled = true
 sort_order = 27
 
 [resource]

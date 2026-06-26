@@ -1,12 +1,9 @@
-[gd_resource type="Resource" script_class="UIStyleProfile" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="UIStyleProfile" format=3 uid="uid://dvkwckitpkkkh"]
 
-[ext_resource type="Script" path="res://Player/Debug/Scripts/UIStyleProfile.gd" id="1_qp7b0"]
+[ext_resource type="Script" uid="uid://bbk5v78balb87" path="res://Player/Debug/Scripts/UIStyleProfile.gd" id="1_qp7b0"]
 
 [resource]
 script = ExtResource("1_qp7b0")
-base_font_size = 15
-heading_font_size = 19
-small_font_size = 12
 primary_text_color = Color(0.88, 0.88, 0.84, 1)
 secondary_text_color = Color(0.62, 0.66, 0.68, 1)
 panel_fill_color = Color(0.045, 0.05, 0.06, 0.88)
