@@ -137,7 +137,6 @@ func _deferred_weapon_root_setup(character_body: Node3D) -> void:
 	controller.aim_controller_path = NodePath("../../AimController")
 	controller.fullbody_ik_path = NodePath("../../VisualsComponent/Rig/ImportedModel/Armature/Skeleton3D/FullBodyIKController")
 	controller.visuals_component_path = NodePath("../../VisualsComponent")
-	controller.character_controller_path = NodePath("../..")
 	weapon_root.add_child(controller)
 	controller.owner = get_tree().edited_scene_root if Engine.is_editor_hint() else null
 
