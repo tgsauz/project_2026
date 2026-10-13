@@ -16,7 +16,7 @@ class_name WeaponController
 # aquí. Está en el hueso (animación o rig) o en la cadena que lo mueve.
 # Ver project-docs/ADRs/0001-el-hueso-es-la-autoridad-del-arma.md
 #
-# No escribe nada en AimState: AimController es su único productor.
+# No depende de AimController: el arma no lee AimState. Su pose es el hueso.
 # No lee nada del rig más allá del hueso y de los marcadores del asset.
 # ============================================================
 
@@ -28,14 +28,12 @@ const WEAPON_SUPPORT_BONE := "ik_hand_gun"
 const MARKER_RIGHT_GRIP := "RGRIP"
 const MARKER_LEFT_GRIP := "LGRIP"
 
-@export var aim_controller_path: NodePath
 @export var fullbody_ik_path: NodePath
 @export var visuals_component_path: NodePath
 @export var weapon_visual_slot: String = "right_hand"
 
 var weapon_root: Node3D
 
-var _aim_controller: AimController
 var _fullbody_ik: FullBodyIKController
 var _visuals_component: VisualsComponent
 var _skeleton: Skeleton3D
@@ -58,14 +56,8 @@ func _ready() -> void:
 		push_error("WeaponController debe ser hijo de WeaponRoot.")
 		return
 
-	_aim_controller = get_node_or_null(aim_controller_path) as AimController
 	_fullbody_ik = get_node_or_null(fullbody_ik_path) as FullBodyIKController
 	_visuals_component = get_node_or_null(visuals_component_path) as VisualsComponent
-
-	if _aim_controller == null:
-		push_warning("WeaponController: sin AimController el arma queda en su pose de autor.")
-		set_process(false)
-		return
 
 	if _visuals_component != null:
 		_skeleton = _visuals_component.skeleton

@@ -21,7 +21,6 @@ var attachment_roots: Dictionary = {}
 var attachment_content_roots: Dictionary = {}
 var equipped_visuals: Dictionary = {}
 var equipped_visual_entries: Dictionary = {}
-var equipped_visual_markers: Dictionary = {}
 var mounted_interactables: Dictionary = {}
 var attachment_debug_gizmos: Dictionary = {}
 var attachment_node_data: Dictionary = {}
@@ -239,7 +238,6 @@ func clear_runtime_visual(slot_name: String) -> void:
 			visual.queue_free()
 		equipped_visuals.erase(visual_key)
 		equipped_visual_entries.erase(visual_key)
-		equipped_visual_markers.erase(visual_key)
 		emit_signal("equipped_visual_detached", slot_name, removed_item_id)
 		_remove_slot_interactable(slot_name)
 
@@ -256,16 +254,6 @@ func get_active_visual(slot_name: String, item_id: String = "") -> Node3D:
 				
 	return equipped_visuals.get(visual_key, null)
 
-func get_active_visual_marker(slot_name: String, marker_name: String, item_id: String = "") -> Node3D:
-	var visual_key: String = _get_active_visual_key(slot_name, item_id)
-	if visual_key.is_empty():
-		return null
-
-	var markers: Dictionary = equipped_visual_markers.get(visual_key, {}) as Dictionary
-	var marker: Node3D = markers.get(marker_name, null) as Node3D
-	if marker != null and is_instance_valid(marker):
-		return marker
-	return null
 
 func get_active_visual_entry(slot_name: String, item_id: String = "") -> Dictionary:
 	var visual_key: String = slot_name
@@ -341,7 +329,6 @@ func _on_equipment_visuals_changed(visible_items: Array) -> void:
 			visual.queue_free()
 		equipped_visuals.erase(visual_key)
 		equipped_visual_entries.erase(visual_key)
-		equipped_visual_markers.erase(visual_key)
 		emit_signal("equipped_visual_detached", removed_slot_name, removed_item_id)
 
 	# Clean up interactables that are no longer active (using same logic)
@@ -537,7 +524,6 @@ func _update_equipped_visual(slot_name: String, entry: Dictionary) -> void:
 	if visual == null or not _matches_equipped_scene(visual, desired_scene):
 		if is_instance_valid(visual):
 			visual.queue_free()
-		equipped_visual_markers.erase(visual_key)
 
 		visual = _instantiate_equipped_visual(entry)
 		if visual == null:
@@ -555,7 +541,6 @@ func _update_equipped_visual(slot_name: String, entry: Dictionary) -> void:
 	visual.visible = true
 	_apply_visual_profile(visual, entry)
 	equipped_visual_entries[visual_key] = entry.duplicate(true)
-	_cache_equipped_visual_markers(visual_key, visual, definition)
 	emit_signal("equipped_visual_attached", slot_name, item_id, visual, equipped_visual_entries[visual_key].duplicate(true))
 
 func _instantiate_equipped_visual(entry: Dictionary) -> Node3D:
@@ -583,23 +568,6 @@ func _matches_equipped_scene(visual: Node3D, equipped_scene: PackedScene) -> boo
 	if equipped_scene == null:
 		return visual is MeshInstance3D
 	return str(visual.get_meta("equipped_scene_path", "")) == equipped_scene.resource_path
-
-func _cache_equipped_visual_markers(visual_key: String, visual: Node3D, _definition: ItemDefinition) -> void:
-	var markers: Dictionary = {}
-	var marker_names: PackedStringArray = PackedStringArray(["LGRIP", "RGRIP", "SIGHT_BACK", "SIGHT_FRONT", "MUZZLE"])
-	for marker_name in marker_names:
-		var marker: Node3D = _find_visual_marker(visual, marker_name)
-		if marker != null:
-			markers[marker_name] = marker
-
-	equipped_visual_markers[visual_key] = markers
-
-func _find_visual_marker(visual: Node3D, marker_name: String) -> Node3D:
-	if visual == null or marker_name.is_empty():
-		return null
-	if visual.name == marker_name:
-		return visual
-	return visual.find_child(marker_name, true, false) as Node3D
 
 func _get_active_visual_key(slot_name: String, item_id: String = "") -> String:
 	if not item_id.is_empty():

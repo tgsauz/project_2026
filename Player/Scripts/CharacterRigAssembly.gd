@@ -134,7 +134,6 @@ func _deferred_weapon_root_setup(character_body: Node3D) -> void:
 
 	var controller := WeaponController.new()
 	controller.name = "WeaponController"
-	controller.aim_controller_path = NodePath("../../AimController")
 	controller.fullbody_ik_path = NodePath("../../VisualsComponent/Rig/ImportedModel/Armature/Skeleton3D/FullBodyIKController")
 	controller.visuals_component_path = NodePath("../../VisualsComponent")
 	weapon_root.add_child(controller)
