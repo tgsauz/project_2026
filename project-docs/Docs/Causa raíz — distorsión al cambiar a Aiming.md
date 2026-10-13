@@ -80,21 +80,58 @@ El resultado visible es un arma que se coloca bien y se orienta mal.
 ## Dónde está el fallo
 
 En el asset, no en el código. Los clips `holding_aim`, `walking_aiming_gun` y
-`strafe_walk_aiming_gun` nunca recibieron la rotación de `ik_hand_gun` en la
-posición de apuntado. En Blender esos clips existen y se ven bien; lo que no
-llegó al `.glb` es la rotación del hueso de soporte en ellos.
+`strafe_walk_aiming_gun` no tienen rotación propia para `ik_hand_gun`: usan la
+de los clips desarmados. Una reexportación completa ya se ha probado y deja la
+rotación intacta, de modo que el ajuste pendiente es de autoría en Blender.
 
-## Observación sobre el import
+## Reexportación del 2026-10-13: qué cambió y qué no
 
-Al leer el recurso, `ik_hand_gun` tiene dos pistas cuyos **tipos no coinciden con
-sus valores**: una pista `TYPE_ROTATION_3D` contiene un `Vector3` de posición, y
-una `TYPE_SCALE_3D` contiene un `Quaternion` de rotación. Ambas tienen una sola
-clave, constante por clip.
+Se comparó el `.glb` reexportado contra el del repo leyendo el binario
+directamente, sin pasar por Godot ni por su importador.
 
-Esto merece atención al reexportar. Si el exportador está escribiendo posición
-en la ranura de rotación y rotación en la de escala, el problema persistirá
-aunque se autorice la pose en Blender. **Conviene verificar una reexportación
-antes de dar por cerrado el arreglo.**
+**Corrección de este documento:** una versión anterior de esta sección
+afirmaba que las pistas de `ik_hand_gun` tenían el tipo cambiado respecto a su
+valor. **Era falso.** El error estaba en la sonda que las leía, que
+desaprovechaba el enum `Animation.TrackType` por un índice equivocado. Los
+tipos son correctos: rotación `VEC4`, posición `VEC3`. El exportador de Blender
+no escribe en la ranura equivocada.
+
+### Lo que la reexportación sí corrigió
+
+| Magnitud | Antes | Ahora |
+|---|---|---|
+| Posición de `holding_aim` relativa a `idle_holding_gun` | 43.55 cm | **24.53 cm** |
+| Posición de `walking_aiming_gun` | 43.55 cm | **24.00 cm** |
+| Posición de `strafe_walk_aiming_gun` | 42.30 cm | **25.82 cm** |
+
+La rotación de reposo del hueso se movió de los canales de animación al
+transform del nodo: un desplazamiento global de 81.2° en todas las pistas, que
+no altera las diferencias entre clips.
+
+### Lo que la reexportación NO corrigió
+
+Rotación de `ik_hand_gun` **relativa a `idle_holding_gun`**:
+
+| Clip | Antes | Ahora |
+|---|---|---|
+| `holding_aim` | 88.78° | **88.78°** |
+| `walking_aiming_gun` | 88.78° | **88.78°** |
+| `strafe_walk_aiming_gun` | 88.78° | **88.78°** |
+| `idle`, `walking`, `running`, `left/right_strafe_walk` | 88.78° | 88.78° |
+
+**Cero cambios.** Los clips de apuntado siguen compartiendo, con precisión de
+0.01°, la misma rotación que los clips desarmados.
+
+La reexportación ajustó la **posición** de apuntado y dejó la **rotación**
+exactamente como estaba. Ese es el trabajo pendiente: en Blender, los clips
+`holding_aim`, `walking_aiming_gun` y `strafe_walk_aiming_gun` necesitan una
+rotación propia para `ik_hand_gun`, distinta de la de los clips desarmados.
+
+## Nota sobre el archivo reexportado
+
+El `.glb` reexportado **no está instalado**. Sustituir el del repo cambia la
+pose de reposo del hueso en 81.2°, lo que interactúa con la convención del rig
+documentada en ADR-0002. No se cambia sin decisión explícita.
 
 ## Lo que este documento no resuelve
 
