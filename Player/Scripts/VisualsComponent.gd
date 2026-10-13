@@ -5,7 +5,6 @@ signal equipped_visual_attached(slot_name: String, item_id: String, visual: Node
 signal equipped_visual_detached(slot_name: String, item_id: String)
 
 @export_category("Helpers")
-@export var gun_support_bone_name: String = "ik_hand_gun"
 @export var attachment_content_scale_compensation: float = 1.0
 ## Visual layer assigned to character body meshes in first-person mode.
 ## The FPS camera's cull_mask must exclude this layer (set once in the editor).
@@ -416,7 +415,6 @@ func _ensure_attachment_roots_for_nodes(nodes: Array) -> void:
 			continue
 		attachment_node_data[node_id] = node_data.duplicate(true)
 		_ensure_attachment_root(node_id, bone_name, node_data.get("anchor_local_position", Vector3.ZERO), node_data.get("anchor_local_rotation", Vector3.ZERO))
-	_ensure_attachment_root("gun_support", gun_support_bone_name, Vector3.ZERO, Vector3.ZERO)
 	_refresh_attachment_debug_gizmos()
 
 func _ensure_attachment_root(slot_name: String, bone_name_value: String, local_position: Vector3, local_rotation: Vector3) -> void:
@@ -519,11 +517,7 @@ func _get_debug_color_for_slot(slot_name: String) -> Color:
 	if attachment_node_data.has(slot_name):
 		return attachment_node_data[slot_name].get("debug_color", Color.WHITE)
 
-	match slot_name:
-		"gun_support":
-			return Color(0.7, 0.7, 0.7, 1.0)
-		_:
-			return Color(1.0, 1.0, 1.0, 1.0)
+	return Color(1.0, 1.0, 1.0, 1.0)
 
 func _update_equipped_visual(slot_name: String, entry: Dictionary) -> void:
 	var item_id: String = str(entry.get("item_id", ""))
@@ -632,7 +626,13 @@ func _refresh_dynamic_equipped_visual_transforms() -> void:
 		_apply_visual_profile(visual, entry)
 
 
+## Un visual en la mano NUNCA recibe perfil: WeaponRoot es la unica
+## autoridad de su transform. Un perfil aqui escribiria por encima de la
+## pose cada fotograma. No es un dato configurable, es una invariante.
 func _apply_visual_profile(visual: Node3D, entry: Dictionary) -> void:
+	if str(entry.get("visual_state", "")) == "held":
+		return
+
 	var profile: ItemVisualAttachmentProfile = entry.get("attachment_profile", null)
 
 	if profile == null:
