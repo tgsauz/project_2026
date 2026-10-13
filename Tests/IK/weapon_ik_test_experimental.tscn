@@ -1,0 +1,78 @@
+[gd_scene format=3 uid="uid://drdq62t17a5ey"]
+
+[ext_resource type="Script" uid="uid://760lfxhsh4ud" path="res://Tests/IK/weapon_ik_test.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://m62ijxeuosdk" path="res://Player/PlayerCharacter.tscn" id="2_player"]
+[ext_resource type="PackedScene" uid="uid://chkk4laksuify" path="res://Player/Debug/UIRoot.tscn" id="3_uiroot"]
+[ext_resource type="Resource" uid="uid://12ggde6tffjy" path="res://World/Items/TestWeaponItem.tres" id="4_weapon"]
+[ext_resource type="Resource" uid="uid://cbg4cqfn7gxe2" path="res://World/Items/TestMedicalItem.tres" id="5_medical"]
+[ext_resource type="Resource" uid="uid://b2s6vfo1bxtyc" path="res://World/Items/simpleBackpack/simpleBackpack.tres" id="6_backpack"]
+[ext_resource type="PackedScene" uid="uid://dtnyw1u4w6p" path="res://World/Items/WorldItem.tscn" id="7_worlditem"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ground"]
+size = Vector3(25, 0.5, 25)
+
+[sub_resource type="BoxMesh" id="BoxMesh_ground"]
+size = Vector3(25, 0.5, 25)
+
+[sub_resource type="ProceduralSkyMaterial" id="SKyMat"]
+sky_top_color = Color(0.23638466, 0.4741372, 0.63555753, 1)
+energy_multiplier = 1.5
+
+[sub_resource type="Sky" id="Sky"]
+sky_material = SubResource("SKyMat")
+
+[sub_resource type="Environment" id="Env"]
+background_mode = 2
+background_color = Color(0.09571245, 0.1937368, 0.27542377, 0.6156863)
+background_energy_multiplier = 1.5
+sky = SubResource("Sky")
+ambient_light_color = Color(1, 1, 1, 1)
+
+[node name="WeaponIKTestExperimental" type="Node3D" unique_id=2032494720]
+script = ExtResource("1_script")
+weapon_definition = ExtResource("4_weapon")
+experimental_socket_pose = true
+direct_socket_bone_attachment = true
+run_transform_audit = false
+
+[node name="CharacterBody3D" parent="." unique_id=296676832 instance=ExtResource("2_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4648862, 0)
+
+[node name="UIRoot" parent="CharacterBody3D" unique_id=1596921536 instance=ExtResource("3_uiroot")]
+presentation_tier = 1
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1061656225]
+transform = Transform3D(1, 0, 0, 0, 0.5, -0.866, 0, 0.866, 0.5, 0, 8, 0)
+
+[node name="Plane" type="Node3D" parent="." unique_id=1258965035]
+
+[node name="StaticBody3D" type="StaticBody3D" parent="Plane" unique_id=1967345983]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Plane/StaticBody3D" unique_id=733841608]
+shape = SubResource("BoxShape3D_ground")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Plane/StaticBody3D/CollisionShape3D" unique_id=1719520686]
+mesh = SubResource("BoxMesh_ground")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1372235233]
+environment = SubResource("Env")
+
+[node name="Items" type="Node3D" parent="." unique_id=73894265]
+
+[node name="Gun" parent="Items" unique_id=1035643794 instance=ExtResource("7_worlditem")]
+transform = Transform3D(-1, 0, 8.940697e-08, 0, 1, 0, -8.940697e-08, 0, -1, 0, 1.3657718, -2.187511)
+mass = 3.5
+item_definition = ExtResource("4_weapon")
+metadata/world_visual_applied = false
+
+[node name="Bandage" parent="Items" unique_id=2016817792 instance=ExtResource("7_worlditem")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.70235413, 0.6851126, -2.1565814)
+mass = 0.2
+item_definition = ExtResource("5_medical")
+metadata/world_visual_applied = false
+
+[node name="Backpack" parent="Items" unique_id=41153284 instance=ExtResource("7_worlditem")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.7557735, 0.8212156, -1.7164879)
+mass = 0.5
+item_definition = ExtResource("6_backpack")
+metadata/world_visual_applied = false

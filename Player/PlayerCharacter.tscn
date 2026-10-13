@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://dhuh4t6w4cyqn" path="res://World/Items/Scripts/InventoryComponent.gd" id="1_2nw4y"]
 [ext_resource type="Script" uid="uid://b13x2jiav3w8x" path="res://Player/Scripts/CharacterController.gd" id="1_ay0dg"]
 [ext_resource type="Script" uid="uid://dvm6nlpktho52" path="res://Player/Scripts/VisualsComponent.gd" id="3_5dj55"]
-[ext_resource type="PackedScene" uid="uid://vxgi8ggmn2p1" path="res://Player/mastercharacter.tscn" id="3_6f781"]
+[ext_resource type="PackedScene" uid="uid://dsyl0f0rlm016" path="res://Player/CharacterRig.tscn" id="3_6f781"]
 [ext_resource type="Script" uid="uid://cb6df4o0xh02u" path="res://World/Items/Scripts/InteractionComponent.gd" id="4_mg46b"]
 [ext_resource type="Script" uid="uid://01gl5dbi1kb6" path="res://Player/Scripts/CameraController.gd" id="5_cam"]
 [ext_resource type="Script" uid="uid://dbvf3coa6supw" path="res://Player/Scripts/WeaponActionController.gd" id="6_weapon"]
@@ -29,7 +29,7 @@ properties/3/replication_mode = 1
 
 [node name="CharacterBody3D" type="CharacterBody3D" unique_id=1321391257 groups=["Player"]]
 script = ExtResource("1_ay0dg")
-ik_controller_path = NodePath("VisualsComponent/Rig/Armature/Skeleton3D/FullBodyIKController")
+ik_controller_path = NodePath("VisualsComponent/Rig/ImportedModel/Armature/Skeleton3D/FullBodyIKController")
 
 [node name="VisualsComponent" type="Node3D" parent="." unique_id=1722711644]
 script = ExtResource("3_5dj55")
@@ -59,9 +59,6 @@ visuals_component_path = NodePath("../VisualsComponent")
 
 [node name="FPSPIVOT" type="Node3D" parent="CAMERARIG" unique_id=1661205752]
 
-[node name="AimTarget" type="Node3D" parent="CAMERARIG/FPSPIVOT" unique_id=1284683472]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.18, -0.12, -1.4)
-
 [node name="FPSCAMERA" type="Camera3D" parent="CAMERARIG/FPSPIVOT" unique_id=432016729]
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=848472128]
@@ -72,3 +69,6 @@ script = ExtResource("6_weapon")
 
 [node name="AimController" type="Node" parent="." unique_id=1670919205]
 script = ExtResource("8_aimcontroller")
+
+[editable path="VisualsComponent/Rig"]
+[editable path="VisualsComponent/Rig/ImportedModel"]

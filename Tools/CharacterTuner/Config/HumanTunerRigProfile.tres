@@ -7,7 +7,7 @@
 script = ExtResource("1_profile_script")
 display_name = "Human Rig"
 visuals_host_path = NodePath(".")
-skeleton_path = NodePath("Armature/Skeleton3D")
+skeleton_path = NodePath("ImportedModel/Armature/Skeleton3D")
 animation_tree_path = NodePath("AnimationTree")
 slot_source_mode = 0
 attachment_layout = ExtResource("2_layout")

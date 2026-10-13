@@ -472,7 +472,7 @@ func _recalculate() -> void:
 		new_weight += float(item.get_total_weight())
 
 	total_weight = new_weight
-	load_factor = max(total_weight / base_capacity, 0.0)
+	load_factor = max(total_weight / base_capacity, 0.0) if base_capacity > 0.0 else 0.0
 
 	emit_signal("inventory_updated")
 	emit_signal("weight_changed", total_weight, load_factor)
@@ -737,12 +737,15 @@ func _get_attachment_candidate_order(definition: ItemDefinition) -> PackedString
 	if not str(definition.preferred_slot).is_empty() and attachment_graph.has_node(definition.preferred_slot):
 		ordered.append(definition.preferred_slot)
 
+	# Single reusable probe instance: can_attach_item only reads its
+	# definition/id, so allocating one per node was pure churn.
+	var probe := ItemInstance.create_from_definition(definition, 1)
 	for node in attachment_graph.get_all_nodes_sorted():
 		if node == null:
 			continue
 		if ordered.has(node.node_id):
 			continue
-		if can_attach_item(ItemInstance.create_from_definition(definition, 1), node.node_id):
+		if can_attach_item(probe, node.node_id):
 			ordered.append(node.node_id)
 	return ordered
 

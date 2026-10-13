@@ -56,3 +56,23 @@ crash_log.txt
 # Obsidian vault config
 # ------------------------------
 .obsidian/
+
+# ------------------------------
+# Planning documents (superseded by project-docs/)
+# ------------------------------
+/plans/
+
+# ------------------------------
+# graphify knowledge graph (regenerable build artifact)
+# ------------------------------
+/graphify-out/
+
+# ------------------------------
+# Third-party agent tooling (not required by the game)
+# ------------------------------
+/addons/
+
+# ------------------------------
+# KDE desktop integration junk
+# ------------------------------
+.directory

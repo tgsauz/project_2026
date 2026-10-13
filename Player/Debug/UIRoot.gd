@@ -29,7 +29,6 @@ var player_character: Node
 var inventory_view_controller: InventoryViewController
 var inventory_overlay_ui: InventoryOverlayUI
 var inventory_slot_panel_ui: InventorySlotPanelUI
-var inventory_action_menu: InventoryItemActionMenu
 var inventory_inspect_ui: ItemInspectUI
 var inventory_tooltip_ui: ItemTooltipUI
 var debug_inventory_inspector: DebugInventoryInspector

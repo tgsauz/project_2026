@@ -8,6 +8,7 @@ class_name SpineLookAtController
 @export var character_controller_path: NodePath
 @export var aim_controller_path: NodePath
 @export var look_at_target_path: NodePath
+@export var weapon_root_path: NodePath
 
 ## Distance from pelvis to IK target. Tune for desired spine bend.
 @export var arc_radius: float = 1.5
@@ -30,6 +31,7 @@ var _skeleton: Skeleton3D
 var _character_controller: CharacterController
 var _aim_controller: AimController
 var _look_at_target: Node3D
+var _weapon_root: Node3D
 
 var _pelvis_idx: int = -1
 var _spine01_idx: int = -1
@@ -38,6 +40,9 @@ var _gun_bone_idx: int = -1
 
 var _current_influence: float = 0.0
 
+var _ccdik_node: CCDIK3D
+var _last_camera_pitch: float = 0.0
+var _debug_spine_weapon_align_pressed: bool = false
 # Temp debug: prints spine bone eulers before CCDIK on P
 var _debug_f8_pressed: bool = false
 
@@ -48,6 +53,8 @@ var _debug_f8_pressed: bool = false
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("debug_spine_track"):
 		_debug_f8_pressed = true
+	if event.is_action_pressed("debug_spine_weapon_align"):
+		_debug_spine_weapon_align_pressed = true
 
 func _ready() -> void:
 	_skeleton = get_skeleton()
@@ -58,15 +65,64 @@ func _ready() -> void:
 	_cache_bone_indices()
 
 	# Configure CCDIK3D via ChainIK3D API (Godot 4.6+)
-	var ccdik := get_node("../CCDIK") as CCDIK3D
-	if ccdik != null:
-		ccdik.set_setting_count(1)
-		ccdik.set_root_bone_name(0, "spine_01")
-		ccdik.set_end_bone_name(0, "spine_02")
+	_ccdik_node = get_node("../CCDIK") as CCDIK3D
+	if _ccdik_node != null:
+		_ccdik_node.set_setting_count(1)
+		_ccdik_node.set_root_bone_name(0, "spine_01")
+		_ccdik_node.set_end_bone_name(0, "spine_02")
 		if _look_at_target != null:
-			ccdik.set_target_node(0, ccdik.get_path_to(_look_at_target))
-		ccdik.max_iterations = 4
-		ccdik.min_distance = 0.01
+			_ccdik_node.set_target_node(0, _ccdik_node.get_path_to(_look_at_target))
+		_ccdik_node.max_iterations = 4
+		_ccdik_node.min_distance = 0.01
+
+	# _process() pre-positions LookAtTarget BEFORE the modifier pipeline runs.
+	# This ensures CCDIK (which runs as a SkeletonModifier3D modifier) receives
+	# the current frame's target position, not the previous frame's.
+	set_process(true)
+
+func _process(_delta: float) -> void:
+	if _skeleton == null or _aim_controller == null or _look_at_target == null:
+		return
+	if _pelvis_idx == -1 or _spine02_idx == -1:
+		return
+
+	# Pre-position target BEFORE modifier pipeline so CCDIK solves with
+	# current-frame data. The modifier callback handles influence blending.
+	_update_look_at_target_pose()
+	_update_ccdik_iterations()
+
+func _update_look_at_target_pose() -> void:
+	var aim_state: AimState = _aim_controller.get_aim_state()
+	if aim_state == null or not aim_state.is_valid:
+		return
+
+	var aim_direction: Vector3 = aim_state.aim_direction.normalized()
+	if aim_direction.is_zero_approx():
+		return
+
+	var pelvis_pose: Transform3D = _skeleton.get_bone_global_pose(_pelvis_idx)
+	var pelvis_world: Vector3 = _skeleton.global_transform * pelvis_pose.origin
+	var aim_target_world: Vector3 = pelvis_world + aim_direction * arc_radius
+
+	if _current_influence < 1.0 - INFLUENCE_EPSILON:
+		var neutral_target_world: Vector3 = pelvis_world + Vector3.UP * arc_radius
+		aim_target_world = neutral_target_world.lerp(aim_target_world, _current_influence)
+
+	# AimState direction is already world-space; keeping the target in world
+	# space avoids a second pitch-sign conversion through the rig's 180° Y basis.
+	_look_at_target.global_position = aim_target_world
+
+func _update_ccdik_iterations() -> void:
+	if _ccdik_node == null:
+		return
+
+	var pitch := _get_camera_pitch()
+	var pitch_delta: float = absf(pitch - _last_camera_pitch)
+	_last_camera_pitch = pitch
+
+	var base: int = 4
+	var extra: int = int(rad_to_deg(pitch_delta) / 5.0)
+	_ccdik_node.max_iterations = clampi(base + extra, 4, 12)
 
 func _process_modification_with_delta(delta: float) -> void:
 	if _skeleton == null or _spine01_idx == -1 or _spine02_idx == -1:
@@ -77,25 +133,20 @@ func _process_modification_with_delta(delta: float) -> void:
 	var target_influence: float = _compute_target_influence()
 	_blend_influence(delta, target_influence)
 
-	var pelvis_global: Transform3D = _skeleton.get_bone_global_pose(_pelvis_idx)
-	var pitch := _get_camera_pitch()
-
-	var local_offset := Vector3(0.0, arc_radius, 0.0).rotated(Vector3.RIGHT, -pitch)
-	var aim_target := pelvis_global.origin + local_offset
-
-	if _current_influence < 1.0 - INFLUENCE_EPSILON:
-		var neutral_pos := pelvis_global.origin + Vector3(0.0, arc_radius, 0.0)
-		aim_target = neutral_pos.lerp(aim_target, _current_influence)
-
-	if _look_at_target != null:
-		_look_at_target.position = aim_target
+	_update_ccdik_iterations()
 
 	if _debug_f8_pressed:
 		_debug_f8_pressed = false
-		prints("[CCDIK_CTX] camera_pitch(deg):", rad_to_deg(pitch),
+		var _dbg_pitch := _get_camera_pitch()
+		var _dbg_target := _look_at_target.position if _look_at_target != null else Vector3.ZERO
+		prints("[CCDIK_CTX] camera_pitch(deg):", rad_to_deg(_dbg_pitch),
 			"  yaw(deg):", 0.0,
 			"  influence:", _current_influence,
-			"  target_pos:", aim_target)
+			"  target_pos:", _dbg_target)
+
+	if _debug_spine_weapon_align_pressed:
+		_debug_spine_weapon_align_pressed = false
+		_debug_spine_weapon_align()
 		var s1_idx: int = _spine01_idx
 		var s2_idx: int = _spine02_idx
 		if s1_idx != -1:
@@ -109,23 +160,23 @@ func _process_modification_with_delta(delta: float) -> void:
 			prints("[BEFORE_CCDIK] spine_02  q:", q2, "  euler(deg):",
 				rad_to_deg(e2.x), rad_to_deg(e2.y), rad_to_deg(e2.z))
 
-		var ccdik_node: Node = get_node("../CCDIK")
-		if ccdik_node != null and ccdik_node is SkeletonModifier3D:
-			var ccdik_sm: SkeletonModifier3D = ccdik_node as SkeletonModifier3D
-			var ccdik_typed := ccdik_node as CCDIK3D
+		if _ccdik_node != null:
+			var ccdik_sm: SkeletonModifier3D = _ccdik_node as SkeletonModifier3D
 			prints("[CCDIK_DIAG] influence:", ccdik_sm.influence,
 				"  active:", ccdik_sm.active,
 				"  process_mode:", ccdik_sm.process_mode,
 				"  skeleton_valid:", ccdik_sm.get_skeleton() != null)
-			if ccdik_typed != null:
-				var post_bones = ccdik_typed.bones
-				prints("[CCDIK_VERIFY] bones en P:", post_bones, "  is_empty:", post_bones.is_empty() if post_bones != null else "NULL")
-				if post_bones != null:
-					for bname in post_bones:
-						var b_idx: int = _skeleton.find_bone(bname)
-						prints("[CCDIK_BONE] name:", bname, "  find_bone:", b_idx)
+			var joint_count: int = _ccdik_node.get_joint_count(0)
+			var root_name: String = _ccdik_node.get_root_bone_name(0)
+			var end_name: String = _ccdik_node.get_end_bone_name(0)
+			prints("[CCDIK_CHAIN] root:", root_name, "  end:", end_name,
+				"  joints:", joint_count, "  max_iter:", _ccdik_node.max_iterations)
+			for j in joint_count:
+				var bname: String = _ccdik_node.get_joint_bone_name(0, j)
+				var b_idx: int = _skeleton.find_bone(bname)
+				prints("[CCDIK_JOINT] idx:", j, "  bone:", bname, "  find_bone:", b_idx)
 		else:
-			prints("[CCDIK_DIAG] CCDIK node not found or not SkeletonModifier3D")
+			prints("[CCDIK_DIAG] CCDIK node not found")
 
 		if _look_at_target != null:
 			var tip_global: Vector3 = _skeleton.global_transform * _skeleton.get_bone_global_pose(s2_idx).origin if s2_idx != -1 else Vector3.ZERO
@@ -150,7 +201,7 @@ func _process_modification_with_delta(delta: float) -> void:
 		if cc != null:
 			var cam: Camera3D = cc.fps_camera if cc.using_fps else cc.tps_camera
 			if cam != null and _gun_bone_idx != -1 and s2_idx != -1:
-				var cam_pitch_deg := rad_to_deg(pitch)
+				var cam_pitch_deg := rad_to_deg(_get_camera_pitch())
 
 				var spine_gpose: Transform3D = _skeleton.get_bone_global_pose(s2_idx)
 				var spine_fwd: Vector3 = -spine_gpose.basis.z.normalized()
@@ -182,13 +233,20 @@ func _process_modification_with_delta(delta: float) -> void:
 #  RESOLVE
 # ============================================================
 
+## Injects the player-owned external dependencies (composition root).
+func configure(character: CharacterController, aim: AimController) -> void:
+	_character_controller = character
+	_aim_controller = aim
+
 func _resolve_dependencies() -> void:
 	if _character_controller == null and not character_controller_path.is_empty():
-		_character_controller = get_node(character_controller_path) as CharacterController
+		_character_controller = get_node_or_null(character_controller_path) as CharacterController
 	if _aim_controller == null and not aim_controller_path.is_empty():
-		_aim_controller = get_node(aim_controller_path) as AimController
+		_aim_controller = get_node_or_null(aim_controller_path) as AimController
 	if _look_at_target == null and not look_at_target_path.is_empty():
-		_look_at_target = get_node(look_at_target_path) as Node3D
+		_look_at_target = get_node_or_null(look_at_target_path) as Node3D
+	if _weapon_root == null and not weapon_root_path.is_empty():
+		_weapon_root = get_node_or_null(weapon_root_path) as Node3D
 
 func _cache_bone_indices() -> void:
 	_pelvis_idx = _skeleton.find_bone("pelvis")
@@ -223,10 +281,12 @@ func _blend_influence(delta: float, target: float) -> void:
 # ============================================================
 
 func _get_camera_pitch() -> float:
-	if _aim_controller == null or _aim_controller.camera_controller == null:
+	if _aim_controller == null:
 		return 0.0
-	var cam := _aim_controller.camera_controller as CameraController
-	return cam.fps_pitch if cam.using_fps else cam.tps_pitch
+	var state: AimState = _aim_controller.get_aim_state()
+	if state == null or not state.is_valid:
+		return 0.0
+	return state.look_pitch
 
 func _get_aim_direction_local() -> Vector3:
 	if _aim_controller == null:
@@ -235,3 +295,48 @@ func _get_aim_direction_local() -> Vector3:
 	if dir == Vector3.ZERO:
 		return Vector3(0.0, 0.0, -1.0)
 	return (_skeleton.global_transform.basis.inverse() * dir).normalized()
+
+# ============================================================
+#  DIAGNOSTIC — Spine-Weapon Alignment
+# ============================================================
+
+func _debug_spine_weapon_align() -> void:
+	if _aim_controller == null or _skeleton == null:
+		return
+
+	var state: AimState = _aim_controller.get_aim_state()
+	if state == null or not state.is_valid:
+		return
+
+	var aim_dir_local: Vector3 = _get_aim_direction_local()
+
+	var spine_fwd: Vector3 = Vector3.ZERO
+	if _spine02_idx != -1:
+		var spine_gpose: Transform3D = _skeleton.get_bone_global_pose(_spine02_idx)
+		spine_fwd = -(_skeleton.global_transform.basis * spine_gpose.basis).z.normalized()
+
+	var weapon_fwd: Vector3 = Vector3.FORWARD
+	if _weapon_root != null:
+		weapon_fwd = -_weapon_root.global_transform.basis.z.normalized()
+
+	var body_yaw: float = 0.0
+	if _character_controller != null:
+		body_yaw = _character_controller.rotation.y
+
+	var spine_dot: float = spine_fwd.dot(weapon_fwd)
+	var spine_angle: float = rad_to_deg(acos(clampf(spine_dot, -1.0, 1.0)))
+
+	prints("")
+	prints("===== SPINE-WEAPON ALIGN =====")
+	prints("[aim_dir_local] (%.4f, %.4f, %.4f)" % [aim_dir_local.x, aim_dir_local.y, aim_dir_local.z])
+	if _look_at_target != null:
+		prints("[lookat_target] (%.4f, %.4f, %.4f)" % [_look_at_target.position.x, _look_at_target.position.y, _look_at_target.position.z])
+	else:
+		prints("[lookat_target] NULL")
+	prints("[spine_fwd]     (%.4f, %.4f, %.4f)" % [spine_fwd.x, spine_fwd.y, spine_fwd.z])
+	prints("[weapon_fwd]    (%.4f, %.4f, %.4f)" % [weapon_fwd.x, weapon_fwd.y, weapon_fwd.z])
+	prints("[body_yaw]      %.4f rad (%.2f deg)" % [body_yaw, rad_to_deg(body_yaw)])
+	prints("[cam_pitch]     %.4f rad (%.2f deg)" % [state.look_pitch, rad_to_deg(state.look_pitch)])
+	prints("[spine·weapon]  dot: %.6f  angle: %.2f deg" % [spine_dot, spine_angle])
+	prints("================================")
+	prints("")

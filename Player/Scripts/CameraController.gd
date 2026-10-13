@@ -8,7 +8,7 @@ class_name CameraController
 # - Independent FPS/TPS look state
 # - Sending yaw target to Motor
 # - Switching between FPS and TPS cameras
-# - ADS camera displacement toward weapon SIGHT_BACK node
+# - Head-bone anchored FPS pivot (always at eye position)
 # ============================================================
 
 @export_category("Mouse Settings")
@@ -19,9 +19,6 @@ class_name CameraController
 @export var tps_orbit_distance: float = 3.0
 @export var tps_shoulder_offset: float = 0.2
 @export var tps_height_offset: float = 0.25
-
-@export_category("ADS Camera Displacement")
-@export var enable_ads_displacement: bool = true
 
 @export_category("Head-Bone Anchoring")
 ## Path to the VisualsComponent node for reading head-bone eye position.
@@ -59,14 +56,10 @@ var _visuals_component: VisualsComponent
 var _head_bone_warning_emitted: bool = false
 
 # ============================================================
-# ADS DISPLACEMENT STATE
+# ADS STATE (read from AimState via apply_aim_state)
 # ============================================================
-## World-space target for the FPS pivot during ADS.
-## Set each frame by AimController via set_ads_position_target().
-var _ads_position_target: Vector3 = Vector3.ZERO
-## Blend weight: 0 = default hip pivot, 1 = fully displaced to SIGHT_BACK.
-## Driven by AimController via set_ads_weight().
-var _ads_pivot_weight: float = 0.0
+var _current_ads_weight: float = 0.0
+var _current_fov: float = 75.0
 ## Default local position of fps_pivot, captured once in _ready().
 var _fps_pivot_default_local_position: Vector3 = Vector3.ZERO
 
@@ -188,29 +181,34 @@ func _emit_missing_motor_warning_once() -> void:
 	push_warning("No valid motor found for CameraController. Input look will stay disabled until a compatible parent is available.")
 
 # ============================================================
-# ADS CAMERA DISPLACEMENT — PUBLIC API
+# AIM STATE CONSUMER — PUBLIC API
 # ============================================================
 
-## Called each frame by AimController when a weapon with a SIGHT_BACK node
-## is equipped and the player is in ADS stance.
-## world_pos is the computed position behind the weapon's iron sight.
-func set_ads_position_target(world_pos: Vector3) -> void:
-	_ads_position_target = world_pos
-
-## Called by AimController each frame.
-## weight: 1.0 = fully displaced to SIGHT_BACK, 0.0 = default hip pivot.
-func set_ads_weight(weight: float) -> void:
-	if enable_ads_displacement:
-		_ads_pivot_weight = clampf(weight, 0.0, 1.0)
-	else:
-		_ads_pivot_weight = 0.0
-
-## Called by AimController each frame. Applies FOV to both cameras.
-func set_current_fov(fov: float) -> void:
+## Called each frame by AimController with the current AimState.
+## CameraController reads presentation-relevant fields (FOV, ads_weight).
+func apply_aim_state(state: AimState) -> void:
+	if state == null or not state.is_valid:
+		return
+	_current_ads_weight = state.ads_weight
+	_current_fov = state.fov_target
 	if fps_camera != null:
-		fps_camera.fov = fov
+		fps_camera.fov = _current_fov
 	if tps_camera != null:
-		tps_camera.fov = fov
+		tps_camera.fov = _current_fov
+
+# ============================================================
+# RAW LOOK — READ-ONLY PUBLIC API
+# ============================================================
+
+## Returns the active camera mode's raw pitch (radians, unmodified).
+## Read-only for AimController — CameraController remains the sole writer.
+func get_raw_pitch() -> float:
+	return fps_pitch if using_fps else tps_pitch
+
+## Returns the active camera mode's raw yaw (radians, unmodified).
+## Read-only for AimController — CameraController remains the sole writer.
+func get_raw_yaw() -> float:
+	return fps_yaw if using_fps else tps_yaw
 
 # ============================================================
 # INPUT
@@ -274,20 +272,13 @@ func _apply_active_look():
 
 	fps_pivot.rotation.x = fps_pitch
 
-	# Base position: head-bone-anchored eye level in FPS, fixed editor position as fallback.
+	# Head-bone anchored eye level in FPS, fixed editor position as fallback.
 	var base_local: Vector3 = _fps_pivot_default_local_position
 	if using_fps and _visuals_component != null:
 		var eye_world: Vector3 = _visuals_component.get_eye_world_position()
 		if not eye_world.is_zero_approx():
 			base_local = to_local(eye_world)
-
-	# ADS displacement: slide the FPS pivot toward the weapon's rear iron sight.
-	# Only applied in FPS mode; camera rotation remains purely mouse-driven.
-	if enable_ads_displacement and using_fps and _ads_pivot_weight > 0.001 and _ads_position_target != Vector3.ZERO:
-		var sight_local: Vector3 = to_local(_ads_position_target)
-		fps_pivot.position = base_local.lerp(sight_local, _ads_pivot_weight)
-	else:
-		fps_pivot.position = base_local
+	fps_pivot.position = base_local
 
 	# Keep TPS orbit independent from character yaw by compensating parent rotation.
 	tps_pivot.rotation.x = tps_pitch
@@ -295,7 +286,7 @@ func _apply_active_look():
 	tps_camera.position = Vector3(tps_shoulder_offset, tps_height_offset, tps_orbit_distance)
 
 	if using_fps:
-		motor.set_target_yaw(fps_yaw)
+		pass  # Body yaw authority transferred to CharacterController (Step 6)
 
 	motor.set_camera_yaw(tps_yaw if not using_fps else fps_yaw)
 	motor.set_camera_mode(using_fps)

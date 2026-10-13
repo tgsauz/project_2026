@@ -38,9 +38,11 @@ var interaction: InteractionComponent
 var visuals_component: VisualsComponent
 var animation_tree: AnimationTree
 var camera_controller: Node
+var _aim_controller: AimController
 
 @export var ik_controller_path: NodePath
 var ik_controller: FullBodyIKController
+var _spine_look_at: SpineLookAtController
 
 signal quick_action_menu_changed(prompt_data: Dictionary, actions: Array, selected_index: int, is_open: bool)
 
@@ -90,6 +92,9 @@ func _ready():
 	
 	if camera_controller.has_method("set_motor"):
 		camera_controller.set_motor(self)
+
+	_resolve_aim_controller()
+	_inject_ik_dependencies()
 
 	if not inventory.weight_changed.is_connected(_on_weight_changed):
 		inventory.weight_changed.connect(_on_weight_changed)
@@ -180,6 +185,7 @@ func get_inventory_component() -> InventoryComponent:
 func _physics_process(delta):
 
 	if is_multiplayer_authority():
+		_update_body_yaw()
 		_collect_input()
 		_update_sprint(delta)
 		_compute_motor(delta)
@@ -210,12 +216,6 @@ func _collect_input():
 	intent_direction = move_basis * Vector3(input_vector.x, 0, input_vector.y)
 	intent_direction.y = 0
 	intent_direction = intent_direction.normalized()
-	
-	if not is_first_person:
-		if _is_effectively_aiming():
-			target_yaw = camera_yaw
-		elif intent_direction.length_squared() > 0.0:
-			target_yaw = atan2(-intent_direction.x, -intent_direction.z)
 		
 # ============================================================
 #  MOTOR (CORE SYSTEM)
@@ -257,6 +257,21 @@ func _compute_motor(delta):
 # ============================================================
 #  ROTATION
 # ============================================================
+
+func _update_body_yaw() -> void:
+	if _aim_controller == null:
+		return
+	var state: AimState = _aim_controller.get_aim_state()
+	if state == null or not state.is_valid:
+		return
+
+	if is_first_person:
+		target_yaw = state.intended_yaw
+	else:
+		if _is_effectively_aiming():
+			target_yaw = state.intended_yaw
+		elif intent_direction.length_squared() > 0.0:
+			target_yaw = atan2(-intent_direction.x, -intent_direction.z)
 
 func _update_rotation(delta):
 	if is_first_person:
@@ -472,11 +487,15 @@ func _spawn_dropped_world_item(item: ItemInstance) -> void:
 	world_item.item_instance = item
 	world_item.freeze = true
 
-	var collision_shape := CollisionShape3D.new()
-	var box_shape := BoxShape3D.new()
-	box_shape.size = Vector3(0.35, 0.25, 0.2)
-	collision_shape.shape = box_shape
-	world_item.add_child(collision_shape)
+	# Fallback collider only when the definition has no world_visual_scene.
+	# WorldItem._apply_world_visual() generates a collider from that scene on
+	# _ready; adding ours unconditionally produced two overlapping colliders.
+	if item.definition == null or item.definition.world_visual_scene == null:
+		var collision_shape := CollisionShape3D.new()
+		var box_shape := BoxShape3D.new()
+		box_shape.size = Vector3(0.35, 0.25, 0.2)
+		collision_shape.shape = box_shape
+		world_item.add_child(collision_shape)
 
 	get_parent().add_child(world_item)
 	world_item.global_position = global_position + (-global_basis.z * 0.8) + Vector3.UP * 1.0
@@ -525,7 +544,23 @@ func _resolve_dependencies() -> bool:
 			push_error("CharacterController could not resolve FullBodyIKController from path: ", ik_controller_path)
 			valid = false
 
+	if ik_controller != null:
+		_spine_look_at = ik_controller.get_parent().get_node_or_null("SpineLookAtController") as SpineLookAtController
+
 	return valid
+
+func _resolve_aim_controller() -> void:
+	_aim_controller = get_node_or_null("AimController") as AimController
+	if _aim_controller == null:
+		push_warning("CharacterController: AimController not found as child.")
+
+## Injects this player's dependencies into the rig's IK controllers so the
+## rig module no longer has to resolve player-owned nodes by fixed paths.
+func _inject_ik_dependencies() -> void:
+	if ik_controller != null:
+		ik_controller.configure(self, _aim_controller, visuals_component)
+	if _spine_look_at != null:
+		_spine_look_at.configure(self, _aim_controller)
 
 func _bind_ui() -> void:
 	var ui_root := get_node_or_null("UIRoot")

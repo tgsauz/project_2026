@@ -45,8 +45,8 @@
 ## Required Bones
 - `spine_02` — chest anchor for weapon offset
 - `spine_01` — primary spine bend bone
-- `ik_hand_gun` — weapon position bone
-- `ik_hand_root` — parent of ik_hand_gun
+- `ik_hand_root` — sibling of `pelvis` at skeleton root (NOT child of spine chain)
+- `ik_hand_gun` — child of `ik_hand_root`; only written by `AnimationTree` at runtime
 - `arm_r` — right shoulder (IK root + distance diagnostic)
 - `arm_l` — left shoulder (IK root)
 - `clavicle_r`, `forearm_r`, `hand_r` — right arm IK chain

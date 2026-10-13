@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://dty2y6kwbwb3n" path="res://Tools/CharacterTuner/TunerRigPreset.gd" id="1_preset_script"]
 [ext_resource type="Script" uid="uid://btxnwqtcdecia" path="res://Tools/CharacterTuner/DefaultTunerRigAdapter.gd" id="3_adapter"]
-[ext_resource type="PackedScene" uid="uid://vxgi8ggmn2p1" path="res://Player/mastercharacter.tscn" id="3_rxtig"]
+[ext_resource type="PackedScene" path="res://Player/CharacterRig.tscn" id="3_rxtig"]
 [ext_resource type="Resource" path="res://Tools/CharacterTuner/Config/HumanTunerRigProfile.tres" id="4_profile"]
 
 [resource]

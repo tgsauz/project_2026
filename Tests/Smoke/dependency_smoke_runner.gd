@@ -84,24 +84,33 @@ func _test_player_ik_layout_contract(player: CharacterController) -> void:
 	if rig == null:
 		return
 
-	var armature: Node3D = rig.get_node_or_null("Armature") as Node3D
-	var skeleton: Skeleton3D = rig.get_node_or_null("Armature/Skeleton3D") as Skeleton3D
-	_assert(armature != null, "IK layout should expose Rig/Armature.")
-	_assert(skeleton != null, "IK layout should expose Rig/Armature/Skeleton3D.")
-	if armature == null or skeleton == null:
+	# The character model is hosted under ImportedModel (the glb root), so the
+	# armature/skeleton live at Rig/ImportedModel/Armature/Skeleton3D. The IK
+	# target nodes are authored as direct children of the rig.
+	var skeleton: Skeleton3D = rig.get_node_or_null("ImportedModel/Armature/Skeleton3D") as Skeleton3D
+	_assert(skeleton != null, "IK layout should expose Rig/ImportedModel/Armature/Skeleton3D.")
+	if skeleton == null:
 		return
 
 	var target_names: PackedStringArray = PackedStringArray(["AimIKTarget", "RightHandIKTarget", "LeftHandIKTarget"])
 	for target_name in target_names:
-		_assert(armature.get_node_or_null(target_name) is Node3D, "IK layout missing target node '%s'." % target_name)
+		_assert(rig.get_node_or_null(target_name) is Node3D, "IK layout missing target node '%s'." % target_name)
 
-	var expected_order: Array[String] = ["WeaponOffsetCache", "SpineLookAtController", "CCDIK", "WeaponPositionController", "FullBodyIKController", "RightArmIK", "LeftArmIK", "HeadCCDIK"]
+	# Runtime SkeletonModifier3D order. The load-bearing invariant is that
+	# FullBodyIKController runs BEFORE the arm IK solvers so it can write the
+	# hand targets first (see CharacterRigAssembly._reorder_modifiers). Legacy
+	# WeaponOffsetCache/WeaponPositionController are intentionally absent.
 	var actual_order: Array[String] = []
 	for child in skeleton.get_children():
 		if child is SkeletonModifier3D:
 			actual_order.append(str(child.name))
 
-	_assert(actual_order == expected_order, "IK modifier order mismatch. Expected %s, got %s." % [str(expected_order), str(actual_order)])
+	var expected_modifiers: Array[String] = ["CCDIK", "FullBodyIKController", "RightArmIK", "LeftArmIK", "HeadCCDIK", "SpineLookAtController"]
+	for modifier_name in expected_modifiers:
+		_assert(actual_order.has(modifier_name), "IK pipeline missing modifier '%s'. Got %s." % [modifier_name, str(actual_order)])
+
+	if actual_order.has("FullBodyIKController") and actual_order.has("RightArmIK"):
+		_assert(actual_order.find("FullBodyIKController") < actual_order.find("RightArmIK"), "FullBodyIKController must run before RightArmIK so hand targets are set first. Got %s." % str(actual_order))
 
 func _test_world_scene_boot() -> void:
 	var world := WORLD_SCENE.instantiate()

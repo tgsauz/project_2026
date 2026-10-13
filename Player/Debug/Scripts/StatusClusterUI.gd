@@ -46,12 +46,22 @@ func bind_character(new_character: Node) -> void:
 		return
 	inventory = controller.get_inventory_component()
 
+func _find_ui_root_ancestor() -> UIRoot:
+	var node: Node = get_parent()
+	while node != null:
+		if node is UIRoot:
+			return node as UIRoot
+		node = node.get_parent()
+	return null
+
 func apply_style(style: UIStyleProfile) -> void:
 	style_profile = style
 	
-	# Get layout manager from UIRoot
+	# Resolve the layout manager from the owning UIRoot (bounded ancestor walk).
+	# UIRoot is a child of the player, not an autoload, so the previous
+	# "/root/UIRoot" absolute lookup never resolved.
 	if layout_manager == null:
-		var ui_root = get_node_or_null("/root/UIRoot") as UIRoot
+		var ui_root := _find_ui_root_ancestor()
 		if ui_root != null:
 			layout_manager = ui_root.get_layout_manager()
 	

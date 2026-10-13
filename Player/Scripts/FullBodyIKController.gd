@@ -32,14 +32,14 @@ var _warned_messages: Dictionary = {}
 
 var _ik_hand_gun_bone_idx: int = -1
 
-var _right_grip_local_offset: Transform3D = Transform3D.IDENTITY
-var _left_grip_local_offset: Transform3D = Transform3D.IDENTITY
-var _right_grip_valid: bool = false
-var _left_grip_valid: bool = false
+var _current_grip_target: GripTarget = null
+var _grip_target_valid: bool = false
+var _grip_target_just_valid: bool = false
 
-var _cached_rgrip_local: Transform3D = Transform3D.IDENTITY
-var _cached_lgrip_local: Transform3D = Transform3D.IDENTITY
-var _marker_cache_valid: bool = false
+## Set true only after _ready() fully resolves dependencies and caches
+## state. Until then the modifier tick is a no-op, so a modifier that
+## cannot resolve its dependencies never touches the skeleton.
+var _initialized: bool = false
 
 var _arm_ik_valid: Dictionary = {
 	"RightArmIK": true,
@@ -61,7 +61,7 @@ var _debug_f6_pressed: bool = false
 # ============================================================
 
 ## Grip IK weight is decoupled from combat state. The IK always
-## pulls hands to RGRIP/LGRIP markers at this strength when a
+## pulls hands to GripTarget positions at this strength when a
 ## weapon is equipped. This ensures any weapon + animation combo
 ## produces correct hand positions without per-state tuning.
 const IK_GRIP_WEIGHT: float = 1.0
@@ -99,7 +99,22 @@ func _ready() -> void:
 	if _skeleton == null:
 		push_error("FullBodyIKController must be a child of Skeleton3D.")
 		return
+	_try_initialize()
 
+## Injects the player-owned external dependencies. Called by the composition
+## root (CharacterController) once the rig exists in the tree. Rig-internal
+## references (targets, modifiers) are resolved internally.
+func configure(character: CharacterController, aim: AimController, visuals: VisualsComponent) -> void:
+	_character_controller = character
+	_aim_controller = aim
+	_visuals_component = visuals
+	if _skeleton != null and not _initialized:
+		_try_initialize()
+
+## Resolves dependencies and, only if they are sufficient, configures the
+## modifier pipeline and marks the controller operational. Idempotent: a
+## failed attempt (no host) leaves it inert and can be retried via configure().
+func _try_initialize() -> void:
 	if not _resolve_dependencies():
 		return
 
@@ -113,18 +128,17 @@ func _ready() -> void:
 		var hand_rest: Transform3D = _skeleton.get_bone_rest(_hand_r_bone_idx)
 		_rest_chain_length = forearm_rest.origin.length() + hand_rest.origin.length()
 
-	if _visuals_component != null and _visuals_component.has_signal("equipped_visual_attached"):
-		if not _visuals_component.equipped_visual_attached.is_connected(_on_visual_attached):
-			_visuals_component.equipped_visual_attached.connect(_on_visual_attached)
+	_initialized = true
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("debug_ik_reach"):
 		_debug_f6_pressed = true
 
 func _process_modification_with_delta(delta: float) -> void:
-	_cache_weapon_marker_offsets()
+	if not _initialized:
+		return
 	_update_aim_target()
-	_update_hand_targets_from_bone_pose()
+	_update_hand_targets_from_grip_target()
 	_compute_weight_targets()
 	if delta > 0.0001:
 		_blend_weights(delta)
@@ -138,33 +152,40 @@ func _process_modification_with_delta(delta: float) -> void:
 #  DEPENDENCY RESOLUTION
 # ============================================================
 
+## Resolves rig-internal targets (required) and player-owned externals
+## (optional). Internal failures are rig bugs -> push_error. Missing
+## externals mean "not hosted by a player" -> warn once and stay inert.
 func _resolve_dependencies() -> bool:
-	_character_controller = get_node(character_controller_path) as CharacterController
-	_aim_controller = get_node(aim_controller_path) as AimController
-	_visuals_component = get_node(visuals_component_path) as VisualsComponent
-	_aim_target = get_node(aim_target_path) as Node3D
-	_right_hand_target = get_node(right_hand_target_path) as Node3D
-	_left_hand_target = get_node(left_hand_target_path) as Node3D
-	var valid := true
-	if _character_controller == null:
-		push_error("FullBodyIKController could not resolve CharacterController.")
-		valid = false
-	if _aim_controller == null:
-		push_error("FullBodyIKController could not resolve AimController.")
-		valid = false
-	if _visuals_component == null:
-		push_error("FullBodyIKController could not resolve VisualsComponent.")
-		valid = false
+	if _aim_target == null and not aim_target_path.is_empty():
+		_aim_target = get_node_or_null(aim_target_path) as Node3D
+	if _right_hand_target == null and not right_hand_target_path.is_empty():
+		_right_hand_target = get_node_or_null(right_hand_target_path) as Node3D
+	if _left_hand_target == null and not left_hand_target_path.is_empty():
+		_left_hand_target = get_node_or_null(left_hand_target_path) as Node3D
+
+	if _character_controller == null and not character_controller_path.is_empty():
+		_character_controller = get_node_or_null(character_controller_path) as CharacterController
+	if _aim_controller == null and not aim_controller_path.is_empty():
+		_aim_controller = get_node_or_null(aim_controller_path) as AimController
+	if _visuals_component == null and not visuals_component_path.is_empty():
+		_visuals_component = get_node_or_null(visuals_component_path) as VisualsComponent
+
+	var internal_ok := true
 	if _aim_target == null:
 		push_error("FullBodyIKController could not resolve AimIKTarget.")
-		valid = false
+		internal_ok = false
 	if _right_hand_target == null:
 		push_error("FullBodyIKController could not resolve RightHandIKTarget.")
-		valid = false
+		internal_ok = false
 	if _left_hand_target == null:
 		push_error("FullBodyIKController could not resolve LeftHandIKTarget.")
-		valid = false
-	return valid
+		internal_ok = false
+
+	var external_ok: bool = _character_controller != null and _aim_controller != null and _visuals_component != null
+	if not external_ok:
+		_warn_once("external_deps_unresolved", "FullBodyIKController: player dependencies unavailable; modifier stays inactive.")
+
+	return internal_ok and external_ok
 
 func _cache_bone_indices() -> void:
 	_ik_hand_gun_bone_idx = _skeleton.find_bone("ik_hand_gun")
@@ -172,7 +193,7 @@ func _cache_bone_indices() -> void:
 	_left_arm_root_idx = _skeleton.find_bone("arm_l")
 
 	if _ik_hand_gun_bone_idx == -1:
-		push_error("FullBodyIKController: skeleton missing bone 'ik_hand_gun'. Hand targets will be invalid.")
+		push_warning("FullBodyIKController: skeleton missing bone 'ik_hand_gun'. Debug diagnostics disabled.")
 
 	_clavicle_r_bone_idx = _skeleton.find_bone("clavicle_r")
 	_arm_r_bone_idx = _skeleton.find_bone("arm_r")
@@ -230,83 +251,21 @@ func _init_weights() -> void:
 	_apply_modifier_weights()
 
 # ============================================================
-#  WEAPON GRIP OFFSETS (MARKER LOCAL CACHE)
+#  GRIP TARGET CONSUMER (Step 8 — authority)
 # ============================================================
 
-func _on_visual_attached(slot_name: String, _item_id: String, visual: Node3D, _entry: Dictionary) -> void:
-	if slot_name != "right_hand":
-		return
-	_cache_marker_locals_from_weapon(visual)
-
-func _cache_marker_locals_from_weapon(weapon: Node3D) -> void:
-	_marker_cache_valid = false
-
-	var rgrip := _find_weapon_marker(weapon, "RGRIP")
-	var lgrip := _find_weapon_marker(weapon, "LGRIP")
-
-	_cached_rgrip_local = rgrip.transform if rgrip != null else Transform3D.IDENTITY
-	_cached_lgrip_local = lgrip.transform if lgrip != null else Transform3D.IDENTITY
-	_marker_cache_valid = true
-
-	var r_str: String = _v3_str(_cached_rgrip_local.origin) if rgrip != null else "N/A"
-	var l_str: String = _v3_str(_cached_lgrip_local.origin) if lgrip != null else "N/A"
-	prints("[IK] Marker cache:", _skeleton.get_bone_name(_ik_hand_gun_bone_idx) if _ik_hand_gun_bone_idx != -1 else "?", "RGRIP=" + r_str, "LGRIP=" + l_str)
-
-static func _find_weapon_marker(weapon: Node3D, marker_name: String) -> Node3D:
-	if weapon == null or marker_name.is_empty():
-		return null
-	if weapon.name == marker_name:
-		return weapon
-	return weapon.find_child(marker_name, true, false) as Node3D
-
-func _cache_weapon_marker_offsets() -> void:
-	if _skeleton == null or _visuals_component == null:
+## Receives GripTarget from WeaponController. GripTarget is now
+## the authoritative source for hand positioning.
+func apply_grip_target(grip_target: GripTarget) -> void:
+	if grip_target == null or not grip_target.is_valid:
+		_current_grip_target = null
+		_grip_target_valid = false
 		return
 
-	var has_weapon: bool = _character_controller != null and _character_controller.has_main_hand_weapon()
-
-	if not has_weapon:
-		_marker_cache_valid = false
-
-	if not _marker_cache_valid:
-		if has_weapon:
-			var weapon := _visuals_component.get_active_visual("right_hand")
-			if weapon != null:
-				_cache_marker_locals_from_weapon(weapon)
-			else:
-				_right_grip_local_offset = Transform3D.IDENTITY
-				_left_grip_local_offset = Transform3D.IDENTITY
-				_right_grip_valid = false
-				_left_grip_valid = false
-				return
-		else:
-			_right_grip_local_offset = Transform3D.IDENTITY
-			_left_grip_local_offset = Transform3D.IDENTITY
-			_right_grip_valid = false
-			_left_grip_valid = false
-			return
-
-	if _ik_hand_gun_bone_idx == -1:
-		_right_grip_local_offset = Transform3D.IDENTITY
-		_left_grip_local_offset = Transform3D.IDENTITY
-		_right_grip_valid = false
-		_left_grip_valid = false
-		return
-
-	if _cached_rgrip_local != Transform3D.IDENTITY:
-		_right_grip_local_offset = _cached_rgrip_local
-		_right_grip_valid = true
-	else:
-		_right_grip_local_offset = Transform3D.IDENTITY
-		_right_grip_valid = false
-
-	if _cached_lgrip_local != Transform3D.IDENTITY:
-		_left_grip_local_offset = _cached_lgrip_local
-		_left_grip_valid = true
-	else:
-		_left_grip_local_offset = Transform3D.IDENTITY
-		_left_grip_valid = false
-
+	if not _grip_target_valid:
+		_grip_target_just_valid = true
+	_current_grip_target = grip_target
+	_grip_target_valid = true
 
 
 # ============================================================
@@ -316,28 +275,28 @@ func _cache_weapon_marker_offsets() -> void:
 func _update_aim_target() -> void:
 	if _aim_controller == null or _aim_target == null:
 		return
-	var aim_dir: Vector3 = _aim_controller.aim_direction
+	var state: AimState = _aim_controller.get_aim_state()
+	if state == null or not state.is_valid:
+		return
+	var aim_dir: Vector3 = state.aim_direction
 	if aim_dir == Vector3.ZERO:
 		aim_dir = Vector3.FORWARD
 	_aim_target.global_position = _skeleton.global_position + aim_dir * aim_target_distance
 
-func _update_hand_targets_from_bone_pose() -> void:
-	if not _character_controller.has_main_hand_weapon():
-		_set_target_weight("RightArmIK", 0.0)
-		_set_target_weight("LeftArmIK", 0.0)
+func _update_hand_targets_from_grip_target() -> void:
+	if _current_grip_target == null or not _current_grip_target.is_valid:
+		_grip_target_valid = false
 		return
 
-	if _ik_hand_gun_bone_idx == -1:
-		return
+	_grip_target_valid = true
 
-	var bone_pose := _skeleton.get_bone_global_pose(_ik_hand_gun_bone_idx)
-	var bone_world := _skeleton.global_transform * bone_pose
+	if _current_grip_target.right_hand_valid and _arm_ik_valid.get("RightArmIK", false) and _right_hand_target != null:
+		_right_hand_target.global_position = _current_grip_target.right_hand_position
+		_right_hand_target.global_transform.basis = Basis(_current_grip_target.right_hand_rotation)
 
-	if _arm_ik_valid.get("RightArmIK", false) and _right_hand_target != null:
-		_right_hand_target.global_transform = bone_world * _right_grip_local_offset
-
-	if _arm_ik_valid.get("LeftArmIK", false) and _left_hand_target != null:
-		_left_hand_target.global_transform = bone_world * _left_grip_local_offset
+	if _current_grip_target.left_hand_valid and _arm_ik_valid.get("LeftArmIK", false) and _left_hand_target != null:
+		_left_hand_target.global_position = _current_grip_target.left_hand_position
+		_left_hand_target.global_transform.basis = Basis(_current_grip_target.left_hand_rotation)
 
 # ============================================================
 #  WEIGHT STATE MACHINE
@@ -355,23 +314,26 @@ func _compute_weight_targets() -> void:
 	else:
 		_weight_targets = WEIGHTS_ARMED.duplicate()
 
-	# Grip IK is decoupled from combat state — always use grip weight
-	# when weapon is equipped. The per-state table controls HeadCCDIK
-	# while IK grip strength is constant.
-	_weight_targets["RightArmIK"] = IK_GRIP_WEIGHT
-	_weight_targets["LeftArmIK"] = IK_GRIP_WEIGHT
-
-	if not _right_grip_valid:
-		_weight_targets["RightArmIK"] = 0.0
-	if not _left_grip_valid:
-		_weight_targets["LeftArmIK"] = 0.0
+	# Grip IK is decoupled from combat state — always use grip weight when the
+	# weapon is equipped. Per-hand validity comes from the GripTarget, so a hand
+	# without a grip marker relaxes to the animation instead of a stale target.
+	var right_valid: bool = _current_grip_target != null and _current_grip_target.right_hand_valid
+	var left_valid: bool = _current_grip_target != null and _current_grip_target.left_hand_valid
+	_weight_targets["RightArmIK"] = IK_GRIP_WEIGHT if right_valid else 0.0
+	_weight_targets["LeftArmIK"] = IK_GRIP_WEIGHT if left_valid else 0.0
 
 func _blend_weights(delta: float) -> void:
 	var blend_alpha: float = 1.0 - exp(-weight_blend_speed * delta)
+	var snap_first_frame: bool = _grip_target_just_valid
+	_grip_target_just_valid = false
 	for modifier_name in MODIFIER_ORDER:
 		var current: float = float(_weights.get(modifier_name, 0.0))
 		var target: float = float(_weight_targets.get(modifier_name, 0.0))
-		var blended := lerpf(current, target, blend_alpha)
+		var blended: float
+		if snap_first_frame and (modifier_name == "RightArmIK" or modifier_name == "LeftArmIK"):
+			blended = target
+		else:
+			blended = lerpf(current, target, blend_alpha)
 		if absf(blended - target) <= zero_weight_epsilon:
 			blended = target
 		_weights[modifier_name] = blended
@@ -382,9 +344,6 @@ func _apply_modifier_weights() -> void:
 		if modifier == null:
 			continue
 		modifier.influence = clampf(float(_weights.get(modifier_name, 0.0)), 0.0, 1.0)
-
-func _set_target_weight(modifier_name: String, weight: float) -> void:
-	_weight_targets[modifier_name] = clampf(weight, 0.0, 1.0)
 
 func _warn_once(key: String, message: String) -> void:
 	if _warned_messages.has(key):
@@ -403,8 +362,8 @@ func _debug_print_ik_reach() -> void:
 	var hand_r_idx: int = _skeleton.find_bone("hand_r")
 	var hand_l_idx: int = _skeleton.find_bone("hand_l")
 
-	var weapon := _visuals_component.get_active_visual("right_hand") if _visuals_component != null else null
-	if weapon == null:
+	var has_weapon: bool = _character_controller != null and _character_controller.has_main_hand_weapon()
+	if not has_weapon:
 		prints("===== IK REACH DEBUG =====")
 		prints("[No weapon equipped]")
 		return
@@ -414,30 +373,38 @@ func _debug_print_ik_reach() -> void:
 	prints("")
 	prints("===== IK REACH DEBUG (J) =====")
 
-	# Right hand
-	var rgrip: Node3D = _visuals_component.get_active_visual_marker("right_hand", "RGRIP")
-	var rgrip_world: Vector3 = rgrip.global_position if rgrip != null else Vector3.ZERO
+	var r_ik: Vector3 = _current_grip_target.right_hand_position if _current_grip_target != null and _current_grip_target.is_valid else Vector3.ZERO
+	var l_ik: Vector3 = _current_grip_target.left_hand_position if _current_grip_target != null and _current_grip_target.is_valid else Vector3.ZERO
 	var rht: Vector3 = _right_hand_target.global_position if _right_hand_target != null else Vector3.ZERO
+	var lht: Vector3 = _left_hand_target.global_position if _left_hand_target != null else Vector3.ZERO
 	var rbone: Vector3 = (skel_tf * _skeleton.get_bone_global_pose(hand_r_idx)).origin if hand_r_idx != -1 else Vector3.ZERO
+	var lbone: Vector3 = (skel_tf * _skeleton.get_bone_global_pose(hand_l_idx)).origin if hand_l_idx != -1 else Vector3.ZERO
 
-	prints("[RGRIP]        world:", _v3_str(rgrip_world))
+	prints("[GripTarget R] pos:", _v3_str(r_ik))
+	prints("[GripTarget L] pos:", _v3_str(l_ik))
 	prints("[RHandTarget]  world:", _v3_str(rht))
 	prints("[RHandBone]    world:", _v3_str(rbone))
-	if rgrip != null:
-		prints("[RGRIP→Target] dist:", "%.4f" % rgrip_world.distance_to(rht))
+	prints("[LHandTarget]  world:", _v3_str(lht))
+	prints("[LHandBone]    world:", _v3_str(lbone))
+	if r_ik != Vector3.ZERO:
+		prints("[Grip→RHand]   dist:", "%.4f" % r_ik.distance_to(rht))
+	if l_ik != Vector3.ZERO:
+		prints("[Grip→LHand]   dist:", "%.4f" % l_ik.distance_to(lht))
 	if hand_r_idx != -1:
 		prints("[RHandBone→Target] dist:", "%.4f" % rbone.distance_to(rht))
+	if hand_l_idx != -1:
+		prints("[LHandBone→Target] dist:", "%.4f" % lbone.distance_to(lht))
 
 	# Arm reach measurement
-	if _arm_r_bone_idx != -1 and rgrip != null:
+	if _arm_r_bone_idx != -1 and r_ik != Vector3.ZERO:
 		var arm_r_world: Vector3 = (skel_tf * _skeleton.get_bone_global_pose(_arm_r_bone_idx)).origin
-		var arm_r_target_dist: float = arm_r_world.distance_to(rgrip_world)
+		var arm_r_target_dist: float = arm_r_world.distance_to(r_ik)
 		var reach_margin: float = _rest_chain_length - arm_r_target_dist
-		prints("[ArmReach]     chain: %.4f  arm_r→RGRIP: %.4f  margin_cm: %+.2f" % [
+		prints("[ArmReach]     chain: %.4f  arm_r→Grip: %.4f  margin_cm: %+.2f" % [
 			_rest_chain_length, arm_r_target_dist, reach_margin * 100.0])
 
-	# Chain bone positions and distances to RGRIP
-	if rgrip != null:
+	# Chain bone positions and distances to GripTarget
+	if r_ik != Vector3.ZERO:
 		var cav_r_world: Vector3 = (skel_tf * _skeleton.get_bone_global_pose(_clavicle_r_bone_idx)).origin if _clavicle_r_bone_idx != -1 else Vector3.ZERO
 		var a_r_world: Vector3 = (skel_tf * _skeleton.get_bone_global_pose(_arm_r_bone_idx)).origin if _arm_r_bone_idx != -1 else Vector3.ZERO
 		var fa_r_world: Vector3 = (skel_tf * _skeleton.get_bone_global_pose(_forearm_r_bone_idx)).origin if _forearm_r_bone_idx != -1 else Vector3.ZERO
@@ -446,32 +413,18 @@ func _debug_print_ik_reach() -> void:
 		prints("[ChainWorld]   arm_r:   ", _v3_str(a_r_world))
 		prints("[ChainWorld]   forearm: ", _v3_str(fa_r_world))
 		prints("[ChainWorld]   hand_r:  ", _v3_str(h_r_world))
-		prints("[ChainWorld]   RGRIP:   ", _v3_str(rgrip_world))
-		var cav_dist: float = cav_r_world.distance_to(rgrip_world)
-		var arm_dist: float = a_r_world.distance_to(rgrip_world)
-		var fa_dist: float = fa_r_world.distance_to(rgrip_world)
-		prints("[ChainDist]   clavicle→RGRIP: %.4f  arm_r→RGRIP: %.4f  forearm→RGRIP: %.4f" % [cav_dist, arm_dist, fa_dist])
-
-	# Left hand
-	var lgrip: Node3D = _visuals_component.get_active_visual_marker("right_hand", "LGRIP")
-	var lgrip_world: Vector3 = lgrip.global_position if lgrip != null else Vector3.ZERO
-	var lht: Vector3 = _left_hand_target.global_position if _left_hand_target != null else Vector3.ZERO
-	var lbone: Vector3 = (skel_tf * _skeleton.get_bone_global_pose(hand_l_idx)).origin if hand_l_idx != -1 else Vector3.ZERO
-
-	prints("[LGRIP]        world:", _v3_str(lgrip_world))
-	prints("[LHandTarget]  world:", _v3_str(lht))
-	prints("[LHandBone]    world:", _v3_str(lbone))
-	if lgrip != null:
-		prints("[LGRIP→Target] dist:", "%.4f" % lgrip_world.distance_to(lht))
-	if hand_l_idx != -1:
-		prints("[LHandBone→Target] dist:", "%.4f" % lbone.distance_to(lht))
+		prints("[ChainWorld]   GripR:   ", _v3_str(r_ik))
+		var cav_dist: float = cav_r_world.distance_to(r_ik)
+		var arm_dist: float = a_r_world.distance_to(r_ik)
+		var fa_dist: float = fa_r_world.distance_to(r_ik)
+		prints("[ChainDist]   clavicle→Grip: %.4f  arm_r→Grip: %.4f  forearm→Grip: %.4f" % [cav_dist, arm_dist, fa_dist])
 
 	# Modifier influences
 	var rik_mod := _modifiers.get("RightArmIK") as SkeletonModifier3D
 	var lik_mod := _modifiers.get("LeftArmIK") as SkeletonModifier3D
 	prints("[RightArmIK]   influence:", "%.3f" % rik_mod.influence if rik_mod != null else "N/A")
 	prints("[LeftArmIK]    influence:", "%.3f" % lik_mod.influence if lik_mod != null else "N/A")
-	prints("[GripValid]    R:", _right_grip_valid, " L:", _left_grip_valid)
+	prints("[GripValid]    ", _grip_target_valid)
 
 	# ik_hand_gun bone diagnostic
 	if _ik_hand_gun_bone_idx != -1:
@@ -486,23 +439,15 @@ func _debug_print_ik_reach() -> void:
 		prints("[ik_hand_gun]  global_pose  pos:", _v3_str(gun_global_pose.origin), " X:", _v3_str(gun_global_pose.basis.x), " Y:", _v3_str(gun_global_pose.basis.y), " Z:", _v3_str(gun_global_pose.basis.z))
 
 	# Shoulder-pivot diagnostic
-	# Weapon follows spine rigidly (WeaponPositionController applies only chest offset).
-	# arm_r→gun should stay invariant across pitch angles.
-	if _ik_hand_gun_bone_idx != -1 and _arm_r_bone_idx != -1 and rgrip != null:
+	if _ik_hand_gun_bone_idx != -1 and _arm_r_bone_idx != -1 and r_ik != Vector3.ZERO:
 		var gun_pose: Transform3D = _skeleton.get_bone_global_pose(_ik_hand_gun_bone_idx)
 		var gun_world: Transform3D = skel_tf * gun_pose
 		var shoulder_world: Vector3 = (skel_tf * _skeleton.get_bone_global_pose(_arm_r_bone_idx)).origin
 		var shoulder_gun_dist: float = shoulder_world.distance_to(gun_world.origin)
-		var grip_world: Vector3 = rgrip_world
-		var shoulder_grip_dist: float = shoulder_world.distance_to(grip_world)
+		var shoulder_grip_dist: float = shoulder_world.distance_to(r_ik)
 
 		prints("[PivotDiag]    gun_world:", _v3_str(gun_world.origin))
 		prints("[PivotDiag]    arm_r→gun: %.4f  arm_r→grip: %.4f" % [shoulder_gun_dist, shoulder_grip_dist])
-		prints("[PivotDiag]    weapon follows spine (no independent pitch)")
-
-	# Offsets
-	prints("[RHS]          offset:", _v3_str(_right_grip_local_offset.origin))
-	prints("[LHS]          offset:", _v3_str(_left_grip_local_offset.origin))
 
 	prints("================================")
 	prints("")

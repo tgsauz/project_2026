@@ -1,9 +1,0 @@
-[gd_resource type="Resource" script_class="ItemVisualAttachmentProfile" format=3 uid="uid://5q00b5hufieq"]
-
-[ext_resource type="Script" uid="uid://d2acu83ir08qt" path="res://World/Items/Scripts/ItemVisualAttachmentProfile.gd" id="1_profile"]
-
-[resource]
-script = ExtResource("1_profile")
-slot_name = "left_hand"
-visual_state = "held"
-secondary_slot_name = "right_hand"

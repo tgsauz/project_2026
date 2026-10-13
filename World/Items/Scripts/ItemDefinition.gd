@@ -73,11 +73,6 @@ const CATEGORY_CLOTHING := "clothing"
 func get_interaction_label() -> String:
 	return "%s [%s]" % [interaction_verb, interaction_key_hint]
 
-func can_fit_in_slot(slot_name: String) -> bool:
-	if allowed_slots.is_empty():
-		return false
-	return allowed_slots.has(slot_name)
-
 func can_store_category(target_category: String) -> bool:
 	if container_allowed_categories.is_empty():
 		return true

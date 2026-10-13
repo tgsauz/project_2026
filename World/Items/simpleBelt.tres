@@ -11,6 +11,7 @@ tooltip_text = "Adds attachment points"
 category = "clothing"
 allowed_slots = PackedStringArray("belt")
 attachment_tags = PackedStringArray("belt")
+visible_when_equipped = true
 preferred_slot = "belt"
 is_skinned_mesh = true
 attachment_modifier = ExtResource("2_modifier")
