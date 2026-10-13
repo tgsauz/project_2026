@@ -108,11 +108,11 @@ problema de posicionamiento.
 ## 4. Hecho 3 — `WeaponLayerBase` descarta la posición del hueso
 
 `Player/Scripts/WeaponLayerBase.gd:60-109` toma la **orientación** del hueso
-(`get_bone_global_pose`) pero **descarta la posición** y la sustituye por una
-posición calculada a partir de `clavicle_r`, una longitud de brazo estimada en
-rest y una constante de dirección.
+(`get_bone_global_pose`) pero **descarta la posición**: en lugar de propagarla,
+invoca `_compute_grip_marker_position()`, que fabrica una posición a partir de
+otros huesos del personaje.
 
-Ese cálculo no debería existir. La posición del arma es la del hueso:
+Esa posición fabricada no debería existir. La posición del arma es la del hueso:
 
 ```
 weapon_root.global_transform = skeleton.global_transform × skeleton.get_bone_global_pose(ik_hand_gun)
@@ -162,12 +162,12 @@ No es un bucle. Es esto:
 ```
 AnimationTree  ──escribe──►  ik_hand_gun (posición + orientación)
 WeaponLayerBase ──ignora──►  posición de ik_hand_gun
-              ──sustituye─►  posición calculada desde clavicle_r
+              ──sustituye─►  posicion fabricada (_compute_grip_marker_position)
 WeaponLayerAim ──escribe──►  orientación de ik_hand_gun (hasta 106.8°)
 ```
 
 **Dos escritores, tres verdades.** La animación dice una cosa sobre dónde está
-el arma; el cálculo interno dice otra; la capa de apuntado dice una tercera.
+el arma; la posición fabricada dice otra; la capa de apuntado dice una tercera.
 No hay forma de satisfacer las tres, así que el resultado se ve roto de forma
 diferente en cada estado.
 
