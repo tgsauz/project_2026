@@ -21,18 +21,26 @@ reproducen aquí los datos, no las herramientas.
 El síntoma reportado era "el arma no se mantiene acoplada al hueso
 `ik_hand_gun`, siempre se rompe". La causa medida no es un bucle de
 retroalimentación: es un **conflicto de dos escritores sobre la misma
-información**. La animación coloca el arma; el runtime la coloca en otro sitio;
-el brazo obedece al runtime.
+información**. La animación coloca el arma; el runtime la coloca en otro sitio.
 
-En números, con el M4 equipado y sin apuntar:
+La posición del arma debe ser la del hueso, sin cálculo intermedio:
 
-| Magnitud | Valor medido |
-|---|---|
-| Distancia entre el arma y donde el hueso dice que está | **25.1 cm** |
-| Distancia entre `RGRIP` y la mano animada `hand_r` | **25.3 cm** |
-| Ángulo entre el forward del hueso y el del arma, sin apuntar | **0.0°** |
-| Ángulo entre el forward del hueso y el del arma, apuntando (peso 0.96) | **104.65°** |
-| Error de la heurística al reproducir la posición real del arma | **3.0 × 10⁻⁸ m** |
+```
+weapon_root.global_transform = skeleton.global_transform × skeleton.get_bone_global_pose(ik_hand_gun)
+```
+
+Con el M4 equipado, distancia entre el arma y la posición del hueso:
+
+| Magnitud | Hip fire | Apuntando |
+|---|---|---|
+| Distancia entre el arma y donde el hueso dice que está | **25.1 cm** | **46.5 cm** |
+| Distancia entre `RGRIP` y la mano animada `hand_r` | **25.3 cm** | **43.5 cm** |
+| Ángulo entre el forward del hueso y el del arma | **0.0°** | **106.8°** |
+| `RGRIP` vs `hand_r` *si el arma estuviera en el hueso* | **5.9 mm** | 7.5 cm |
+| `LGRIP` vs `hand_l` *si el arma estuviera en el hueso* | **3.6 mm** | 25.0 cm |
+
+Las dos últimas filas son la clave: en hip fire la animación ya coloca las
+manos donde deben estar, y es el runtime el que las separa del arma.
 
 ---
 
@@ -100,24 +108,28 @@ problema de posicionamiento.
 ## 4. Hecho 3 — `WeaponLayerBase` descarta la posición del hueso
 
 `Player/Scripts/WeaponLayerBase.gd:60-109` toma la **orientación** del hueso
-(`get_bone_global_pose`) pero **descarta la posición** y la sustituye por:
+(`get_bone_global_pose`) pero **descarta la posición** y la sustituye por una
+posición calculada a partir de `clavicle_r`, una longitud de brazo estimada en
+rest y una constante de dirección.
 
-```gdscript
-hand_natural = clavicle_global.origin + _arm_length * IDLE_DIRECTION
-# IDLE_DIRECTION = Vector3(0.0, -0.8, 0.3)   ← constante anatológica
-weapon_pos = hand_natural_world - weapon_basis * _rgrip_local.origin
+Ese cálculo no debería existir. La posición del arma es la del hueso:
+
+```
+weapon_root.global_transform = skeleton.global_transform × skeleton.get_bone_global_pose(ik_hand_gun)
 ```
 
-Verificación de que esa fórmula **es** la autoridad: recalcularla a partir de
-los valores reales del runtime reproduce `WeaponRoot.global_transform` con un
-error de **2.98 × 10⁻⁸ m** — precisión de coma flotante, no aproximación. La
-posición animada del hueso no entra en el cálculo en absoluto.
+Nada más. No hay longitud de brazo que medir ni constante que calibrar.
+
+Verificación de que el cálculo actual **es** la autoridad: reproducirlo con
+los valores reales del runtime da `WeaponRoot.global_transform` con error de
+**0.0 m** en hip fire. La posición del hueso no entra en él en absoluto.
 
 Efecto medido: el arma queda **25.1 cm** desplazada respecto a la pose
-autorada, y `RGRIP` queda a **25.3 cm** de la mano animada. El IK de brazo
-desplaza entonces el brazo ~25 cm para alcanzar un agarre que la animación
-nunca puso ahí. La animación y el runtime describen posiciones distintas del
-mismo objeto, y el brazo sigue a la que tiene el poder.
+autorada en hip fire, y **46.5 cm** apuntando. La animación y el runtime
+describen posiciones distintas del mismo objeto.
+
+El arreglo no es ajustar la constante ni recalibrar la longitud: es borrar el
+cálculo. Ver ADR-0001.
 
 ---
 
@@ -129,7 +141,7 @@ que produce un apuntado real:
 
 | Magnitud (apuntando, peso 0.96) | Valor |
 |---|---|
-| Ángulo entre forward del hueso y forward del arma | **104.65°** |
+| Ángulo entre forward del hueso y forward del arma | **106.8°** |
 | `RGRIP` vs `hand_r` | 43.7 cm |
 | `LGRIP` vs `hand_l` | 91.5 cm |
 
@@ -138,7 +150,7 @@ exacta del hueso. En cuanto entra la capa de apuntado, el arma gira **más de
 90°** fuera de la orientación que el hueso y la animación\Serviceaban. Ese es el
 "siempre se rompe" en su forma más visible.
 
-Nótese que 104.65° no es un ajuste fino de puntería: es el arma apuntando
+Nótese que 106.8° no es un ajuste fino de puntería: es el arma apuntando
 prácticamente al revés respecto al hueso.
 
 ---
@@ -150,14 +162,13 @@ No es un bucle. Es esto:
 ```
 AnimationTree  ──escribe──►  ik_hand_gun (posición + orientación)
 WeaponLayerBase ──ignora──►  posición de ik_hand_gun
-              ──sustituye─►  clavicle_r + arm_length · (0, −0.8, 0.3)
-WeaponLayerAim ──escribe──►  orientación de ik_hand_gun (hasta 104.65°)
-IK de brazo    ──obedece──►  WeaponRoot, no a la animación
+              ──sustituye─►  posición calculada desde clavicle_r
+WeaponLayerAim ──escribe──►  orientación de ik_hand_gun (hasta 106.8°)
 ```
 
 **Dos escritores, tres verdades.** La animación dice una cosa sobre dónde está
-el arma; la heurística dice otra; la capa de apuntado dice una tercera. El
-brazo no puede satisfacer a las tres, así que el resultado se ve roto de forma
+el arma; el cálculo interno dice otra; la capa de apuntado dice una tercera.
+No hay forma de satisfacer las tres, así que el resultado se ve roto de forma
 diferente en cada estado.
 
 El comentario del código atribuye el diseño a un ciclo que no existe. La causa
@@ -171,14 +182,14 @@ Si el hueso de soporte del arma es la autoridad (medido: coherente a 4-6 mm en
 `Armed`), entonces:
 
 - La posición del arma es `skeleton.global_transform × get_bone_global_pose(ik_hand_gun)`.
-  Sin `IDLE_DIRECTION`, sin heurística, sin fallback.
+  No hay constante, ni longitud estimada, ni fallback. No queda nada que ajustar.
 - Los marcadores `RGRIP`/`LGRIP` sobre ese transform producen el objetivo de
   agarre, y el IK de brazo converge hacia la animación en lugar de arrastrar
   al cuerpo hacia una pose inventada.
 - Cualquier ajuste de puntería debe aplicarse **una sola vez** y en **un solo
   sitio**. Hoy el pitch/yaw se aplica en la columna (CCDIK `spine_01 → spine_02`,
   del que `ik_hand_gun` es hijo) **y** en `WeaponLayerAim`. Eso duplica el
-  ajuste; por eso el ángulo medido se dispara a 104° en vez de acercarse a 0.
+  ajuste; por eso el ángulo medido se dispara a 106.8° en vez de acercarse a 0.
 
 Pendiente de medición, no de suposición:
 
