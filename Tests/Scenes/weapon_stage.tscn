@@ -1,0 +1,44 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://Player/PlayerCharacter.tscn" id="1_player"]
+[ext_resource type="PackedScene" path="res://World/Items/WorldItem.tscn" id="2_item"]
+[ext_resource type="Resource" path="res://World/Items/TestWeaponItem.tres" id="3_weapon"]
+
+[sub_resource type="BoxShape3D" id="GroundShape"]
+size = Vector3(10, 0.5, 10)
+
+[sub_resource type="BoxMesh" id="GroundMesh"]
+size = Vector3(10, 0.5, 10)
+
+[sub_resource type="Environment" id="StageEnv"]
+background_mode = 1
+background_color = Color(0.08, 0.1, 0.14, 1)
+ambient_light_source = 2
+ambient_light_color = Color(1, 1, 1, 1)
+ambient_light_energy = 0.7
+
+[node name="WeaponStage" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("StageEnv")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 6, 0)
+
+[node name="Ground" type="StaticBody3D" parent="."]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+shape = SubResource("GroundShape")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Ground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+mesh = SubResource("GroundMesh")
+
+[node name="CharacterBody3D" parent="." instance=ExtResource("1_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="Gun" parent="." instance=ExtResource("2_item")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 1, -1)
+mass = 3.5
+item_definition = ExtResource("3_weapon")
