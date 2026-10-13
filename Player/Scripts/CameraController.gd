@@ -58,7 +58,6 @@ var _head_bone_warning_emitted: bool = false
 # ============================================================
 # ADS STATE (read from AimState via apply_aim_state)
 # ============================================================
-var _current_ads_weight: float = 0.0
 var _current_fov: float = 75.0
 ## Default local position of fps_pivot, captured once in _ready().
 var _fps_pivot_default_local_position: Vector3 = Vector3.ZERO
@@ -185,11 +184,10 @@ func _emit_missing_motor_warning_once() -> void:
 # ============================================================
 
 ## Called each frame by AimController with the current AimState.
-## CameraController reads presentation-relevant fields (FOV, ads_weight).
+## CameraController reads presentation-relevant fields (FOV).
 func apply_aim_state(state: AimState) -> void:
 	if state == null or not state.is_valid:
 		return
-	_current_ads_weight = state.ads_weight
 	_current_fov = state.fov_target
 	if fps_camera != null:
 		fps_camera.fov = _current_fov

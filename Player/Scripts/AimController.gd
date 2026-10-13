@@ -157,8 +157,6 @@ func _build_aim_state() -> void:
 	var yaw_basis := Basis(Vector3(0.0, 1.0, 0.0), state.look_yaw)
 	state.aim_direction = (yaw_basis * pitch_basis * Vector3.FORWARD).normalized()
 
-	state.aim_target_point = state.aim_origin + state.aim_direction * 1000.0
-
 	# ADS and FOV from existing computed state
 	state.ads_weight = _ads_weight
 	state.aim_orientation_weight = _aim_orientation_weight

@@ -1,10 +1,10 @@
 # 🧠 Project 2026 — AI Agent Engineering Guidelines
 
-## 📌 TECH STACK: Godot 4.6.1 · GDScript · CharacterBody3D + CameraController + InteractionComponent
+## 📌 TECH STACK: Godot 4.7.2 · GDScript · CharacterBody3D + CameraController + InteractionComponent
 
 ## Core Facts
 
-**Engine:** Godot 4.6.1 | **Language:** GDScript | **Architecture:** CharacterController + CameraController + InteractionComponent  
+**Engine:** Godot 4.7.2 | **Language:** GDScript | **Architecture:** CharacterController + CameraController + InteractionComponent  
 **Roadmap:** Single-player → multiplayer  
 **Optimize for:** Scalability · Modularity · Efficiency · Robustness · Long-term maintainability
 
@@ -97,7 +97,7 @@
 
 ### Session Start
 At the start of every conversation, output:
-> **Project 2026 (Godot 4.6.1, GDScript)** — ready.
+> **Project 2026 (Godot 4.7.2, GDScript)** — ready.
 
 **Default mode:** Do NOT explain unless asked. Minimize token waste. Answer directly.
 
@@ -143,9 +143,9 @@ At the start of every conversation, output:
 - [ ] Change scope minimal and documented
 - [ ] Known tradeoffs explicitly listed
 
-### Godot 4.6.1 — API Guardrails
+### Godot 4.7.2 — API Guardrails
 
-| ❌ Wrong (Godot 3 / Other) | ✅ Correct (Godot 4.6.1) |
+| ❌ Wrong (Godot 3 / Godot 4.6 or older) | ✅ Correct (Godot 4.7.2) |
 |---|---|
 | `export var` | `@export var` |
 | `onready var` | `@onready var` |

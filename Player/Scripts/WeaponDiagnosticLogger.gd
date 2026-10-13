@@ -20,7 +20,6 @@ const DEG_EPSILON: float = 0.1
 var _file: FileAccess
 var _enabled: bool = false
 var _frame_count: int = 0
-var _test_label: String = ""
 var _pre_write_visual_local_pos: Vector3 = Vector3.ZERO
 var _pre_write_visual_local_fwd: Vector3 = Vector3.FORWARD
 var _pre_write_visual_parent: String = ""
@@ -62,15 +61,6 @@ func close() -> void:
 
 func is_enabled() -> bool:
 	return _enabled
-
-func set_test_label(label: String) -> void:
-	_test_label = label
-	if _file != null:
-		_file.store_line("")
-		_file.store_line("================================================================")
-		_file.store_line("TEST: %s" % label)
-		_file.store_line("================================================================")
-		_file.store_line("")
 
 func flush() -> void:
 	if _file != null:

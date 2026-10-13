@@ -152,8 +152,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 1.004)
 
 [node name="LeftHandIKTarget" type="Node3D" parent="." unique_id=1800037670]
 
-[node name="GunMarker" type="Node3D" parent="." unique_id=1682744280]
-
 [node name="AnimationTree" type="AnimationTree" parent="." unique_id=558616322]
 root_node = NodePath("../ImportedModel")
 tree_root = SubResource("AnimationNodeStateMachine_vkgsr")

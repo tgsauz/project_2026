@@ -195,7 +195,6 @@ func _physics_process(delta):
 	move_and_slide()
 
 	_update_animation()
-	_update_visuals(delta)
 
 # ============================================================
 #  INPUT → INTENT
@@ -268,7 +267,7 @@ func _update_body_yaw() -> void:
 	if is_first_person:
 		target_yaw = state.intended_yaw
 	else:
-		if _is_effectively_aiming():
+		if is_effectively_aiming():
 			target_yaw = state.intended_yaw
 		elif intent_direction.length_squared() > 0.0:
 			target_yaw = atan2(-intent_direction.x, -intent_direction.z)
@@ -304,7 +303,7 @@ func _apply_gravity(delta):
 # ============================================================
 
 func _update_sprint(delta):
-	if _is_effectively_aiming():
+	if is_effectively_aiming():
 		is_sprinting = false
 
 	if is_sprinting:
@@ -364,11 +363,8 @@ func _update_animation():
 		playback.travel(target_state)
 
 # ============================================================
-#  VISUALS
+#  AIM DEBUG TOGGLE
 # ============================================================
-
-func _update_visuals(_delta: float) -> void:
-	pass
 
 func toggle_ads_debug() -> void:
 	is_aiming = !is_aiming
@@ -587,22 +583,16 @@ func has_main_hand_weapon() -> bool:
 func is_effectively_aiming() -> bool:
 	return is_aiming and not is_in_inventory and not quick_action_menu_open and has_main_hand_weapon()
 
-func _has_main_hand_weapon() -> bool:
-	return has_main_hand_weapon()
-
-func _is_effectively_aiming() -> bool:
-	return is_effectively_aiming()
-
 func _get_effective_move_speed() -> float:
 	var speed := sprint_speed if is_sprinting else move_speed
-	if _is_effectively_aiming():
+	if is_effectively_aiming():
 		speed *= aim_speed_multiplier
 	return speed
 
 func _get_target_animation_state() -> String:
-	if _is_effectively_aiming():
+	if is_effectively_aiming():
 		return "Aiming"
-	if _has_main_hand_weapon():
+	if has_main_hand_weapon():
 		return "Armed"
 	return "Unarmed"
 
