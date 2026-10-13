@@ -21,6 +21,11 @@ hacia arriba.
 
 1. `VisualsComponent/Rig` mantiene la rotación de 180° en Y. No se modifica sin
    una migración y una validación explícitas.
+2. La rotación de 180° en Y del nodo `M4RIFLE` dentro de
+   `World/Items/M4RIFLE/weaponSceneEquipped.tscn` es **una corrección
+   legítima**, no un residuo. Está ahí porque el asset y el hueso no comparten
+   el mismo marco de forward. **No se corrige.** Las dos rotaciones se cancelan
+   y el resultado es correcto; "arreglarla" rompería el weapon el alineado.
 2. Toda pose de hueso que se convierta al espacio mundo incluye la
    transformación global del esqueleto:
    `skeleton.global_transform * skeleton.get_bone_global_pose(idx)`.
