@@ -13,3 +13,4 @@ se mueva).
 - [ ] Ambas líneas existen y alinean con sus fuentes (verificable headless)
 - [ ] Verificación manual: mover el ratón mueve ambas líneas en la escena
 - [ ] Suites existentes en verde
+**Done:** e1ea9cb feat(T05): retirada de ads_weight + prioridad de lectura pen

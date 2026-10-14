@@ -22,3 +22,4 @@ tiende a 0.
 - [ ] Ratón quieto + cambio de estado = columna quieta
 - [ ] La costura de T01 pasa
 - [ ] Suites existentes en verde
+**Done:** e1ea9cb feat(T05): retirada de ads_weight + prioridad de lectura pen

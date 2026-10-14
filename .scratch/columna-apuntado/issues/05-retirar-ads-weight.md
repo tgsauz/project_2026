@@ -13,3 +13,4 @@ subiría la cabeza a 0.35 en apuntado y contradiría el reparto decidido).
 - [ ] Cero menciones restantes en código
 - [ ] Suites en verde sin cambio de comportamiento observable
 - [ ] El FOV sigue funcionando (campo independiente, no tocado)
+**Done:** e1ea9cb feat(T05): retirada de ads_weight + prioridad de lectura pen

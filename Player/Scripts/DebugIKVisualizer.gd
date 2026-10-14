@@ -10,6 +10,8 @@ enum BoneAxis { X = 0, Y = 1, Z = 2, MINUS_X = 3, MINUS_Y = 4, MINUS_Z = 5 }
 @export var show_forward_cones: bool = true
 @export var show_targets: bool = true
 @export var show_aim_ray: bool = true
+@export var show_camera_ray: bool = true
+@export var show_muzzle_ray: bool = true
 @export var show_labels: bool = true
 
 const CONE_LENGTH: float = 0.15
@@ -18,6 +20,14 @@ const AXIS_LENGTH: float = 0.12
 const CROSSHAIR_SIZE: float = 0.04
 const CONE_SEGMENTS: int = 8
 const LABEL_POOL_SIZE: int = 20
+
+const CAMERA_RAY_LENGTH: float = 10.0
+const MUZZLE_RAY_LENGTH: float = 10.0
+const CAMERA_RAY_COLOR := Color(1.0, 0.0, 1.0)
+const MUZZLE_RAY_COLOR := Color(1.0, 0.55, 0.1)
+
+## Marcador de boca dentro del asset del arma (ver project-docs/GLOSSARY.md).
+const MUZZLE_MARKER_NAME := "MUZZLE"
 
 const CHAIN_COLORS := {
 	"spine": Color(0.31, 0.76, 0.97),
@@ -32,6 +42,23 @@ var _ik_controller: FullBodyIKController
 var _skeleton: Skeleton3D
 var _ik_controller_injected: bool = false
 
+## Fuentes de los rayos de apuntado. Inyección explícita preferida;
+## si no se inyectan, se resuelven por vecindad acotada (el visualizador
+## es hijo del CharacterBody3D): CAMERARIG/FPSPIVOT/FPSCAMERA y
+## WeaponRoot/WeaponController.
+var _fps_camera: Camera3D
+var _camera_injected: bool = false
+var _weapon_controller: WeaponController
+var _weapon_controller_injected: bool = false
+
+## Últimos rayos calculados en espacio global (para dibujo y verificación).
+var _camera_ray_origin: Vector3 = Vector3.ZERO
+var _camera_ray_dir: Vector3 = Vector3.ZERO
+var _has_camera_ray: bool = false
+var _muzzle_ray_origin: Vector3 = Vector3.ZERO
+var _muzzle_ray_dir: Vector3 = Vector3.ZERO
+var _has_muzzle_ray: bool = false
+
 var _mesh_instance: MeshInstance3D
 var _immediate_mesh: ImmediateMesh
 var _label_pool: Array[Label3D] = []
@@ -45,6 +72,7 @@ var _debug_target_positions: Dictionary = {}
 
 func _ready() -> void:
 	_resolve_dependencies()
+	_resolve_ray_sources()
 	if _skeleton == null:
 		set_process(false)
 		return
@@ -61,6 +89,31 @@ func set_ik_controller(controller: FullBodyIKController) -> void:
 	_skeleton = _ik_controller.get_skeleton()
 	if _skeleton == null:
 		push_error("DebugIKVisualizer could not resolve Skeleton3D from FullBodyIKController.")
+
+func set_camera(camera: Camera3D) -> void:
+	_fps_camera = camera
+	_camera_injected = true
+
+func set_weapon_controller(controller: WeaponController) -> void:
+	_weapon_controller = controller
+	_weapon_controller_injected = true
+
+## Resuelve cámara FPS y WeaponController. La inyección explícita
+## (set_camera / set_weapon_controller) tiene prioridad; si no hay
+## inyección válida, se usa vecindad acotada al padre (CharacterBody3D).
+func _resolve_ray_sources() -> void:
+	if not is_instance_valid(_fps_camera):
+		_fps_camera = null
+		if not _camera_injected:
+			var host := get_parent()
+			if host != null:
+				_fps_camera = host.get_node_or_null("CAMERARIG/FPSPIVOT/FPSCAMERA") as Camera3D
+	if not is_instance_valid(_weapon_controller):
+		_weapon_controller = null
+		if not _weapon_controller_injected:
+			var host := get_parent()
+			if host != null:
+				_weapon_controller = host.get_node_or_null("WeaponRoot/WeaponController") as WeaponController
 
 func _resolve_dependencies() -> void:
 	if _ik_controller_injected:
@@ -140,6 +193,11 @@ func _process(_delta: float) -> void:
 		_draw_target_markers()
 	if show_aim_ray:
 		_draw_aim_ray()
+	_update_ray_sources()
+	if show_camera_ray:
+		_draw_camera_ray()
+	if show_muzzle_ray:
+		_draw_muzzle_ray()
 
 	_immediate_mesh.surface_end()
 
@@ -321,6 +379,80 @@ func _draw_aim_ray() -> void:
 	_add_line(skel_origin, aim_pos, Color.YELLOW)
 
 # ============================================================
+#  RAYOS DE APUNTADO (cámara y boca, en espacio global)
+# ============================================================
+
+## Recalcula ambos rayos en espacio global. Se llama cada fotograma
+## mientras el visualizador está activo; los valores quedan disponibles
+## vía has_camera_ray()/get_camera_ray_*() y has_muzzle_ray()/... aunque
+## el dibujo esté apagado con show_camera_ray/show_muzzle_ray.
+func _update_ray_sources() -> void:
+	_resolve_ray_sources()
+	_update_camera_ray()
+	_update_muzzle_ray()
+
+func has_camera_ray() -> bool:
+	return _has_camera_ray
+
+func get_camera_ray_origin() -> Vector3:
+	return _camera_ray_origin
+
+func get_camera_ray_direction() -> Vector3:
+	return _camera_ray_dir
+
+func has_muzzle_ray() -> bool:
+	return _has_muzzle_ray
+
+func get_muzzle_ray_origin() -> Vector3:
+	return _muzzle_ray_origin
+
+func get_muzzle_ray_direction() -> Vector3:
+	return _muzzle_ray_dir
+
+func _update_camera_ray() -> void:
+	_has_camera_ray = false
+	if not is_instance_valid(_fps_camera):
+		return
+	if not _fps_camera.is_inside_tree():
+		return
+	_camera_ray_origin = _fps_camera.global_transform.origin
+	_camera_ray_dir = -_fps_camera.global_transform.basis.z.normalized()
+	_has_camera_ray = true
+
+func _update_muzzle_ray() -> void:
+	_has_muzzle_ray = false
+	if not is_instance_valid(_weapon_controller):
+		return
+	if not _weapon_controller.has_method("get_weapon_visual"):
+		return
+	var visual: Node3D = _weapon_controller.get_weapon_visual() as Node3D
+	if not is_instance_valid(visual):
+		return
+	var muzzle: Node3D = _find_muzzle_marker(visual)
+	if muzzle == null or not is_instance_valid(muzzle):
+		return
+	if not muzzle.is_inside_tree():
+		return
+	_muzzle_ray_origin = muzzle.global_transform.origin
+	_muzzle_ray_dir = -muzzle.global_transform.basis.z.normalized()
+	_has_muzzle_ray = true
+
+func _find_muzzle_marker(visual: Node3D) -> Node3D:
+	if visual.name == MUZZLE_MARKER_NAME:
+		return visual
+	return visual.find_child(MUZZLE_MARKER_NAME, true, false) as Node3D
+
+func _draw_camera_ray() -> void:
+	if not _has_camera_ray:
+		return
+	_add_line(_camera_ray_origin, _camera_ray_origin + _camera_ray_dir * CAMERA_RAY_LENGTH, CAMERA_RAY_COLOR)
+
+func _draw_muzzle_ray() -> void:
+	if not _has_muzzle_ray:
+		return
+	_add_line(_muzzle_ray_origin, _muzzle_ray_origin + _muzzle_ray_dir * MUZZLE_RAY_LENGTH, MUZZLE_RAY_COLOR)
+
+# ============================================================
 #  LABELS
 # ============================================================
 
@@ -359,6 +491,12 @@ func _update_labels() -> void:
 	var lh_pos: Vector3 = _debug_target_positions.get("left_hand", Vector3.ZERO)
 	if lh_pos != Vector3.ZERO:
 		_place_label(lh_pos, "LeftHandTarget", Color(1.00, 0.44, 0.26))
+
+	if _has_camera_ray:
+		_place_label(_camera_ray_origin + _camera_ray_dir * CAMERA_RAY_LENGTH, "CameraRay", CAMERA_RAY_COLOR)
+
+	if _has_muzzle_ray:
+		_place_label(_muzzle_ray_origin + _muzzle_ray_dir * MUZZLE_RAY_LENGTH, "MuzzleRay", MUZZLE_RAY_COLOR)
 
 func _place_label(world_pos: Vector3, text: String, color: Color) -> void:
 	var label: Label3D = _acquire_label()

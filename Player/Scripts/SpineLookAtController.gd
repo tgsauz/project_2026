@@ -41,7 +41,7 @@ var _gun_bone_idx: int = -1
 var _current_influence: float = 0.0
 
 var _debug_spine_weapon_align_pressed: bool = false
-# Temp debug: prints spine bone eulers before CCDIK on P
+# Temp debug: prints spine bone eulers on P
 var _debug_f8_pressed: bool = false
 
 # ============================================================
@@ -156,7 +156,7 @@ func _process_modification_with_delta(_delta: float) -> void:
 		_debug_f8_pressed = false
 		var _dbg_pitch := _get_camera_pitch()
 		var _dbg_target := _look_at_target.position if _look_at_target != null else Vector3.ZERO
-		prints("[CCDIK_CTX] camera_pitch(deg):", rad_to_deg(_dbg_pitch),
+		prints("[SPINE_CTX] camera_pitch(deg):", rad_to_deg(_dbg_pitch),
 			"  yaw(deg):", 0.0,
 			"  influence:", _current_influence,
 			"  target_pos:", _dbg_target)

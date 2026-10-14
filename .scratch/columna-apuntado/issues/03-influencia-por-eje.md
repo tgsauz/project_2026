@@ -15,3 +15,4 @@ queda quieta por omisión — no se le escribe nada.
 - [ ] Cabeza quieta dentro del mismo estado ante barrido de yaw (pose local
   estable < 1°): nadie le escribe proceduralmente
 - [ ] Suites existentes en verde
+**Done:** e1ea9cb feat(T05): retirada de ads_weight + prioridad de lectura pen

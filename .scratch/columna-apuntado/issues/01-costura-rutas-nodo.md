@@ -21,3 +21,4 @@ solver pero debe conservar el punto de mirada).
 - [ ] Pasa en el código actual (es red de seguridad, no detector)
 - [ ] Cubre punto de mirada, tres objetivos, y nodo del arma
 - [ ] La suite de humo existente sigue en verde
+**Done:** e1ea9cb feat(T05): retirada de ads_weight + prioridad de lectura pen
