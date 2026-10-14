@@ -10,6 +10,8 @@ queda quieta por omisión — no se le escribe nada.
 
 **Status:** ready-for-agent
 
-- [ ] Entrada solo-yaw mueve yaw de columna, no pitch (y viceversa)
-- [ ] Cabeza quieta en los tres estados de apuntado
+- [ ] Entrada solo-yaw NO mueve yaw de columna (variación < 1°): el cuerpo
+  lo absorbe (verificar que el cuerpo sí giró, para no medir quietud falsa)
+- [ ] Cabeza quieta dentro del mismo estado ante barrido de yaw (pose local
+  estable < 1°): nadie le escribe proceduralmente
 - [ ] Suites existentes en verde
