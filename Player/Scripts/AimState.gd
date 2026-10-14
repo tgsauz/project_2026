@@ -16,7 +16,6 @@ var intended_yaw: float = 0.0
 var aim_origin: Vector3 = Vector3.ZERO
 var eye_position: Vector3 = Vector3.ZERO
 var aim_direction: Vector3 = Vector3.FORWARD
-var aim_orientation_weight: float = 0.0
 var fov_target: float = 75.0
 var camera_mode: bool = true
 var timestamp: int = 0

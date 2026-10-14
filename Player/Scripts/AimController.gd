@@ -15,17 +15,12 @@ class_name AimController
 @export var tps_ads_fov: float = 65.0
 @export var fov_speed: float = 8.0
 
-@export_category("Orientation Blend")
-@export var aim_orient_enter_speed: float = 12.0
-@export var aim_orient_exit_speed: float = 10.0
-
 var character_controller: CharacterController
 var camera_controller: CameraController
 
 var aim_origin: Vector3 = Vector3.ZERO
 var aim_direction: Vector3 = Vector3.FORWARD
 
-var _aim_orientation_weight: float = 0.0
 var _current_fov: float
 
 # ============================================================
@@ -62,7 +57,6 @@ func _process(delta: float):
 	var is_ads: bool = character_controller.is_aiming and not character_controller.is_in_inventory
 
 	_update_aim_basis()
-	_update_aim_orientation_weight(delta, is_ads)
 	_update_fov(delta, is_ads)
 	_build_aim_state()
 	_push_state_to_camera()
@@ -79,13 +73,6 @@ func _update_aim_basis() -> void:
 	var aim_point := aim_pivot.global_position + camera_forward * 100.0
 	# Direction from character to that crosshair point — decouples IK from camera position
 	aim_direction = (aim_point - character_controller.global_position).normalized()
-
-func _update_aim_orientation_weight(delta: float, is_aiming: bool) -> void:
-	var target: float = 1.0 if is_aiming else 0.0
-	var speed: float = aim_orient_enter_speed if target >= _aim_orientation_weight else aim_orient_exit_speed
-	_aim_orientation_weight = lerpf(_aim_orientation_weight, target, 1.0 - exp(-speed * delta))
-	if absf(_aim_orientation_weight - target) < 0.001:
-		_aim_orientation_weight = target
 
 func _update_fov(delta: float, is_ads: bool) -> void:
 	var target_fov: float
@@ -141,8 +128,7 @@ func _build_aim_state() -> void:
 	var yaw_basis := Basis(Vector3(0.0, 1.0, 0.0), state.look_yaw)
 	state.aim_direction = (yaw_basis * pitch_basis * Vector3.FORWARD).normalized()
 
-	# Aim blend and FOV from existing computed state
-	state.aim_orientation_weight = _aim_orientation_weight
+	# FOV from existing computed state
 	state.fov_target = _current_fov
 
 	# Timestamp and sequence
