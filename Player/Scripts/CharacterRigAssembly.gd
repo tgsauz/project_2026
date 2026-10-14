@@ -38,12 +38,9 @@ func _create_runtime_nodes() -> void:
 	# via get_node("../Name") must already exist in the Skeleton3D.
 	# Sin solver CCDIK (ADR-0008): la columna se escribe proceduralmente.
 	_create_look_at_target()
-	_create_right_arm_ik()
-	_create_left_arm_ik()
 	_create_head_ccdik()
 	_create_spine_look_at_controller()
 	_create_full_body_ik_controller()
-	_reorder_modifiers()
 	_create_weapon_root()
 
 func _create_look_at_target() -> void:
@@ -79,38 +76,13 @@ func _create_full_body_ik_controller() -> void:
 	fbik.visuals_component_path = NodePath("../../../../..")
 	fbik.character_controller_path = NodePath("../../../../../..")
 	fbik.aim_target_path = NodePath("../../../../AimIKTarget")
-	fbik.right_hand_target_path = NodePath("../../../../RightHandIKTarget")
-	fbik.left_hand_target_path = NodePath("../../../../LeftHandIKTarget")
 	_skeleton.add_child(fbik)
-
-func _create_right_arm_ik() -> void:
-	var ik := TwoBoneIK3D.new()
-	ik.name = "RightArmIK"
-	_skeleton.add_child(ik)
-
-func _create_left_arm_ik() -> void:
-	var ik := TwoBoneIK3D.new()
-	ik.name = "LeftArmIK"
-	_skeleton.add_child(ik)
 
 func _create_head_ccdik() -> void:
 	var ik := CCDIK3D.new()
 	ik.name = "HeadCCDIK"
 	ik.min_distance = 0.01
 	_skeleton.add_child(ik)
-
-## Reorders skeleton children so FullBodyIKController runs BEFORE
-## RightArmIK/LeftArmIK in the modifier pipeline. Godot executes
-## SkeletonModifier3D._process_modification_with_delta() in child-tree
-## order. FBIK must set hand targets before arm IK solves.
-func _reorder_modifiers() -> void:
-	var fbik := _skeleton.get_node_or_null("FullBodyIKController")
-	var right_arm_ik := _skeleton.get_node_or_null("RightArmIK")
-	if fbik != null and right_arm_ik != null:
-		var fbik_idx := _skeleton.get_children().find(fbik)
-		var right_arm_idx := _skeleton.get_children().find(right_arm_ik)
-		if fbik_idx > right_arm_idx:
-			_skeleton.move_child(fbik, right_arm_idx)
 
 func _create_weapon_root() -> void:
 	var character_body := _find_ancestor(self, "CharacterBody3D") as Node3D
@@ -129,7 +101,6 @@ func _deferred_weapon_root_setup(character_body: Node3D) -> void:
 
 	var controller := WeaponController.new()
 	controller.name = "WeaponController"
-	controller.fullbody_ik_path = NodePath("../../VisualsComponent/Rig/ImportedModel/Armature/Skeleton3D/FullBodyIKController")
 	controller.visuals_component_path = NodePath("../../VisualsComponent")
 	weapon_root.add_child(controller)
 	controller.owner = get_tree().edited_scene_root if Engine.is_editor_hint() else null

@@ -297,8 +297,6 @@ func _draw_forward_cones() -> void:
 		var mod_type: String = entry.get("type", "")
 		if mod_type == "look_at":
 			_draw_look_at_cone(entry)
-		elif mod_type == "two_bone":
-			_draw_two_bone_chain(entry)
 
 func _draw_look_at_cone(entry: Dictionary) -> void:
 	var bone_idx: int = entry.get("bone", -1)
@@ -314,28 +312,6 @@ func _draw_look_at_cone(entry: Dictionary) -> void:
 	var chain: String = _get_chain(bone_name)
 	var color: Color = CHAIN_COLORS.get(chain, Color.WHITE)
 	_draw_wireframe_cone(origin, dir, color)
-
-func _draw_two_bone_chain(entry: Dictionary) -> void:
-	var root: int = entry.get("root_bone", -1)
-	var middle: int = entry.get("middle_bone", -1)
-	var end: int = entry.get("end_bone", -1)
-	if root == -1 or middle == -1 or end == -1:
-		return
-
-	var root_pose := _get_bone_global_pose(root)
-	var middle_pose := _get_bone_global_pose(middle)
-	var end_pose := _get_bone_global_pose(end)
-
-	var chain: String = _get_chain(_get_bone_name(root))
-	var color: Color = CHAIN_COLORS.get(chain, Color.WHITE)
-
-	_add_line(root_pose.origin, middle_pose.origin, color)
-	_add_line(middle_pose.origin, end_pose.origin, color)
-
-	var size: float = CROSSHAIR_SIZE * 0.5
-	_add_line(end_pose.origin - Vector3(size, 0, 0), end_pose.origin + Vector3(size, 0, 0), color)
-	_add_line(end_pose.origin - Vector3(0, size, 0), end_pose.origin + Vector3(0, size, 0), color)
-	_add_line(end_pose.origin - Vector3(0, 0, size), end_pose.origin + Vector3(0, 0, size), color)
 
 func _draw_wireframe_cone(origin: Vector3, dir: Vector3, color: Color) -> void:
 	var tip: Vector3 = origin + dir * CONE_LENGTH
@@ -362,14 +338,6 @@ func _draw_target_markers() -> void:
 	var aim_pos: Vector3 = _debug_target_positions.get("aim", Vector3.ZERO)
 	if aim_pos != Vector3.ZERO:
 		_draw_crosshair(aim_pos, Color.CYAN)
-
-	var rh_pos: Vector3 = _debug_target_positions.get("right_hand", Vector3.ZERO)
-	if rh_pos != Vector3.ZERO:
-		_draw_crosshair(rh_pos, Color(0.40, 0.73, 0.42))
-
-	var lh_pos: Vector3 = _debug_target_positions.get("left_hand", Vector3.ZERO)
-	if lh_pos != Vector3.ZERO:
-		_draw_crosshair(lh_pos, Color(1.00, 0.44, 0.26))
 
 func _draw_aim_ray() -> void:
 	var aim_pos: Vector3 = _debug_target_positions.get("aim", Vector3.ZERO)
@@ -471,26 +439,9 @@ func _update_labels() -> void:
 			var color: Color = CHAIN_COLORS.get(chain, Color.WHITE)
 			_place_label(pose.origin, "%s (%s)" % [mod_name, bone_name], color)
 
-		elif mod_type == "two_bone":
-			var end: int = entry.get("end_bone", -1)
-			if end == -1:
-				continue
-			var pose: Transform3D = _get_bone_global_pose(end)
-			var chain: String = _get_chain(_get_bone_name(end))
-			var color: Color = CHAIN_COLORS.get(chain, Color.WHITE)
-			_place_label(pose.origin, mod_name, color)
-
 	var aim_pos: Vector3 = _debug_target_positions.get("aim", Vector3.ZERO)
 	if aim_pos != Vector3.ZERO:
 		_place_label(aim_pos, "AimIKTarget", Color.CYAN)
-
-	var rh_pos: Vector3 = _debug_target_positions.get("right_hand", Vector3.ZERO)
-	if rh_pos != Vector3.ZERO:
-		_place_label(rh_pos, "RightHandTarget", Color(0.40, 0.73, 0.42))
-
-	var lh_pos: Vector3 = _debug_target_positions.get("left_hand", Vector3.ZERO)
-	if lh_pos != Vector3.ZERO:
-		_place_label(lh_pos, "LeftHandTarget", Color(1.00, 0.44, 0.26))
 
 	if _has_camera_ray:
 		_place_label(_camera_ray_origin + _camera_ray_dir * CAMERA_RAY_LENGTH, "CameraRay", CAMERA_RAY_COLOR)

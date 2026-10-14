@@ -93,24 +93,25 @@ func _test_player_ik_layout_contract(player: CharacterController) -> void:
 	if skeleton == null:
 		return
 
-	var target_names: PackedStringArray = PackedStringArray(["AimIKTarget", "RightHandIKTarget", "LeftHandIKTarget"])
+	var target_names: PackedStringArray = PackedStringArray(["AimIKTarget"])
 	for target_name in target_names:
 		_assert(rig.get_node_or_null(target_name) is Node3D, "IK layout missing target node '%s'." % target_name)
 
-	# Runtime SkeletonModifier3D order. The load-bearing invariant is that
-	# FullBodyIKController runs BEFORE the arm IK solvers so it can write the
-	# hand targets first (see CharacterRigAssembly._reorder_modifiers). Legacy
-	# WeaponOffsetCache/WeaponPositionController are intentionally absent.
+	# Runtime SkeletonModifier3D order. The arm solvers (RightArmIK/LeftArmIK)
+	# were removed with the grip chain: measured inert, they wrote no bones.
+	# Legacy WeaponOffsetCache/WeaponPositionController are intentionally absent.
 	var actual_order: Array[String] = []
 	for child in skeleton.get_children():
 		if child is SkeletonModifier3D:
 			actual_order.append(str(child.name))
 
-	var expected_modifiers: Array[String] = ["FullBodyIKController", "RightArmIK", "LeftArmIK", "HeadCCDIK", "SpineLookAtController"]
+	var expected_modifiers: Array[String] = ["FullBodyIKController", "HeadCCDIK", "SpineLookAtController"]
 	for modifier_name in expected_modifiers:
 		_assert(actual_order.has(modifier_name), "IK pipeline missing modifier '%s'. Got %s." % [modifier_name, str(actual_order)])
 
 	if actual_order.has("FullBodyIKController") and actual_order.has("RightArmIK"):
+		# VACUA desde T10: RightArmIK se borro con la cadena de agarre inerte,
+		# asi que la condicion nunca se cumple y esta asercion ya no prueba nada.
 		_assert(actual_order.find("FullBodyIKController") < actual_order.find("RightArmIK"), "FullBodyIKController must run before RightArmIK so hand targets are set first. Got %s." % str(actual_order))
 
 func _test_rig_nodes_exist(player: CharacterController) -> void:
@@ -131,8 +132,7 @@ func _test_rig_nodes_exist(player: CharacterController) -> void:
 
 	var rig: Node3D = player.visuals_component.get_node_or_null("Rig") as Node3D
 	if rig != null:
-		for target_name in ["AimIKTarget", "RightHandIKTarget", "LeftHandIKTarget"]:
-			_assert(rig.get_node_or_null(target_name) is Node3D, "Rig should expose '%s'." % target_name)
+		_assert(rig.get_node_or_null("AimIKTarget") is Node3D, "Rig should expose '%s'." % "AimIKTarget")
 
 func _test_world_scene_boot() -> void:
 	var world := WORLD_SCENE.instantiate()
