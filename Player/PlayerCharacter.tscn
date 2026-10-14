@@ -6,7 +6,6 @@
 [ext_resource type="PackedScene" uid="uid://dsyl0f0rlm016" path="res://Player/CharacterRig.tscn" id="3_6f781"]
 [ext_resource type="Script" uid="uid://cb6df4o0xh02u" path="res://World/Items/Scripts/InteractionComponent.gd" id="4_mg46b"]
 [ext_resource type="Script" uid="uid://01gl5dbi1kb6" path="res://Player/Scripts/CameraController.gd" id="5_cam"]
-[ext_resource type="Script" uid="uid://dbvf3coa6supw" path="res://Player/Scripts/WeaponActionController.gd" id="6_weapon"]
 [ext_resource type="Script" uid="uid://0770tqdraevn" path="res://Player/Scripts/AimController.gd" id="8_aimcontroller"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_jdwmw"]
@@ -63,9 +62,6 @@ visuals_component_path = NodePath("../VisualsComponent")
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=848472128]
 replication_config = SubResource("SceneReplicationConfig_player")
-
-[node name="WeaponActionController" type="Node" parent="." unique_id=734489649]
-script = ExtResource("6_weapon")
 
 [node name="AimController" type="Node" parent="." unique_id=1670919205]
 script = ExtResource("8_aimcontroller")

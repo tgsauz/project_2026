@@ -232,16 +232,6 @@ func _unhandled_input(event):
 	if event.is_action_pressed("ui_cancel"):
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
-func apply_recoil(pitch_kick: float, yaw_kick: float) -> void:
-	if using_fps:
-		fps_pitch += pitch_kick
-		fps_pitch = clamp(fps_pitch, -max_pitch, max_pitch)
-		fps_yaw += yaw_kick
-	else:
-		tps_pitch += pitch_kick
-		tps_pitch = clamp(tps_pitch, -max_pitch, max_pitch)
-		tps_yaw += yaw_kick
-
 # ============================================================
 # MOUSE HANDLING
 # ============================================================
