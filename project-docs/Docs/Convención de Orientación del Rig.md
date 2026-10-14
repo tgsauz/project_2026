@@ -20,6 +20,7 @@ La conversión forma parte del contrato del personaje importado. No debe elimina
 
 - Al convertir una pose de hueso del espacio del esqueleto a mundo, incluir el transform mundial del esqueleto. Por ejemplo, el transform mundial del socket es `skeleton.global_transform * skeleton.get_bone_global_pose(bone_idx)`.
 - No inferir que el eje local `-Z` de cada socket es el forward del arma. La base local de `ik_hand_gun` y el marco del asset deben compararse explícitamente; el eje de montaje puede ser distinto.
+  *Comparación hecha 2026-10-14 (ADR-0009):* el forward del arma resultó ser el **`-Y`** de `ik_hand_gun` (coincide con `MUZZLE` a 0.00°; el `-Z` queda a 90.00°). La regla era correcta y el escritor de columna la incumplió durante un tiempo: leyó el `-Z` y dobló el torso 90° por fotograma. **Comparar contra el marcador del asset, nunca contra el eje del hueso.**
 - Mantener las correcciones específicas de orientación de un arma en su marco de montaje/asset. No usarlas como motivo para quitar la conversión global del rig.
 - El giro de `Rig` no autoriza a añadir flips por separado en el jugador, el esqueleto, la cámara o el arma sin identificar primero el espacio y la autoridad de cada transform.
 

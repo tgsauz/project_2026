@@ -13,8 +13,14 @@ extends SceneTree
 #   2. El forward del arma coincide con el forward del hueso.
 #   3. Ambas cosas se mantienen con pitch y con yaw.
 #      Este es el punto: ik_hand_gun cuelga de spine_02, que es lo que mueve
-#      el CCDIK de columna. Si el arma no sigue al torso aqui, la cadena
-#      CCDIK spine_01->spine_02 -> ik_hand_gun -> WeaponRoot esta rota.
+#      el escritor procedural de columna. Si el arma no sigue al torso aqui,
+#      la cadena esta rota:
+#      camara -> AimState -> SpineLookAtController -> spine_02
+#              -> ik_hand_gun -> WeaponRoot
+#      El solver CCDIK de columna se retiro en T02 (ADR-0008): ningun
+#      SkeletonModifier3D escribe huesos en esta version del motor.
+#      Con yaw, el torso no gira (ADR-0005); el que gira es el cuerpo y el
+#      arma lo sigue por herencia de pelvis.
 # ============================================================
 
 const PLAYER_SCENE := "res://Player/PlayerCharacter.tscn"
@@ -90,7 +96,8 @@ func _process(_delta: float) -> bool:
 ## El pivote no se puede escribir directamente: CameraController lo
 ## sobrescribe cada fotograma desde fps_pitch / fps_yaw. Se conduce la fuente.
 ## Asi el cambio recorre la cadena real:
-##   camara -> AimState -> CCDIK spine_01->spine_02 -> ik_hand_gun -> WeaponRoot
+##   camara -> AimState -> SpineLookAtController -> spine_02
+##           -> ik_hand_gun -> WeaponRoot
 func _apply(axis: String, deg: float) -> void:
 	var cam: Node = _player.get_node_or_null("CAMERARIG")
 	if cam == null:

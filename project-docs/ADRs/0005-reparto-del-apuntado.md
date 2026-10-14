@@ -15,6 +15,10 @@ coordina con los otros:
 - **Torso** (`SpineLookAtController`, CCDIK `spine_01 → spine_02`): influence
   discreta por estado (0 / 0.15 / 1.0). Medido, la columna se queda clavada
   en 17.79° sin responder al ratón.
+  *Corrección 2026-10-14 (mecanismo):* el mecanismo vigente **no es el CCDIK** —
+  se retiró (ADR-0008) y la columna se escribe proceduralmente desde `_process`.
+  La influence discreta por estado sí se mantiene. El resto de este ADR
+  (reparto por eje, cabeza a 0, cuerpo dueño del yaw) sigue vigente.
   *Corrección 2026-10-14 (ADR-0008):* una versión anterior atribuía esto al
   «target mal apuntado». Falsado: las cuatro rutas resuelven y ningún
   `SkeletonModifier3D` escribe huesos en esta versión del motor; la vía

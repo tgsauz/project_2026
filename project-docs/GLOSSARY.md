@@ -18,6 +18,7 @@ _Evitar_: huesos de agarre, manos IK.
 
 **Forward del arma**:
 Eje longitudinal del cañón, definido por el asset. No puede inferirse del eje local `-Z` de ningún hueso ni de ningún nodo de montaje.
+*Medido 2026-10-14 (ADR-0009):* en el rig actual, el forward del arma **es el `-Y` del hueso `ik_hand_gun`** — coincide con el marcador `MUZZLE` del asset a 0.00°, mientras el `-Z` queda a 90.00°, en los estados armado y apuntado. La regla de no inferir se confirma; lo que cambia es que ahora sí hay un eje conocido.
 _Evitar_: eje Z, forward local, -Z.
 
 **Convención de orientación del rig**:

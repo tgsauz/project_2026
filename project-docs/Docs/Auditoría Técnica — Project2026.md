@@ -150,6 +150,12 @@ Input → AimController → AimState → (consumido, nunca escrito por los consu
 - **`FACT` `SpineLookAtController`**: configura el `CCDIK3D` "CCDIK" (spine_01→spine_02), mueve `Node3D LookAtTarget`, ajusta iteraciones según delta de pitch.
 - **`FACT` crítico**: `_process_modification_with_delta` de `FullBodyIKController` **no guarda** `_character_controller == null` antes de `has_main_hand_weapon()` (`:279`) → null-ref confirmado en runtime.
 
+> **Corrección 2026-10-14 (sin reescritura del original).** Los dos `FACT` de arriba describen un estado que ya no existe:
+> - `SpineLookAtController` **ya no configura ningún `CCDIK3D`**. El solver de columna se retiró (ADR-0008): ningún `SkeletonModifier3D` escribe huesos en esta versión del motor, y la vía vigente es escritura procedural desde `_process` (`SpineLookAtController._write_spine_pose`). Tampoco ajusta iteraciones: esa lógica se eliminó.
+> - `FullBodyIKController` **sí sigue configurando** `TwoBoneIK3D` y `CCDIK3D`, y sus pesos se calculan correctamente — pero **los solvers son inertes**: medido, desplazar `RightHandIKTarget` 1 m produce `0.000000 m` de movimiento en `hand_r`. El error de agarre resultante (9.56 cm derecha, 55.85 cm izquierda) viene del clip, no del controlador.
+>
+> El resto de la auditoría (superficie, nulos, acoplamiento) sigue vigente.
+
 ### 4.6 VisualsComponent (`731`)
 - **Responsable** de instanciar visuales equipados (`BoneAttachment3D` por slot + ContentRoot), cachear markers (LGRIP/RGRIP/SIGHT_BACK/SIGHT_FRONT/MUZZLE), visibilidad de cabeza en FPS, y API para el Tuner.
 - **`FACT`**: se cablea por `bind_inventory` a `inventory_updated` y `equipment_visuals_changed` (`:295-304`).
@@ -447,6 +453,12 @@ Mundo plano 25×25, `CharacterBody3D` (PlayerCharacter) en y≈0.46, `UIRoot` co
 | `_bounds_cache` estático para AABB | `WeaponPositionController.gd:79,338-357` | 🟡 BAJO (código legacy) |
 | `find_child` recursivo por evento (markers/UI) | `CameraController.gd:298`, `VisualsComponent._find_visual_marker` | 🟡 BAJO |
 | IK: hasta 12 iteraciones CCDIK adaptativas | `SpineLookAtController.gd:116-118` | 🟡 BAJO/MEDIO |
+
+> **Corrección 2026-10-14.** La fila anterior está **obsoleta**: el código citado
+> (`SpineLookAtController.gd:116-118`, iteraciones CCDIK adaptativas) ya no
+> existe. El solver de columna se retiró (ADR-0008) y la fila debe leerse como
+> **resuelta**. No aplica al sector de cabeza, que usa `HeadCCDIK3D` y sigue
+> configurado — aunque también inerte por la misma razón de motor.
 
 **`INFERENCE`**: no hay evidencia de que el rendimiento sea hoy un problema crítico. **No optimizar prematuramente.**
 

@@ -61,6 +61,11 @@ objetivo de agarre; el IK de brazo converge **hacia** la animación.
   en la columna (CCDIK `spine_01 → spine_02`, del que `ik_hand_gun` es hijo) **y**
   en la capa de apuntado; ese solapamiento está sin medir y es el siguiente
   bloqueante medible.
+  *Corrección 2026-10-14:* el solapamiento descrito aquí está **resuelto**: la
+  capa de apuntado y el CCDIK de columna se eliminaron ambos. El ajuste vive
+  ahora en un único sitio, la escritura procedural de `spine_02`
+  (ADR-0008). El parentesco (`ik_hand_gun` cuelga de `spine_02`) sí sigue siendo
+  cierto.
 - Si en el futuro se necesita una pose de arma independiente de la animación
   (recoil, sway), debe ser una capa que componga **sobre** la pose del hueso, no
   una sustituta de su posición.

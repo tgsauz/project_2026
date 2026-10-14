@@ -191,6 +191,14 @@ Si el hueso de soporte del arma es la autoridad (medido: coherente a 4-6 mm en
   del que `ik_hand_gun` es hijo) **y** en `WeaponLayerAim`. Eso duplica el
   ajuste; por eso el ángulo medido se dispara a 106.8° en vez de acercarse a 0.
 
+> **Corrección 2026-10-14 (esta página es histórica; no la reescribas).** Los tres
+> mecanismos nombrados aquí ya no existen: el `CCDIK` de columna se retiró
+> (ADR-0008, sustituido por escritura procedural) y `WeaponLayerAim` se borró
+> al reescribirse el controlador del arma. **El yaw tampoco lo aplica la columna**
+> (ADR-0005: el cuerpo es su único dueño; el torso es inmune, medido). El
+> diagnóstico de fondo —«el ajuste se aplica en más de un sitio y se duplica»—
+> sigue siendo la lección válida de esta página.
+
 Pendiente de medición, no de suposición:
 
 - El clip `Aiming` no lleva la mano izquierda al arma (25 cm). Requiere

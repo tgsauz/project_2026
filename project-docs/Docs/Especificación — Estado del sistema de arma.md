@@ -79,8 +79,11 @@ apuntado y exportar limpio; el trabajo de código está completo y verificado.
     clip.
 20. Como jugador, querré que el brazo corrija pequeñas desviaciones por IK,
     cuando el IK de brazo funcione.
-21. Como desarrollador, querré que el disparo use el estado de apuntado y no
-    el pivote de cámara, cuando se toque el camino de disparo.
+21. ~~Como desarrollador, querré que el disparo use el estado de apuntado y no
+    el pivote de cámara, cuando se toque el camino de disparo.~~
+    *Retirada 2026-10-14 (T08):* el sistema de disparo y su recoil se borraron
+    por completo. Esta historia queda sin objeto hasta que exista un camino de
+    disparo nuevo, que se diseñará con hitreg desde cero (ADR-0010).
 
 ## Implementation Decisions
 
@@ -132,11 +135,16 @@ primero**. Ninguna afirmación sin número; ningún número sin test que lo exij
 - **Costuras propuestas** (a confirmar):
   1. El criterio de aceptación como única costura del acoplamiento (ya
      existe; no abrir costuras nuevas por debajo).
-  2. Boca del cañón contra dirección de apuntado al disparar (máx. 2° en
+  2. ~~Boca del cañón contra dirección de apuntado al disparar (máx. 2° en
      cadera) — costura a la altura del evento de disparo, cuando se toque
-     ese camino.
+     ese camino.~~ *Retirada 2026-10-14 (T08):* no hay evento de disparo.
+     **Equivalente ya cubierto:** `spine_muzzle_convergence.gd` afirma la
+     convergencia boca-vs-apuntado (0.00° medidos) sin necesitar disparar.
   3. Diferencial influencia-0-contra-1 del IK de brazo — el test que habría
      atrapado el IK muerto hace meses, para cuando se reconstruya.
+     *Actualización 2026-10-14:* el IK muerto **ya está medido** (mover el
+     objetivo 1 m produce 0.000000 m de movimiento en la mano). Falta el test
+     que lo vigile; la costura sigue pendiente.
 
 ## Out of Scope
 
@@ -144,7 +152,9 @@ primero**. Ninguna afirmación sin número; ningún número sin test que lo exij
 - Mano izquierda flotante en apuntado (aceptado como menor).
 - Reconstrucción del IK de brazo (deuda sin causa aislada).
 - Replicación en red del estado de apuntado, agarre y arma.
-- Camino de disparo (sigue anclado a cámara; su migración es trabajo aparte).
+- ~~Camino de disparo (sigue anclado a cámara; su migración es trabajo aparte).~~
+  *Retirado 2026-10-14 (T08).* No queda nada ancorado: el camino de disparo se
+  borró entero, incluido el recoil sin recuperación.
 - Tuner de personaje, UI/inventario, y cualquier sistema no-arma.
 - Guardar la fuente `.blend` en el repo (vive fuera; decisión no tomada).
 

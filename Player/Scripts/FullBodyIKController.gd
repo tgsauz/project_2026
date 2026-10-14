@@ -60,10 +60,16 @@ var _debug_f6_pressed: bool = false
 #  CONSTANTS
 # ============================================================
 
-## Grip IK weight is decoupled from combat state. The IK always
-## pulls hands to GripTarget positions at this strength when a
-## weapon is equipped. This ensures any weapon + animation combo
-## produces correct hand positions without per-state tuning.
+## Grip IK weight is decoupled from combat state. This ensures any weapon +
+## animation combo produces correct hand positions without per-state tuning.
+##
+## MEDIDO 2026-10-14: los TwoBoneIK3D de brazos NO mueven las manos en esta
+## version del motor. Desplazar RightHandIKTarget 1 m produce 0.000000 m de
+## movimiento en hand_r, con active=true e influence=1.00. Es el mismo
+## phenomenon que ADR-0008 midio para los solvers de columna: los
+## SkeletonModifier3D no escriben huesos. El error de agarre resultante es de
+## 9.56 cm (derecha) y 55.85 cm (izquierda), y viene del clip, no de este
+## controlador. Ver el item de lista de pesos muertos en project-docs.
 const IK_GRIP_WEIGHT: float = 1.0
 
 const MODIFIER_ORDER: PackedStringArray = [
@@ -317,6 +323,9 @@ func _compute_weight_targets() -> void:
 	# Grip IK is decoupled from combat state — always use grip weight when the
 	# weapon is equipped. Per-hand validity comes from the GripTarget, so a hand
 	# without a grip marker relaxes to the animation instead of a stale target.
+	# OJO: estos pesos no tienen efecto observable mientras los TwoBoneIK3D
+	# sigan inertes (ver la nota de IK_GRIP_WEIGHT mas arriba). Se mantienen
+	# porque son la configuracion correcta si los solvers vuelven a escribir.
 	var right_valid: bool = _current_grip_target != null and _current_grip_target.right_hand_valid
 	var left_valid: bool = _current_grip_target != null and _current_grip_target.left_hand_valid
 	_weight_targets["RightArmIK"] = IK_GRIP_WEIGHT if right_valid else 0.0
