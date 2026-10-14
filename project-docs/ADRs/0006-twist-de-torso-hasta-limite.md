@@ -37,9 +37,12 @@ El cuerpo **deja de** llevar el yaw completo.
 
 Tres cosas deben estar resueltas antes:
 
-1. **El torso twist comparte el problema del pitch**: hoy el CCDIK de la
-   columna no resuelve su target y su influence es por estado, no por eje.
-   Arreglar el pitch no arregla el yaw automáticamente, y al revés.
+1. **El torso twist comparte el problema del pitch**: hoy la columna no
+   responde (modifiers inertes — ver ADR-0008, no problema de ruta) y su peso
+   es por estado, no por eje. Arreglar el pitch no arregla el yaw
+   automáticamente, y al revés.
+   *Corrección 2026-10-14:* la redacción anterior decía «el CCDIK de la
+   columna no resuelve su target»; premisa sustituida por ADR-0008.
 2. **El límite L debe medirse**: hay que ver a qué ángulo la pose de locomoción
    (caminar, correr, strafear) deja de ser creíble con el torso girado.
 3. **El solape entre torso y cuerpo debe repartirse con precisión**: si ambos
@@ -48,10 +51,12 @@ Tres cosas deben estar resueltas antes:
 
 ## Riesgo
 
-Añadir twist de torso sin haber arreglado el target del CCDIK produce un torso
-que gira en respuesta a un objetivo fijo — el caso peor, donde el torso se
-clava en un ángulo y el jugador solo puede girar en el rango que el fix
-permite.
+Añadir twist de torso sin haber implementado la escritura procedural de la
+columna (ADR-0008) produce un torso que no sigue la cámara — el caso peor,
+donde el torso se clava en un ángulo y el jugador solo puede girar en el
+rango que el fix permite.
+*Corrección 2026-10-14:* la redacción anterior pedía «arreglar el target del
+CCDIK»; la vía vigente es procedural.
 
 ## Relación con ADR-0005
 
@@ -61,7 +66,10 @@ contradicen: uno describe el incremento, el otro la dirección.
 
 ## Dependencias
 
-- El target del CCDIK debe resolver (primer ticket del overhaul de la
-  columna).
-- El reparto de yaw necesita influence separada por eje en la columna, que
-  hoy no existe: `CCDIK3D` resuelve una cadena completa con una sola influence.
+- La columna debe escribirse proceduralmente desde `_process` (T02 del
+  overhaul de la columna; ver ADR-0008).
+- El reparto de yaw necesita pesos separados por eje en la matemática propia
+  (T03), no influences de solver: al ser procedural, el reparto por eje es
+  trivial.
+  *Corrección 2026-10-14:* la redacción anterior pedía «target del CCDIK» e
+  «influence separada por eje»; premisa sustituida por ADR-0008.

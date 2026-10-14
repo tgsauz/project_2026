@@ -13,9 +13,12 @@ coordina con los otros:
 - **Cuerpo** (`CharacterController`): lleva el yaw completo. Es el único que
   gira hoy.
 - **Torso** (`SpineLookAtController`, CCDIK `spine_01 → spine_02`): influence
-  discreta por estado (0 / 0.15 / 1.0). Con su target mal apuntado no
-  converge: medido, la columna se queda clavada en 17.79° sin responder al
-  ratón.
+  discreta por estado (0 / 0.15 / 1.0). Medido, la columna se queda clavada
+  en 17.79° sin responder al ratón.
+  *Corrección 2026-10-14 (ADR-0008):* una versión anterior atribuía esto al
+  «target mal apuntado». Falsado: las cuatro rutas resuelven y ningún
+  `SkeletonModifier3D` escribe huesos en esta versión del motor; la vía
+  vigente es escritura procedural desde `_process`.
 - **Cabeza** (`FullBodyIKController`, `HeadCCDIK`): influence por tabla de
   estado (0 / 0.25 / 0.35), y además se atenúa con `ads_weight`.
 
@@ -42,8 +45,9 @@ cuerpo completa, como en shooters AAA) es el comportamiento objetivo, pero
    deje de tener sentido (caminar de lado con torso girado 40° se ve roto).
 2. Definir el límite y la transición entre torso y cuerpo sin solape — dos
   Sumiders sobre el mismo yaw se transparentan y ambos se sienten mal.
-3. El torso twist necesita el mismo overhaul que el pitch (target correcto,
-   influence por eje, curva de respuesta).
+3. El torso twist necesita el mismo overhaul que el pitch (offset procedural
+   con pesos por eje, curva de respuesta; ver ADR-0008 — no corrección de
+   ruta de solver).
 
 Hacerlo sin esas tres cosas produce un torso que gira de más y un cuerpo que no
 compensa. Ver ADR-0006.

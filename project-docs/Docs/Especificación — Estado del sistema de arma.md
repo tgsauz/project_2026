@@ -89,9 +89,14 @@ Decisiones tomadas (todas con evidencia medida, ver ADRs y diagnósticos):
 - **El hueso de soporte es la autoridad de la pose del arma.** Transform
   completo, sin offsets ni constantes. Alternativas descartadas: runtime como
   autoridad (exigía reanimar) e híbrido (mantenía dos escritores).
-- **El apuntado viene solo de la columna.** El ajuste vive en el CCDIK de
-  columna; no hay capa de arma que lo duplique. Heredar la rotación del padre
-  no es contaminación: es el canal por el que llega el apuntado.
+- **El apuntado viene solo de la columna.** El ajuste vive en la escritura
+  procedural de columna desde `_process` (ver ADR-0008); no hay capa de arma
+  que lo duplique. Heredar la rotación del padre no es contaminación: es el
+  canal por el que llega el apuntado.
+  *Corrección 2026-10-14:* una versión anterior de este punto decía «el ajuste
+  vive en el CCDIK de columna». Medición posterior (ADR-0008) demostró que
+  ningún `SkeletonModifier3D` escribe huesos en esta versión del motor y que
+  las cuatro rutas resuelven; la vía vigente es escritura procedural.
 - **Sin IK de brazo por ahora.** Medido sin efecto (influencia 0 = 1); la
   animación es autoritativa, incluido entre clips.
 - **Los clips de cadera no se tocan.** Verificados funcionando (marcador a
