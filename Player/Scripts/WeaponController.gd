@@ -56,6 +56,10 @@ func _ready() -> void:
 		push_error("WeaponController debe ser hijo de WeaponRoot.")
 		return
 
+	# Lee el hueso DESPUES de que la columna procedural lo escribe (prioridad
+	# 100): si copia antes, el test lee hueso post-offset y arma pre-offset.
+	process_priority = 200
+
 	_fullbody_ik = get_node_or_null(fullbody_ik_path) as FullBodyIKController
 	_visuals_component = get_node_or_null(visuals_component_path) as VisualsComponent
 

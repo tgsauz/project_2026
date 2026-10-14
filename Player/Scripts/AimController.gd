@@ -9,10 +9,6 @@ class_name AimController
 # Produces AimState — downstream systems consume, never write.
 # ============================================================
 
-@export_category("ADS Timing")
-@export var ads_enter_speed: float = 8.0
-@export var ads_exit_speed: float = 10.0
-
 @export_category("FOV Zoom")
 @export var default_fov: float = 75.0
 @export var fps_ads_fov: float = 55.0
@@ -29,7 +25,6 @@ var camera_controller: CameraController
 var aim_origin: Vector3 = Vector3.ZERO
 var aim_direction: Vector3 = Vector3.FORWARD
 
-var _ads_weight: float = 0.0
 var _aim_orientation_weight: float = 0.0
 var _current_fov: float
 
@@ -39,9 +34,6 @@ var _current_fov: float
 
 var _sequence: int = 0
 var _current_state: AimState
-
-func get_ads_weight() -> float:
-	return _ads_weight
 
 ## Returns the authoritative AimState produced this frame.
 ## Read-only — downstream systems consume, never write.
@@ -71,7 +63,6 @@ func _process(delta: float):
 
 	_update_aim_basis()
 	_update_aim_orientation_weight(delta, is_ads)
-	_update_ads_weight(delta, is_ads)
 	_update_fov(delta, is_ads)
 	_build_aim_state()
 	_push_state_to_camera()
@@ -95,13 +86,6 @@ func _update_aim_orientation_weight(delta: float, is_aiming: bool) -> void:
 	_aim_orientation_weight = lerpf(_aim_orientation_weight, target, 1.0 - exp(-speed * delta))
 	if absf(_aim_orientation_weight - target) < 0.001:
 		_aim_orientation_weight = target
-
-func _update_ads_weight(delta: float, is_ads: bool) -> void:
-	var target: float = 1.0 if is_ads else 0.0
-	var speed: float = ads_enter_speed if target >= _ads_weight else ads_exit_speed
-	_ads_weight = lerpf(_ads_weight, target, 1.0 - exp(-speed * delta))
-	if absf(_ads_weight - target) < 0.001:
-		_ads_weight = target
 
 func _update_fov(delta: float, is_ads: bool) -> void:
 	var target_fov: float
@@ -157,8 +141,7 @@ func _build_aim_state() -> void:
 	var yaw_basis := Basis(Vector3(0.0, 1.0, 0.0), state.look_yaw)
 	state.aim_direction = (yaw_basis * pitch_basis * Vector3.FORWARD).normalized()
 
-	# ADS and FOV from existing computed state
-	state.ads_weight = _ads_weight
+	# Aim blend and FOV from existing computed state
 	state.aim_orientation_weight = _aim_orientation_weight
 	state.fov_target = _current_fov
 

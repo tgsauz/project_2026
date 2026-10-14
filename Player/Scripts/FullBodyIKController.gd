@@ -308,9 +308,9 @@ func _compute_weight_targets() -> void:
 		return
 
 	if _character_controller.is_effectively_aiming():
+		# Cabeza quieta por ADR-0005 (peso discreto, sin mezcla continua).
 		_weight_targets = WEIGHTS_AIMING.duplicate()
-		if _aim_controller != null:
-			_weight_targets["HeadCCDIK"] = lerpf(WEIGHTS_AIMING["HeadCCDIK"], 0.0, _aim_controller.get_ads_weight())
+		_weight_targets["HeadCCDIK"] = 0.0
 	else:
 		_weight_targets = WEIGHTS_ARMED.duplicate()
 
