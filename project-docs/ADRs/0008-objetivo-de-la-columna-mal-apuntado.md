@@ -1,77 +1,81 @@
-# El objetivo de la columna se apunta mal
+# Los solvers de IK no escriben huesos; la columna se escribe proceduralmente
 
 ## Estado
 
-Aceptado — 2026-10-13.
+Aceptado — 2026-10-13. Sustituye la versión anterior de este ADR, que
+atribuía la columna clavada a la ruta del objetivo. Esa atribución era
+incorrecta y se retira.
 
 ## Contexto
 
-Medido: la columna **no responde al ratón**. `spine_01 → spine_02` da
-17.79° idénticos con pitch 0, +30° y −30°. Sin arma es 1.20°. El torso no
-responde al puntero en ningún caso.
+Medido: la columna no responde al ratón (17.79° idénticos con pitch 0, +30
+y −30). La primera hipótesis fue la ruta del objetivo (`../LookAtTarget`).
+Falsada por medición:
 
-El CCDIK de la columna declara:
+- Las cuatro rutas de solver del proyecto resuelven desde su propio
+  modificador. Ninguna base (propia o del esqueleto) produce movimiento:
+  0.6° y 0.02° con el objetivo a 90° y 100 iteraciones.
+- Un `TwoBoneIK3D` mínimo no se mueve, con pole o sin él (el pole es requisito
+  documentado pero no es la variable operativa: sin él y con él, cero).
+- Un modificador custom mínimo que escribe pose vía `set_bone_pose` en su
+  callback: **0.00°** con 292 invocaciones/segundo.
+- La misma escritura desde `_process` normal: **45.00°**.
+- En el proyecto real, con animación activa: escritura `_process` compone
+  +30° netos sobre la base animada.
 
-```
-root = spine_01, end = spine_02
-target_node = ../LookAtTarget
-influencia = 1.0
-```
-
-Resuelto desde el esqueleto, `../LookAtTarget` **no resuelve**: el nodo
-`LookAtTarget` es hijo **directo** del esqueleto, no hermano de él. El
-ensamblador del rig lo añade con `_skeleton.add_child(target)` y a la vez le
-pasa la ruta `../LookAtTarget`.
-
-Consecuencia observable: el punto objetivo se aleja eternamente —medido en
-`y = −194 m` con el personaje en caída— y el solver no converge a nada. Los
-17.79° son la pose del clip de apuntado, no un giro calculado.
-
-Es la **misma clase de error** que el del IK de brazo: un `NodePath` escrito
-con un nivel de más. Se detectaron por medición, no por lectura; ninguno de los
-dos producía error en consola.
+Conclusión: en esta versión del motor, **ningún `SkeletonModifier3D`
+escribe huesos** — ni custom ni de motor, ni CCDIK ni TwoBone. La escritura
+directa desde `_process` sí funciona, con y sin animación. La animación
+escribe huesos con normalidad; solo el camino modifiers→hueso está inerte.
 
 ## Decisión
 
-La ruta del objetivo es `LookAtTarget`, relativo al esqueleto. Y se deja de
-componer la ruta a mano: el nodo objetivo y su ruta se resuelven en un solo
-sitio, que es quien configura el solver.
+La columna de apuntado se escribe proceduralmente desde `_process`:
 
-## Por qué no basta con corregir la ruta
+1. Leer la base animada del frame.
+2. Sumar el offset de apuntado (pitch/yaw con pesos separados).
+3. Escribir el resultado.
 
-Corregir la ruta **empeora** la situación visible, porque destapa un segundo
-defecto que estaba enmascarado. El objetivo, cuando influence < 1, se interpola
-hacia un neutral que es "un punto por encima de la pelvis" (`SpineLookAt-
-Controller.gd:108`). Es decir: con influence 0.15 (armed) el torso se interpola
-hacia **mirar al techo**. Hoy eso no se ve porque el solver no converge.
+Se reutiliza el nodo controlador de columna existente como dueño del cálculo;
+cambia el mecanismo, no la topología. La fase escritor-vs-mezclador se
+determina empíricamente en implementación: la escritura debe aterrizar
+después del mezclador cada frame.
 
-Neutral correcto: **la dirección en la que el torso ya mira** (forward del
-tórax). Interpolar hacia ahí significa "no hagas nada", que es lo que un
-neutral debe significar.
+Se retira el nodo solver CCDIK de la columna. Se conserva el punto de mirada
+como ancla visual (lo usa el visualizador y el debug).
 
-Ambos cambios van juntos. Corregir solo la ruta convierte un bug silencioso en
-un bug visible.
+## Por qué no pelear con el solver
+
+Tres rondas de sondas variando base de resolución, iteraciones (hasta 100),
+distancia mínima (0.0), topología de target y orden de configuración dieron
+todas el mismo resultado: ~0°. El costo de una cuarta hipótesis supera al de
+la vía procedural, que ya está medida funcionando (45.00° en mínimo, +30°
+netos en proyecto con animación).
 
 ## Consecuencias
 
-- La columna pasa a responder al puntero. Eso es el objetivo.
-- Aparece la necesidad de influence **por eje**: `CCDIK3D` resuelve una cadena
-  completa con una sola influencia, y el reparto pitch/yaw que describe
-  ADR-0005 no cabe ahí. Es trabajo del ticket siguiente, no de este.
-- Los dos caminos de fallo se documentan como una clase: "`NodePath` con
-  niveles equivocados". La costura de test debe cubrir cualquier ruta de nodo
-  que se configure en runtime, no solo estas dos.
+- El reparto pitch/yaw de ADR-0005 se implementa como dos pesos en matemática
+  propia, no como influences de solver. Desaparece la limitación de
+  "una sola influencia por cadena".
+- Los brazos (TwoBone) quedan para trabajo futuro con la misma técnica
+  cuando se activen (hoy fuera de alcance): solver custom en `_process` con
+  plano de flexión fijo, sin nodo pole. El requisito documentado de pole
+  sigue vigente para quien use el solver del motor.
+- El neutral "arriba" desaparece con el solver: offset identidad cuando la
+  influencia tiende a 0.
+- El test de monotonía de T02 no cambia: es conductual y no depende del
+  mecanismo. Sigue siendo el criterio.
 
-## Relación con ADR-0001 y ADR-0005
+## Corrección registrada
 
-ADR-0001 establece que el arma hereda del hueso, y que la columna es el canal
-del apuntado (ADR-0005). Con la columna clavada, ese canal no transmite nada:
-el arma se mueve 90-120° respecto a la cámara sin que el torso participe. Por
-eso el arma "se va" al mover el ratón aunque el hueso esté correctamente
-autorizado en Blender.
+La versión anterior de este ADR afirmaba "target mal apuntado" como causa.
+Medición posterior demostró rutas válidas y solvers inertes con cualquier
+ruta. Se conserva el hallazgo útil (la clase "un nivel de más" existe como
+riesgo) pero deja de ser la causa de este incidente.
 
 ## Evidencia
 
-Medido antes y después de corregir: el ángulo del torso debe variar de forma
-monótona con el pitch del ratón. Hoy es constante. Ese es el test de
-regresión del ticket.
+Sondas headless (eliminadas tras medir): diferencial influencia 1-vs-0 en
+columna 0.0 m; CCDIK mínimo 0.6°/0.02°; TwoBone mínimo 0.0000 m con y sin
+pole; escritor custom en callback 0.00° con 292 invocaciones; mismo escritor
+desde `_process` 45.00°; en proyecto con animación +30° netos.
