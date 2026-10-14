@@ -106,7 +106,7 @@ func _test_player_ik_layout_contract(player: CharacterController) -> void:
 		if child is SkeletonModifier3D:
 			actual_order.append(str(child.name))
 
-	var expected_modifiers: Array[String] = ["CCDIK", "FullBodyIKController", "RightArmIK", "LeftArmIK", "HeadCCDIK", "SpineLookAtController"]
+	var expected_modifiers: Array[String] = ["FullBodyIKController", "RightArmIK", "LeftArmIK", "HeadCCDIK", "SpineLookAtController"]
 	for modifier_name in expected_modifiers:
 		_assert(actual_order.has(modifier_name), "IK pipeline missing modifier '%s'. Got %s." % [modifier_name, str(actual_order)])
 

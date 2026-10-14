@@ -36,7 +36,7 @@ func _create_runtime_nodes() -> void:
 	# Order: dependencies first, dependents last.
 	# _ready() fires immediately on add_child(), so siblings referenced
 	# via get_node("../Name") must already exist in the Skeleton3D.
-	_create_ccdik()
+	# Sin solver CCDIK (ADR-0008): la columna se escribe proceduralmente.
 	_create_look_at_target()
 	_create_right_arm_ik()
 	_create_left_arm_ik()
@@ -71,11 +71,6 @@ func _create_spine_look_at_controller() -> void:
 	slc.weapon_root_path = NodePath("../../../../../../WeaponRoot")
 	slc.arc_radius = 2.0
 	_skeleton.add_child(slc)
-
-func _create_ccdik() -> void:
-	var ccdik := CCDIK3D.new()
-	ccdik.name = "CCDIK"
-	_skeleton.add_child(ccdik)
 
 func _create_full_body_ik_controller() -> void:
 	var fbik := FullBodyIKController.new()

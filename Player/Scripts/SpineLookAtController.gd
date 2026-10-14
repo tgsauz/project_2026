@@ -40,8 +40,6 @@ var _gun_bone_idx: int = -1
 
 var _current_influence: float = 0.0
 
-var _ccdik_node: CCDIK3D
-var _last_camera_pitch: float = 0.0
 var _debug_spine_weapon_align_pressed: bool = false
 # Temp debug: prints spine bone eulers before CCDIK on P
 var _debug_f8_pressed: bool = false
@@ -64,32 +62,21 @@ func _ready() -> void:
 	_resolve_dependencies()
 	_cache_bone_indices()
 
-	# Configure CCDIK3D via ChainIK3D API (Godot 4.6+)
-	_ccdik_node = get_node("../CCDIK") as CCDIK3D
-	if _ccdik_node != null:
-		_ccdik_node.set_setting_count(1)
-		_ccdik_node.set_root_bone_name(0, "spine_01")
-		_ccdik_node.set_end_bone_name(0, "spine_02")
-		if _look_at_target != null:
-			_ccdik_node.set_target_node(0, _ccdik_node.get_path_to(_look_at_target))
-		_ccdik_node.max_iterations = 4
-		_ccdik_node.min_distance = 0.01
-
-	# _process() pre-positions LookAtTarget BEFORE the modifier pipeline runs.
-	# This ensures CCDIK (which runs as a SkeletonModifier3D modifier) receives
-	# the current frame's target position, not the previous frame's.
+	# Escritura directa en _process (sin diferir: el diferido rompe las
+	# lecturas cruzadas del frame, ver T02). El orden contra el mezclador se
+	# fija por prioridad de proceso mas abajo.
+	process_priority = 100
 	set_process(true)
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if _skeleton == null or _aim_controller == null or _look_at_target == null:
 		return
 	if _pelvis_idx == -1 or _spine02_idx == -1:
 		return
 
-	# Pre-position target BEFORE modifier pipeline so CCDIK solves with
-	# current-frame data. The modifier callback handles influence blending.
 	_update_look_at_target_pose()
-	_update_ccdik_iterations()
+	_blend_influence(delta, _compute_target_influence())
+	_write_spine_pose()
 
 func _update_look_at_target_pose() -> void:
 	var aim_state: AimState = _aim_controller.get_aim_state()
@@ -104,36 +91,66 @@ func _update_look_at_target_pose() -> void:
 	var pelvis_world: Vector3 = _skeleton.global_transform * pelvis_pose.origin
 	var aim_target_world: Vector3 = pelvis_world + aim_direction * arc_radius
 
-	if _current_influence < 1.0 - INFLUENCE_EPSILON:
-		var neutral_target_world: Vector3 = pelvis_world + Vector3.UP * arc_radius
-		aim_target_world = neutral_target_world.lerp(aim_target_world, _current_influence)
-
-	# AimState direction is already world-space; keeping the target in world
-	# space avoids a second pitch-sign conversion through the rig's 180° Y basis.
+	# El punto de mirada es ancla visual y de debug (T01 lo exige). Ya no
+	# alimenta ningun solver: el neutral "arriba" se fue con el.
 	_look_at_target.global_position = aim_target_world
 
-func _update_ccdik_iterations() -> void:
-	if _ccdik_node == null:
+## Escritura procedural de la columna (ADR-0008).
+## Lee la base animada del frame, suma el offset de apuntado (pitch sobre el
+## eje X local del esqueleto, pesado por influencia) y escribe. Corre diferida
+## para aterrizar despues del mezclador. Alcance T02: solo spine_02, solo
+## pitch. El reparto por eje y spine_01 son T03 / trabajo futuro.
+##
+## Sensor: el forward del hueso del arma (convencion validada: boca = -Z).
+## JAMAS el -Z del hueso de columna (apunta abajo, no adelante): usarlo dobla
+## el torso hacia el piso. Se rota spine_02 para llevar el forward del arma
+## hacia la direccion de apuntado.
+func _write_spine_pose() -> void:
+	if _skeleton == null or _aim_controller == null:
+		return
+	if _spine02_idx == -1 or _gun_bone_idx == -1:
+		return
+	if _current_influence < INFLUENCE_EPSILON:
 		return
 
-	var pitch := _get_camera_pitch()
-	var pitch_delta: float = absf(pitch - _last_camera_pitch)
-	_last_camera_pitch = pitch
+	var state: AimState = _aim_controller.get_aim_state()
+	if state == null or not state.is_valid:
+		return
+	var aim_local: Vector3 = (_skeleton.global_transform.basis.inverse() * state.aim_direction).normalized()
+	if aim_local.is_zero_approx():
+		return
 
-	var base: int = 4
-	var extra: int = int(rad_to_deg(pitch_delta) / 5.0)
-	_ccdik_node.max_iterations = clampi(base + extra, 4, 12)
+	var gun_pose: Transform3D = _skeleton.get_bone_global_pose(_gun_bone_idx)
+	var gun_fwd: Vector3 = -gun_pose.basis.z.normalized()
 
-func _process_modification_with_delta(delta: float) -> void:
+	# Pitch en el plano YZ local: ignora el yaw (T03), ignora el roll.
+	var a := Vector3(0.0, gun_fwd.y, gun_fwd.z)
+	var b := Vector3(0.0, aim_local.y, aim_local.z)
+	if a.length() < 0.001 or b.length() < 0.001:
+		return
+	a = a.normalized()
+	b = b.normalized()
+	var sin_t: float = (a.cross(b)).x
+	var cos_t: float = a.dot(b)
+	var pitch_delta: float = atan2(sin_t, cos_t) * _current_influence
+	if absf(pitch_delta) < 0.0001:
+		return
+
+	var spine_pose: Transform3D = _skeleton.get_bone_global_pose(_spine02_idx)
+	# La base global incluye los ancestros; la escritura es local. Conjugar
+	# para no contar los ancestros dos veces (el sesgo constante vino de ahi).
+	var local_q: Quaternion = _skeleton.get_bone_pose_rotation(_spine02_idx)
+	var to_local: Quaternion = (spine_pose.basis.get_rotation_quaternion() * local_q.inverse()).inverse()
+	var rotated: Quaternion = to_local * Quaternion(Vector3.RIGHT, pitch_delta) * to_local.inverse() * local_q
+	_skeleton.set_bone_pose_rotation(_spine02_idx, rotated)
+
+func _process_modification_with_delta(_delta: float) -> void:
 	if _skeleton == null or _spine01_idx == -1 or _spine02_idx == -1:
 		return
 
+	# Sin escrituras: en esta version del motor no aterrizan (ADR-0008).
+	# Solo reintento de dependencias para el caso de montaje diferido.
 	_resolve_dependencies()
-
-	var target_influence: float = _compute_target_influence()
-	_blend_influence(delta, target_influence)
-
-	_update_ccdik_iterations()
 
 	if _debug_f8_pressed:
 		_debug_f8_pressed = false
@@ -152,31 +169,13 @@ func _process_modification_with_delta(delta: float) -> void:
 		if s1_idx != -1:
 			var q1: Quaternion = _skeleton.get_bone_pose_rotation(s1_idx)
 			var e1: Vector3 = q1.get_euler()
-			prints("[BEFORE_CCDIK] spine_01  q:", q1, "  euler(deg):",
+			prints("[SPINE] spine_01  q:", q1, "  euler(deg):",
 				rad_to_deg(e1.x), rad_to_deg(e1.y), rad_to_deg(e1.z))
 		if s2_idx != -1:
 			var q2: Quaternion = _skeleton.get_bone_pose_rotation(s2_idx)
 			var e2: Vector3 = q2.get_euler()
-			prints("[BEFORE_CCDIK] spine_02  q:", q2, "  euler(deg):",
+			prints("[SPINE] spine_02  q:", q2, "  euler(deg):",
 				rad_to_deg(e2.x), rad_to_deg(e2.y), rad_to_deg(e2.z))
-
-		if _ccdik_node != null:
-			var ccdik_sm: SkeletonModifier3D = _ccdik_node as SkeletonModifier3D
-			prints("[CCDIK_DIAG] influence:", ccdik_sm.influence,
-				"  active:", ccdik_sm.active,
-				"  process_mode:", ccdik_sm.process_mode,
-				"  skeleton_valid:", ccdik_sm.get_skeleton() != null)
-			var joint_count: int = _ccdik_node.get_joint_count(0)
-			var root_name: String = _ccdik_node.get_root_bone_name(0)
-			var end_name: String = _ccdik_node.get_end_bone_name(0)
-			prints("[CCDIK_CHAIN] root:", root_name, "  end:", end_name,
-				"  joints:", joint_count, "  max_iter:", _ccdik_node.max_iterations)
-			for j in joint_count:
-				var bname: String = _ccdik_node.get_joint_bone_name(0, j)
-				var b_idx: int = _skeleton.find_bone(bname)
-				prints("[CCDIK_JOINT] idx:", j, "  bone:", bname, "  find_bone:", b_idx)
-		else:
-			prints("[CCDIK_DIAG] CCDIK node not found")
 
 		if _look_at_target != null:
 			var tip_global: Vector3 = _skeleton.global_transform * _skeleton.get_bone_global_pose(s2_idx).origin if s2_idx != -1 else Vector3.ZERO

@@ -37,6 +37,17 @@ var _results: Array[Dictionary] = []
 func _initialize() -> void:
 	_player = (load(PLAYER_SCENE) as PackedScene).instantiate() as Node3D
 	root.add_child(_player)
+	# Suelo: sin el, el cuerpo cae en caida libre y la velocidad falsea la
+	# comparacion arma-vs-hueso entre lecturas (~1 m de artefacto).
+	var floor_body := StaticBody3D.new()
+	floor_body.name = "AcceptanceFloor"
+	root.add_child(floor_body)
+	var col := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(10, 0.5, 10)
+	col.shape = shape
+	col.position = Vector3(0, -0.25, 0)
+	floor_body.add_child(col)
 
 func _process(_delta: float) -> bool:
 	_t += _delta
@@ -112,6 +123,8 @@ func _measure() -> void:
 
 	var bone_world: Transform3D = skeleton.global_transform * skeleton.get_bone_global_pose(gun)
 	var weapon_world: Transform3D = wc.weapon_root.global_transform
+	if _results.size() == 0:
+		print("[TDBG] test skelglob=", skeleton.global_transform.origin, " bonelocal=", skeleton.get_bone_global_pose(gun).origin)
 
 	var pos_err: float = bone_world.origin.distance_to(weapon_world.origin)
 	var bone_fwd: Vector3 = -bone_world.basis.z.normalized()
@@ -123,6 +136,7 @@ func _measure() -> void:
 		"label": label,
 		"pos_err_m": pos_err,
 		"angle_err_deg": angle_err,
+		"body_y": _player.global_position.y,
 	})
 	_checks += 2
 
@@ -138,8 +152,8 @@ func _report() -> void:
 	print("  tolerancias: posicion <= %.4f m   angulo <= %.1f deg"
 			% [MAX_POSITION_ERROR, MAX_ANGLE_ERROR_DEG])
 	for r in _results:
-		print("  %-10s | posicion %8.4f m | angulo %8.2f deg"
-				% [r["label"], r["pos_err_m"], r["angle_err_deg"]])
+		print("  %-10s | posicion %8.4f m | angulo %8.2f deg | body_y %8.2f"
+				% [r["label"], r["pos_err_m"], r["angle_err_deg"], r["body_y"]])
 	print("----------------------------------------------------------------")
 	print("  comprobaciones: %d   fallos: %d" % [_checks, _failures.size()])
 	if _failures.is_empty():
