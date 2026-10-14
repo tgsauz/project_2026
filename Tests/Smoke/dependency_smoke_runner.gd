@@ -69,6 +69,7 @@ func _test_player_scene_boot() -> void:
 	_assert(player.ik_controller != null, "Player scene should resolve FullBodyIKController via cached reference.")
 	_assert(player.get_node_or_null("AimController") is AimController, "Player scene should include AimController.")
 	_test_player_ik_layout_contract(player)
+	await _test_rig_nodes_exist(player)
 
 	player.queue_free()
 	await process_frame
@@ -111,6 +112,27 @@ func _test_player_ik_layout_contract(player: CharacterController) -> void:
 
 	if actual_order.has("FullBodyIKController") and actual_order.has("RightArmIK"):
 		_assert(actual_order.find("FullBodyIKController") < actual_order.find("RightArmIK"), "FullBodyIKController must run before RightArmIK so hand targets are set first. Got %s." % str(actual_order))
+
+func _test_rig_nodes_exist(player: CharacterController) -> void:
+	# Red de regresión: existen los nodos que el sector del rig necesita.
+	# No afirma ninguna base de resolución (ver ADR-0008): solo existencia.
+	# Cubre retiradas accidentales (T02 retira el solver pero debe conservar
+	# el punto de mirada).
+	var skeleton: Skeleton3D = player.visuals_component.get_node_or_null("Rig/ImportedModel/Armature/Skeleton3D") as Skeleton3D
+	_assert(skeleton != null, "Node existence net requires Skeleton3D.")
+	if skeleton == null:
+		return
+
+	await process_frame
+	await process_frame
+
+	_assert(skeleton.get_node_or_null("LookAtTarget") is Node3D, "Skeleton3D should expose its LookAtTarget child.")
+	_assert(player.get_node_or_null("WeaponRoot") is Node3D, "Player should expose runtime WeaponRoot.")
+
+	var rig: Node3D = player.visuals_component.get_node_or_null("Rig") as Node3D
+	if rig != null:
+		for target_name in ["AimIKTarget", "RightHandIKTarget", "LeftHandIKTarget"]:
+			_assert(rig.get_node_or_null(target_name) is Node3D, "Rig should expose '%s'." % target_name)
 
 func _test_world_scene_boot() -> void:
 	var world := WORLD_SCENE.instantiate()
