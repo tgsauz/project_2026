@@ -5,7 +5,7 @@ class_name AimController
 # AIM CONTROLLER
 # Central owner of ADS feel parameters.
 # Reads weapon_stance from parent CharacterController,
-# computes ADS weight and target FOV.
+# computes the target FOV.
 # Produces AimState — downstream systems consume, never write.
 # ============================================================
 

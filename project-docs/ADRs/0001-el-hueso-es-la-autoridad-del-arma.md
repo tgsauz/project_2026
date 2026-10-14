@@ -18,6 +18,12 @@ El comentario del código justificaba esa sustitución por un ciclo
 existe: `ik_hand_gun` es hijo de `spine_02` y la cadena del brazo cuelga de
 `clavicle_r`, su hermana. El IK de brazo no puede mover `ik_hand_gun`.
 
+> **Corrección 2026-10-14 (T10).** Ese ciclo **dejó de existir del todo**. El IK
+> de brazos se midió inerte (mover el objetivo 1 m producía `0.000000 m` de
+> movimiento en la mano) y se borró entero, junto con `GripTarget` y los
+> objetivos de mano. La decisión de este ADR —el hueso es la autoridad— sigue
+> vigente y es lo que sobrevive; lo que se elimina es la rama del agarre.
+
 Medición: colocando el arma rígidamente en el hueso, `RGRIP` cae a 5.9 mm de
 `hand_r` y `LGRIP` a 3.6 mm de `hand_l`. El rig está cocinado correctamente.
 Con el cálculo actual, el arma queda 25.1 cm desplazada en hip fire y 46.5 cm
@@ -32,8 +38,10 @@ weapon_root.global_transform = skeleton.global_transform × skeleton.get_bone_gl
 ```
 
 Sin constantes anatológicas, sin fallback de columna, sin ajuste de posición en
-runtime. Los marcadores `RGRIP` y `LGRIP` sobre ese transform producen el
-objetivo de agarre; el IK de brazo converge **hacia** la animación.
+runtime. ~~Los marcadores `RGRIP` y `LGRIP` sobre ese transform producen el
+objetivo de agarre; el IK de brazo converge **hacia** la animación.~~
+*Retirado 2026-10-14 (T10):* ese consumo ya no ocurre; el IK de brazos se borró
+por inerte. Los marcadores siguen en el asset sin consumidor.
 
 ## Por qué
 

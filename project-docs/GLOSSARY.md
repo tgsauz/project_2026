@@ -29,6 +29,9 @@ _Evitar_: rig volteado, espejo del rig.
 
 **Marcador de agarre**:
 Nodo dentro del asset del arma que indica dónde debe quedar la mano. Existen `RGRIP` (derecha) y `LGRIP` (izquierda).
+*Estado 2026-10-14 (T10):* el nodo sigue existiendo en el asset, pero **nada
+lo lee**. El IK de brazos se borró al medirse inerte. Se conservan en el asset
+porque son la referencia de la re-autoría en Blender y de un futuro IK.
 _Evitar_: socket, anclaje, punto de anclaje, ancla.
 
 **Marcador de mira**:
@@ -75,12 +78,11 @@ _Evitar_: pose, estado de apuntado, postura de apuntado.
 
 ## Contratos entre sistemas
 
-**Objetivo de agarre** (`GripTarget`):
-Datos que describen dónde y con qué orientación debe quedar cada mano para sostener el arma. Se produce una vez por fotograma y lo consume el IK de cuerpo completo, que nunca ve el nodo del arma.
-_Evitar_: target de mano, objetivo de IK, GripTarget node.
-
 **Nodo objetivo de IK**:
-Nodo de escena (`RightHandIKTarget`, `LeftHandIKTarget`, `AimIKTarget`) al que se escribe un objetivo. Es un nodo de presentación, no un contrato.
+Nodo de escena (`AimIKTarget`) al que se escribe un objetivo. Es un nodo de presentación, no un contrato.
+*Estado 2026-10-14 (T10):* `RightHandIKTarget` y `LeftHandIKTarget` se borraron
+con la cadena de agarre. Queda solo `AimIKTarget`, que alimenta un `HeadCCDIK`
+que a su vez está inerte.
 _Evitar_: objetivo de agarre, GripTarget.
 
 **Capa de arma** (`WeaponLayer`):

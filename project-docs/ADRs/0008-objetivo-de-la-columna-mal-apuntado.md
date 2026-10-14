@@ -79,3 +79,12 @@ Sondas headless (eliminadas tras medir): diferencial influencia 1-vs-0 en
 columna 0.0 m; CCDIK mínimo 0.6°/0.02°; TwoBone mínimo 0.0000 m con y sin
 pole; escritor custom en callback 0.00° con 292 invocaciones; mismo escritor
 desde `_process` 45.00°; en proyecto con animación +30° netos.
+## Extension a los brazos (T10, 2026-10-14)
+
+La medicion de este ADR se extiende mas alla de la columna. Los `TwoBoneIK3D` de
+brazos y el `CCDIK3D` de cabeza **tampoco escriben huesos**, por la misma razon
+de motor. Medido: desplazar `RightHandIKTarget` 1 m produce `0.000000 m` de
+movimiento en `hand_r`, con `active=true` e `influence=1.00`.
+
+Por eso en T10 se borro la cadena de agarre de brazos entera (IK, `GripTarget`
+y objetivos de mano) en vez de repararla: no habia nada que reparar.

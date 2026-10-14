@@ -160,3 +160,5 @@ Los sidecars `.gd.uid` fueron limpiados automáticamente por el editor (no queda
 ---
 
 *Documento generado como registro de la primera pasada de estabilización. No representa funcionalidad nueva; son correcciones P0, sincronización de un test obsoleto, ajustes de datos y limpieza de código muerto confirmado.*
+
+> **Correccion 2026-10-14 (T10).** Este documento es un registro con fecha; se conserva tal cual. A partir de T10 el IK de brazos, `GripTarget` y los objetivos de mano **se borraron por inertes** (medido: 0.000000 m de respuesta). Todo lo que aqui los describe como vivos describe un estado que ya no existe.

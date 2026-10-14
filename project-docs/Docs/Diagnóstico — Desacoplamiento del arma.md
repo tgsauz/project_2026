@@ -229,3 +229,5 @@ investigación vigente (`Tests/IK/weapon_ik_transform_investigation.md`) medía 
 alcance de la mano izquierda pero no el desacoplamiento del arma, y declaraba
 explícitamente que no se había establecido causa raíz única. Este documento la
 establece para la parte del posicionamiento.
+
+> **Correccion 2026-10-14 (T10).** Este documento es un registro con fecha; se conserva tal cual. A partir de T10 el IK de brazos, `GripTarget` y los objetivos de mano **se borraron por inertes** (medido: 0.000000 m de respuesta). Todo lo que aqui los describe como vivos describe un estado que ya no existe.

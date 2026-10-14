@@ -77,8 +77,12 @@ apuntado y exportar limpio; el trabajo de código está completo y verificado.
 19. Como jugador, querré ver ambas manos en los agarres al apuntar
     (RGRIP a 9.6 cm, LGRIP a 56 cm el 2026-10-13), cuando se reautorice ese
     clip.
-20. Como jugador, querré que el brazo corrija pequeñas desviaciones por IK,
-    cuando el IK de brazo funcione.
+20. ~~Como jugador, querré que el brazo corrija pequeñas desviaciones por IK,
+    cuando el IK de brazo funcione.~~ *Reformulado 2026-10-14 (T10):* el IK de
+    brazos no se va a reparar ni reimplementar tal cual. El problema de las
+    manos se resuelve en Blender (re-autoría de los clips) y, si algún día se
+    quiere IK, se diseña de nuevo sabiendo que los `SkeletonModifier3D` no
+    escriben huesos en esta versión del motor.
 21. ~~Como desarrollador, querré que el disparo use el estado de apuntado y no
     el pivote de cámara, cuando se toque el camino de disparo.~~
     *Retirada 2026-10-14 (T08):* el sistema de disparo y su recoil se borraron
@@ -150,7 +154,7 @@ primero**. Ninguna afirmación sin número; ningún número sin test que lo exij
 
 - Precisión en apuntado con mira (el criterio de 2° es solo cadera).
 - Mano izquierda flotante en apuntado (aceptado como menor).
-- Reconstrucción del IK de brazo (deuda sin causa aislada).
+- Reconstrucción del IK de brazo: la causa **quedó aislada** (T10). Los solvers no escriben huesos en esta versión del motor, igual que la columna (ADR-0008). Se borró la cadena en vez de repararla.
 - Replicación en red del estado de apuntado, agarre y arma.
 - ~~Camino de disparo (sigue anclado a cámara; su migración es trabajo aparte).~~
   *Retirado 2026-10-14 (T08).* No queda nada ancorado: el camino de disparo se

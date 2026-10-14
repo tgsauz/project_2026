@@ -134,3 +134,5 @@ Al arrancar `testing_world.tscn` la vista FPS muestra cielo, una banda oscura de
 ---
 
 *Documento de análisis. Refleja el filesystem actual y la evidencia de runtime del 2026-10-01.*
+
+> **Correccion 2026-10-14 (T10).** Este documento es un registro con fecha; se conserva tal cual. A partir de T10 el IK de brazos, `GripTarget` y los objetivos de mano **se borraron por inertes** (medido: 0.000000 m de respuesta). Todo lo que aqui los describe como vivos describe un estado que ya no existe.
