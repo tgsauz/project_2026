@@ -4,6 +4,9 @@ extends SceneTree
 # RESPUESTA DE COLUMNA AL PITCH (T02)
 # La columna debe variar de forma monótona con el pitch del ratón, y no
 # derivar con el ratón quieto. Conductual: no depende del mecanismo.
+#
+# Eje del hueso: -Y (T07). La convergencia con la boca real se afirma en
+# spine_muzzle_convergence.gd; aquí solo la monotonicidad y la deriva.
 # ============================================================
 
 const PLAYER_SCENE := "res://Player/PlayerCharacter.tscn"
@@ -82,7 +85,13 @@ func _spine_pitch() -> float:
 	var skel: Skeleton3D = _player.get_node_or_null("VisualsComponent/Rig/ImportedModel/Armature/Skeleton3D")
 	var gun: int = skel.find_bone("ik_hand_gun")
 	var gpose: Transform3D = skel.get_bone_global_pose(gun)
-	var gun_fwd: Vector3 = (-(skel.global_transform.basis * gpose.basis).z).normalized()
+	# El forward del hueso del arma es su -Y, medido contra el marcador MUZZLE
+	# del asset (coinciden a 0.00 deg, con el -Z quedan a 90.00 deg). Antes se
+	# leia el -Z: el escritor procedural lo empujaba contra la direccion de
+	# apuntado, asi que este test pasaba por construccion mientras el torso
+	# estaba doblado 90 grados. Ver Tests/Acceptance/spine_muzzle_convergence.gd
+	# para la medida no circular.
+	var gun_fwd: Vector3 = (-(skel.global_transform.basis * gpose.basis).y).normalized()
 	var gun_pitch: float = rad_to_deg(asin(clampf(gun_fwd.y, -1.0, 1.0)))
 	var cam: Node = _player.get_node_or_null("CAMERARIG")
 	_last_aim = rad_to_deg(cam.fps_pitch)

@@ -101,10 +101,13 @@ func _update_look_at_target_pose() -> void:
 ## para aterrizar despues del mezclador. Alcance T02: solo spine_02, solo
 ## pitch. El reparto por eje y spine_01 son T03 / trabajo futuro.
 ##
-## Sensor: el forward del hueso del arma (convencion validada: boca = -Z).
-## JAMAS el -Z del hueso de columna (apunta abajo, no adelante): usarlo dobla
-## el torso hacia el piso. Se rota spine_02 para llevar el forward del arma
-## hacia la direccion de apuntado.
+## Sensor: el forward del hueso del arma es su -Y, NO su -Z. Medido en ARMED
+## y en AIMING, con el escritor apagado: el marcador MUZZLE del asset (la
+## boca real) coincide con el -Y del hueso ik_hand_gun a 0.00 deg, y con el
+## -Z a 90.00 deg. El -Z del hueso apunta al piso, asi que leerlo hacia al
+## escritor a "corregir" un error de 90 grados que no existe y dobla el torso
+## hacia atras en cada fotograma. Se rota spine_02 para llevar el -Y del
+## hueso hacia la direccion de apuntado.
 func _write_spine_pose() -> void:
 	if _skeleton == null or _aim_controller == null:
 		return
@@ -121,7 +124,7 @@ func _write_spine_pose() -> void:
 		return
 
 	var gun_pose: Transform3D = _skeleton.get_bone_global_pose(_gun_bone_idx)
-	var gun_fwd: Vector3 = -gun_pose.basis.z.normalized()
+	var gun_fwd: Vector3 = -gun_pose.basis.y.normalized()
 
 	# Pitch en el plano YZ local: ignora el yaw (T03), ignora el roll.
 	var a := Vector3(0.0, gun_fwd.y, gun_fwd.z)
@@ -206,8 +209,10 @@ func _process_modification_with_delta(_delta: float) -> void:
 				var spine_fwd: Vector3 = -spine_gpose.basis.z.normalized()
 				var spine_pitch_deg := rad_to_deg(asin(clampf(spine_fwd.y, -1.0, 1.0)))
 
+				# El forward del arma es el -Y del hueso, el mismo que usa el
+				# sensor de arriba. Con -Z este readout reportaba el piso.
 				var gun_gpose: Transform3D = _skeleton.get_bone_global_pose(_gun_bone_idx)
-				var gun_fwd: Vector3 = -gun_gpose.basis.z.normalized()
+				var gun_fwd: Vector3 = -gun_gpose.basis.y.normalized()
 				var gun_pitch_deg := rad_to_deg(asin(clampf(gun_fwd.y, -1.0, 1.0)))
 
 				prints("[PITCH_CHAIN]  cam: %+.2f°  spine02: %+.2f°  (Δ: %+.2f°)  weapon: %+.2f°  (Δspine: %+.2f°)" % [
