@@ -1,24 +1,18 @@
 extends Node3D
 class_name DebugIKVisualizer
 
-enum BoneAxis { X = 0, Y = 1, Z = 2, MINUS_X = 3, MINUS_Y = 4, MINUS_Z = 5 }
-
-@export var ik_controller_path: NodePath
+@export var skeleton_path: NodePath
 
 @export var show_bones: bool = true
 @export var show_axes: bool = true
-@export var show_forward_cones: bool = true
 @export var show_targets: bool = true
 @export var show_aim_ray: bool = true
 @export var show_camera_ray: bool = true
 @export var show_muzzle_ray: bool = true
 @export var show_labels: bool = true
 
-const CONE_LENGTH: float = 0.15
-const CONE_RADIUS: float = 0.04
 const AXIS_LENGTH: float = 0.12
 const CROSSHAIR_SIZE: float = 0.04
-const CONE_SEGMENTS: int = 8
 const LABEL_POOL_SIZE: int = 20
 
 const CAMERA_RAY_LENGTH: float = 10.0
@@ -29,6 +23,12 @@ const MUZZLE_RAY_COLOR := Color(1.0, 0.55, 0.1)
 ## Marcador de boca dentro del asset del arma (ver project-docs/GLOSSARY.md).
 const MUZZLE_MARKER_NAME := "MUZZLE"
 
+## Esqueleto y punto de mirada, por vecindad acotada al CharacterBody3D
+## (el visualizador cuelga de el). Rutas fijas de fallback: las mismas que
+## usa CharacterController para AnimationTree.
+const SKELETON_FALLBACK_PATH := "VisualsComponent/Rig/ImportedModel/Armature/Skeleton3D"
+const LOOK_AT_TARGET_NAME := "LookAtTarget"
+
 const CHAIN_COLORS := {
 	"spine": Color(0.31, 0.76, 0.97),
 	"arm_r": Color(1.00, 0.44, 0.26),
@@ -38,9 +38,9 @@ const CHAIN_COLORS := {
 	"ik":    Color(0.74, 0.74, 0.74),
 }
 
-var _ik_controller: FullBodyIKController
 var _skeleton: Skeleton3D
-var _ik_controller_injected: bool = false
+var _skeleton_injected: bool = false
+var _look_at_target: Node3D
 
 ## Fuentes de los rayos de apuntado. Inyección explícita preferida;
 ## si no se inyectan, se resuelven por vecindad acotada (el visualizador
@@ -67,9 +67,6 @@ var _label_pool_index: int = 0
 var _inv_global_full: Transform3D
 var _inv_global_basis: Basis
 
-var _debug_modifier_data: Array[Dictionary] = []
-var _debug_target_positions: Dictionary = {}
-
 func _ready() -> void:
 	_resolve_dependencies()
 	_resolve_ray_sources()
@@ -83,12 +80,13 @@ func _exit_tree() -> void:
 	if _immediate_mesh != null:
 		_immediate_mesh.clear_surfaces()
 
-func set_ik_controller(controller: FullBodyIKController) -> void:
-	_ik_controller = controller
-	_ik_controller_injected = true
-	_skeleton = _ik_controller.get_skeleton()
-	if _skeleton == null:
-		push_error("DebugIKVisualizer could not resolve Skeleton3D from FullBodyIKController.")
+func set_skeleton(skeleton: Skeleton3D) -> void:
+	_skeleton_injected = true
+	if skeleton == null:
+		push_error("DebugIKVisualizer received a null Skeleton3D.")
+		return
+	_skeleton = skeleton
+	_cache_look_at_target()
 
 func set_camera(camera: Camera3D) -> void:
 	_fps_camera = camera
@@ -116,18 +114,26 @@ func _resolve_ray_sources() -> void:
 				_weapon_controller = host.get_node_or_null("WeaponRoot/WeaponController") as WeaponController
 
 func _resolve_dependencies() -> void:
-	if _ik_controller_injected:
+	if _skeleton_injected:
 		return
-	if ik_controller_path.is_empty():
-		push_error("DebugIKVisualizer: no ik_controller_path configured and no controller injected.")
-		return
-	_ik_controller = get_node(ik_controller_path) as FullBodyIKController
-	if _ik_controller == null:
-		push_error("DebugIKVisualizer could not resolve FullBodyIKController at path '%s'." % str(ik_controller_path))
-		return
-	_skeleton = _ik_controller.get_skeleton()
+	if not skeleton_path.is_empty():
+		_skeleton = get_node_or_null(skeleton_path) as Skeleton3D
 	if _skeleton == null:
-		push_error("DebugIKVisualizer could not resolve Skeleton3D from FullBodyIKController.")
+		# Vecindad acotada: el visualizador es hijo del CharacterBody3D.
+		var host := get_parent()
+		if host != null:
+			_skeleton = host.get_node_or_null(SKELETON_FALLBACK_PATH) as Skeleton3D
+	if _skeleton == null:
+		push_error("DebugIKVisualizer could not resolve Skeleton3D.")
+		return
+	_cache_look_at_target()
+
+## El punto de mirada es el unico objetivo de apuntado que queda vivo:
+## lo escribe SpineLookAtController cada fotograma desde el AimState.
+func _cache_look_at_target() -> void:
+	if _skeleton == null:
+		return
+	_look_at_target = _skeleton.get_node_or_null(LOOK_AT_TARGET_NAME) as Node3D
 
 func _create_mesh() -> void:
 	_immediate_mesh = ImmediateMesh.new()
@@ -169,7 +175,7 @@ func _release_all_labels() -> void:
 	_label_pool_index = 0
 
 func _process(_delta: float) -> void:
-	if _skeleton == null or _ik_controller == null:
+	if _skeleton == null:
 		return
 
 	_inv_global_full = global_transform.affine_inverse()
@@ -178,8 +184,9 @@ func _process(_delta: float) -> void:
 	_immediate_mesh.clear_surfaces()
 	_release_all_labels()
 
-	_debug_modifier_data = _ik_controller.get_modifier_debug_info()
-	_debug_target_positions = _ik_controller.get_ik_target_positions()
+	# Reintento acotado por si el rig se montó después del visualizador.
+	if _look_at_target == null:
+		_cache_look_at_target()
 
 	_immediate_mesh.surface_begin(Mesh.PRIMITIVE_LINES)
 
@@ -187,8 +194,6 @@ func _process(_delta: float) -> void:
 		_draw_bone_wireframe()
 	if show_axes:
 		_draw_bone_axes()
-	if show_forward_cones:
-		_draw_forward_cones()
 	if show_targets:
 		_draw_target_markers()
 	if show_aim_ray:
@@ -203,6 +208,14 @@ func _process(_delta: float) -> void:
 
 	if show_labels:
 		_update_labels()
+
+## Posicion global del punto de mirada, o Vector3.ZERO como centinela de
+## "todavia sin objetivo": sin ese filtro la cruceta se dibujaria clavada en
+## el origen del mundo.
+func _get_look_at_position() -> Vector3:
+	if _look_at_target == null or not is_instance_valid(_look_at_target):
+		return Vector3.ZERO
+	return _look_at_target.global_position
 
 # ============================================================
 #  BONE HELPERS
@@ -240,23 +253,6 @@ static func _get_chain(bone_name: String) -> String:
 
 	return "ik"
 
-static func _forward_axis_dir(bone_basis: Basis, axis: int) -> Vector3:
-	match axis:
-		BoneAxis.X:
-			return bone_basis.x.normalized()
-		BoneAxis.Y:
-			return bone_basis.y.normalized()
-		BoneAxis.Z:
-			return bone_basis.z.normalized()
-		BoneAxis.MINUS_X:
-			return -bone_basis.x.normalized()
-		BoneAxis.MINUS_Y:
-			return -bone_basis.y.normalized()
-		BoneAxis.MINUS_Z:
-			return -bone_basis.z.normalized()
-		_:
-			return bone_basis.z.normalized()
-
 # ============================================================
 #  DRAWING HELPERS
 # ============================================================
@@ -292,59 +288,22 @@ func _draw_bone_axes() -> void:
 		_add_line(origin, origin + bone_basis.y.normalized() * AXIS_LENGTH, Color.GREEN)
 		_add_line(origin, origin + bone_basis.z.normalized() * AXIS_LENGTH, Color.BLUE)
 
-func _draw_forward_cones() -> void:
-	for entry in _debug_modifier_data:
-		var mod_type: String = entry.get("type", "")
-		if mod_type == "look_at":
-			_draw_look_at_cone(entry)
-
-func _draw_look_at_cone(entry: Dictionary) -> void:
-	var bone_idx: int = entry.get("bone", -1)
-	if bone_idx == -1:
-		return
-	var pose: Transform3D = _get_bone_global_pose(bone_idx)
-	var origin: Vector3 = pose.origin
-	var bone_basis: Basis = pose.basis
-	var axis: int = entry.get("forward_axis", 2)
-	var dir: Vector3 = _forward_axis_dir(bone_basis, axis)
-
-	var bone_name: String = entry.get("bone_name", "")
-	var chain: String = _get_chain(bone_name)
-	var color: Color = CHAIN_COLORS.get(chain, Color.WHITE)
-	_draw_wireframe_cone(origin, dir, color)
-
-func _draw_wireframe_cone(origin: Vector3, dir: Vector3, color: Color) -> void:
-	var tip: Vector3 = origin + dir * CONE_LENGTH
-	var right: Vector3 = dir.cross(Vector3.UP).normalized()
-	if right.length_squared() < 0.001:
-		right = dir.cross(Vector3.RIGHT).normalized()
-	var up: Vector3 = dir.cross(right).normalized()
-	var segments: int = CONE_SEGMENTS
-
-	var prev: Vector3 = origin + right * CONE_RADIUS
-	for i in range(1, segments + 1):
-		var angle: float = float(i) / float(segments) * TAU
-		var curr: Vector3 = origin + right * cos(angle) * CONE_RADIUS + up * sin(angle) * CONE_RADIUS
-		_add_line(prev, curr, color)
-		_add_line(prev, tip, color)
-		prev = curr
-
 func _draw_crosshair(pos: Vector3, color: Color, size: float = CROSSHAIR_SIZE) -> void:
 	_add_line(pos - Vector3(size, 0, 0), pos + Vector3(size, 0, 0), color)
 	_add_line(pos - Vector3(0, size, 0), pos + Vector3(0, size, 0), color)
 	_add_line(pos - Vector3(0, 0, size), pos + Vector3(0, 0, size), color)
 
 func _draw_target_markers() -> void:
-	var aim_pos: Vector3 = _debug_target_positions.get("aim", Vector3.ZERO)
-	if aim_pos != Vector3.ZERO:
-		_draw_crosshair(aim_pos, Color.CYAN)
+	var look_at_pos: Vector3 = _get_look_at_position()
+	if look_at_pos != Vector3.ZERO:
+		_draw_crosshair(look_at_pos, Color.CYAN)
 
 func _draw_aim_ray() -> void:
-	var aim_pos: Vector3 = _debug_target_positions.get("aim", Vector3.ZERO)
-	if aim_pos == Vector3.ZERO or _skeleton == null:
+	var look_at_pos: Vector3 = _get_look_at_position()
+	if look_at_pos == Vector3.ZERO or _skeleton == null:
 		return
 	var skel_origin: Vector3 = _skeleton.global_position
-	_add_line(skel_origin, aim_pos, Color.YELLOW)
+	_add_line(skel_origin, look_at_pos, Color.YELLOW)
 
 # ============================================================
 #  RAYOS DE APUNTADO (cámara y boca, en espacio global)
@@ -425,23 +384,9 @@ func _draw_muzzle_ray() -> void:
 # ============================================================
 
 func _update_labels() -> void:
-	for entry in _debug_modifier_data:
-		var mod_type: String = entry.get("type", "")
-		var mod_name: String = entry.get("name", "")
-
-		if mod_type == "look_at":
-			var bone_idx: int = entry.get("bone", -1)
-			if bone_idx == -1:
-				continue
-			var pose: Transform3D = _get_bone_global_pose(bone_idx)
-			var bone_name: String = _get_bone_name(bone_idx)
-			var chain: String = _get_chain(bone_name)
-			var color: Color = CHAIN_COLORS.get(chain, Color.WHITE)
-			_place_label(pose.origin, "%s (%s)" % [mod_name, bone_name], color)
-
-	var aim_pos: Vector3 = _debug_target_positions.get("aim", Vector3.ZERO)
-	if aim_pos != Vector3.ZERO:
-		_place_label(aim_pos, "AimIKTarget", Color.CYAN)
+	var look_at_pos: Vector3 = _get_look_at_position()
+	if look_at_pos != Vector3.ZERO:
+		_place_label(look_at_pos, LOOK_AT_TARGET_NAME, Color.CYAN)
 
 	if _has_camera_ray:
 		_place_label(_camera_ray_origin + _camera_ray_dir * CAMERA_RAY_LENGTH, "CameraRay", CAMERA_RAY_COLOR)

@@ -57,13 +57,13 @@ func _process(_delta: float) -> bool:
 		_t = 0.0
 
 	elif _stage == 1 and _t > 2.0:
-		var ik: Node = _player.get("ik_controller") as Node
-		if ik == null:
-			_fail("CharacterController no resolvió FullBodyIKController.")
+		var spine := _player.get("spine_look_at") as SkeletonModifier3D
+		if spine == null:
+			_fail("CharacterController no resolvió SpineLookAtController.")
 			return true
 		_viz = DebugIKVisualizer.new()
 		_viz.name = "DebugIKVisualizer"
-		_viz.set_ik_controller(ik as FullBodyIKController)
+		_viz.set_skeleton(spine.get_skeleton())
 		_player.add_child(_viz)
 		_stage = 2
 		_t = 0.0

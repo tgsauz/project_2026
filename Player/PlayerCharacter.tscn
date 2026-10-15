@@ -28,7 +28,7 @@ properties/3/replication_mode = 1
 
 [node name="CharacterBody3D" type="CharacterBody3D" unique_id=1321391257 groups=["Player"]]
 script = ExtResource("1_ay0dg")
-ik_controller_path = NodePath("VisualsComponent/Rig/ImportedModel/Armature/Skeleton3D/FullBodyIKController")
+spine_controller_path = NodePath("VisualsComponent/Rig/ImportedModel/Armature/Skeleton3D/SpineLookAtController")
 
 [node name="VisualsComponent" type="Node3D" parent="." unique_id=1722711644]
 script = ExtResource("3_5dj55")

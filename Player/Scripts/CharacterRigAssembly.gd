@@ -38,9 +38,7 @@ func _create_runtime_nodes() -> void:
 	# via get_node("../Name") must already exist in the Skeleton3D.
 	# Sin solver CCDIK (ADR-0008): la columna se escribe proceduralmente.
 	_create_look_at_target()
-	_create_head_ccdik()
 	_create_spine_look_at_controller()
-	_create_full_body_ik_controller()
 	_create_weapon_root()
 
 func _create_look_at_target() -> void:
@@ -68,21 +66,6 @@ func _create_spine_look_at_controller() -> void:
 	slc.weapon_root_path = NodePath("../../../../../../WeaponRoot")
 	slc.arc_radius = 2.0
 	_skeleton.add_child(slc)
-
-func _create_full_body_ik_controller() -> void:
-	var fbik := FullBodyIKController.new()
-	fbik.name = "FullBodyIKController"
-	fbik.aim_controller_path = NodePath("../../../../../../AimController")
-	fbik.visuals_component_path = NodePath("../../../../..")
-	fbik.character_controller_path = NodePath("../../../../../..")
-	fbik.aim_target_path = NodePath("../../../../AimIKTarget")
-	_skeleton.add_child(fbik)
-
-func _create_head_ccdik() -> void:
-	var ik := CCDIK3D.new()
-	ik.name = "HeadCCDIK"
-	ik.min_distance = 0.01
-	_skeleton.add_child(ik)
 
 func _create_weapon_root() -> void:
 	var character_body := _find_ancestor(self, "CharacterBody3D") as Node3D

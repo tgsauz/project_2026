@@ -66,7 +66,7 @@ func _test_player_scene_boot() -> void:
 	_assert(inventory.slot_names == AttachmentLayoutLibrary.get_default_root_node_ids(), "Default player inventory should initialize from the shared attachment layout.")
 	_assert(player.has_main_hand_weapon() == false, "CharacterController should expose public has_main_hand_weapon().")
 	_assert(player.is_effectively_aiming() == false, "CharacterController should expose public is_effectively_aiming().")
-	_assert(player.ik_controller != null, "Player scene should resolve FullBodyIKController via cached reference.")
+	_assert(player.spine_look_at != null, "Player scene should resolve SpineLookAtController via cached reference.")
 	_assert(player.get_node_or_null("AimController") is AimController, "Player scene should include AimController.")
 	_test_player_ik_layout_contract(player)
 	await _test_rig_nodes_exist(player)
@@ -93,26 +93,22 @@ func _test_player_ik_layout_contract(player: CharacterController) -> void:
 	if skeleton == null:
 		return
 
-	var target_names: PackedStringArray = PackedStringArray(["AimIKTarget"])
-	for target_name in target_names:
-		_assert(rig.get_node_or_null(target_name) is Node3D, "IK layout missing target node '%s'." % target_name)
-
-	# Runtime SkeletonModifier3D order. The arm solvers (RightArmIK/LeftArmIK)
-	# were removed with the grip chain: measured inert, they wrote no bones.
+	# Runtime SkeletonModifier3D: queda un solo escritor vivo. Los solvers de
+	# brazos (T10) y el sector de cabeza (HeadCCDIK + FullBodyIKController,
+	# T12) se borraron tras medirlos inertes: en esta version del motor
+	# ningun SkeletonModifier3D escribe huesos (ADR-0008).
 	# Legacy WeaponOffsetCache/WeaponPositionController are intentionally absent.
 	var actual_order: Array[String] = []
 	for child in skeleton.get_children():
 		if child is SkeletonModifier3D:
 			actual_order.append(str(child.name))
 
-	var expected_modifiers: Array[String] = ["FullBodyIKController", "HeadCCDIK", "SpineLookAtController"]
-	for modifier_name in expected_modifiers:
-		_assert(actual_order.has(modifier_name), "IK pipeline missing modifier '%s'. Got %s." % [modifier_name, str(actual_order)])
-
-	if actual_order.has("FullBodyIKController") and actual_order.has("RightArmIK"):
-		# VACUA desde T10: RightArmIK se borro con la cadena de agarre inerte,
-		# asi que la condicion nunca se cumple y esta asercion ya no prueba nada.
-		_assert(actual_order.find("FullBodyIKController") < actual_order.find("RightArmIK"), "FullBodyIKController must run before RightArmIK so hand targets are set first. Got %s." % str(actual_order))
+	_assert(actual_order.has("SpineLookAtController"), "IK pipeline missing the only live writer 'SpineLookAtController'. Got %s." % str(actual_order))
+	# Orden: con un unico escritor el orden de ejecucion no cambia el
+	# resultado, asi que no hay orden que afirmar. La asercion de orden que
+	# vivio aqui quedo vacua con T10 y se borro en vez de quedarse como
+	# decoracion; este conteo la vuelve imposible de resucitar en silencio.
+	_assert(actual_order.size() == 1, "Skeleton should carry exactly one live writer. Got %s." % str(actual_order))
 
 func _test_rig_nodes_exist(player: CharacterController) -> void:
 	# Red de regresión: existen los nodos que el sector del rig necesita.
@@ -129,10 +125,6 @@ func _test_rig_nodes_exist(player: CharacterController) -> void:
 
 	_assert(skeleton.get_node_or_null("LookAtTarget") is Node3D, "Skeleton3D should expose its LookAtTarget child.")
 	_assert(player.get_node_or_null("WeaponRoot") is Node3D, "Player should expose runtime WeaponRoot.")
-
-	var rig: Node3D = player.visuals_component.get_node_or_null("Rig") as Node3D
-	if rig != null:
-		_assert(rig.get_node_or_null("AimIKTarget") is Node3D, "Rig should expose '%s'." % "AimIKTarget")
 
 func _test_world_scene_boot() -> void:
 	var world := WORLD_SCENE.instantiate()

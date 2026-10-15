@@ -40,9 +40,8 @@ var animation_tree: AnimationTree
 var camera_controller: Node
 var _aim_controller: AimController
 
-@export var ik_controller_path: NodePath
-var ik_controller: FullBodyIKController
-var _spine_look_at: SpineLookAtController
+@export var spine_controller_path: NodePath
+var spine_look_at: SpineLookAtController
 
 signal quick_action_menu_changed(prompt_data: Dictionary, actions: Array, selected_index: int, is_open: bool)
 
@@ -534,14 +533,11 @@ func _resolve_dependencies() -> bool:
 		push_error("CharacterController could not resolve CAMERARIG.")
 		valid = false
 
-	if ik_controller_path != NodePath():
-		ik_controller = get_node_or_null(ik_controller_path) as FullBodyIKController
-		if ik_controller == null:
-			push_error("CharacterController could not resolve FullBodyIKController from path: ", ik_controller_path)
+	if spine_controller_path != NodePath():
+		spine_look_at = get_node_or_null(spine_controller_path) as SpineLookAtController
+		if spine_look_at == null:
+			push_error("CharacterController could not resolve SpineLookAtController from path: ", spine_controller_path)
 			valid = false
-
-	if ik_controller != null:
-		_spine_look_at = ik_controller.get_parent().get_node_or_null("SpineLookAtController") as SpineLookAtController
 
 	return valid
 
@@ -550,13 +546,11 @@ func _resolve_aim_controller() -> void:
 	if _aim_controller == null:
 		push_warning("CharacterController: AimController not found as child.")
 
-## Injects this player's dependencies into the rig's IK controllers so the
+## Injects this player's dependencies into the rig's IK controller so the
 ## rig module no longer has to resolve player-owned nodes by fixed paths.
 func _inject_ik_dependencies() -> void:
-	if ik_controller != null:
-		ik_controller.configure(self, _aim_controller, visuals_component)
-	if _spine_look_at != null:
-		_spine_look_at.configure(self, _aim_controller)
+	if spine_look_at != null:
+		spine_look_at.configure(self, _aim_controller)
 
 func _bind_ui() -> void:
 	var ui_root := get_node_or_null("UIRoot")
@@ -605,13 +599,13 @@ func _toggle_ik_debug() -> void:
 		prints("IK Debug: OFF")
 		return
 
-	if ik_controller == null:
-		push_error("Cannot create IK debug visualizer: FullBodyIKController not found.")
+	if spine_look_at == null:
+		push_error("Cannot create IK debug visualizer: SpineLookAtController not found.")
 		prints("IK Debug: FAILED")
 		return
 	var viz := DebugIKVisualizer.new()
 	viz.name = "DebugIKVisualizer"
-	viz.set_ik_controller(ik_controller)
+	viz.set_skeleton(spine_look_at.get_skeleton())
 	add_child(viz)
 	prints("IK Debug: ON")
 

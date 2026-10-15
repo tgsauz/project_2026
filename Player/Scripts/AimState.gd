@@ -5,8 +5,8 @@ class_name AimState
 # AIM STATE
 # Immutable data structure — single source of truth for aiming intent.
 # Produced by AimController each frame.
-# Consumed by CameraController, CharacterController, SpineLookAtController,
-# FullBodyIKController. (WeaponController does NOT read it: the weapon reads
+# Consumed by CameraController, CharacterController, SpineLookAtController.
+# (WeaponController does NOT read it: the weapon reads
 # only the support bone. There is no AI or network consumer in this repo.)
 #
 # ============================================================
