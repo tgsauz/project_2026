@@ -101,13 +101,25 @@ func _update_look_at_target_pose() -> void:
 ## para aterrizar despues del mezclador. Alcance T02: solo spine_02, solo
 ## pitch. El reparto por eje y spine_01 son T03 / trabajo futuro.
 ##
-## Sensor: el forward del hueso del arma es su -Y, NO su -Z. Medido en ARMED
-## y en AIMING, con el escritor apagado: el marcador MUZZLE del asset (la
-## boca real) coincide con el -Y del hueso ik_hand_gun a 0.00 deg, y con el
-## -Z a 90.00 deg. El -Z del hueso apunta al piso, asi que leerlo hacia al
-## escritor a "corregir" un error de 90 grados que no existe y dobla el torso
-## hacia atras en cada fotograma. Se rota spine_02 para llevar el -Y del
-## hueso hacia la direccion de apuntado.
+## QUE SE MIDE DEPENDE DEL ESTADO DE APUNTADO (issue 12). Son dos metas
+## distintas, asi que necesitan medir cosas distintas:
+##
+## - Apuntando: la boca tiene que llegar a la mira, asi que se mide la boca.
+##   Sensor: el forward del hueso del arma es su -Y, NO su -Z. Medido en ARMED
+##   y en AIMING, con el escritor apagado: el marcador MUZZLE del asset (la
+##   boca real) coincide con el -Y del hueso ik_hand_gun a 0.00 deg, y con el
+##   -Z a 90.00 deg. El -Z del hueso apunta al piso, asi que leerlo hacia al
+##   escritor a "corregir" un error de 90 grados que no existe y dobla el torso
+##   hacia atras en cada fotograma.
+##
+## - Armado: el rifle va en la cadera y NO esta apuntado a proposito, con el
+##   canon unos 21 grados hacia abajo. Esa inclinacion es la postura, no un
+##   error. Medir la boca ahi hacia a inventar un error de 21 grados constante
+##   y a pelear con una postura que esta bien. Ademas la camara no puede ser la
+##   medida: medido con el escritor activo y rotando spine_02 +20 grados a
+##   mano, la boca se movia 13.83 deg y la direccion de la camara 0.00. Lo que
+##   un servo mide tiene que depender de lo que el servo mueve. Por eso en
+##   ARMED se mide el eje del propio spine_02 y la camara queda de destino.
 func _write_spine_pose() -> void:
 	if _skeleton == null or _aim_controller == null:
 		return
@@ -119,23 +131,12 @@ func _write_spine_pose() -> void:
 	var state: AimState = _aim_controller.get_aim_state()
 	if state == null or not state.is_valid:
 		return
-	var aim_local: Vector3 = (_skeleton.global_transform.basis.inverse() * state.aim_direction).normalized()
-	if aim_local.is_zero_approx():
-		return
 
-	var gun_pose: Transform3D = _skeleton.get_bone_global_pose(_gun_bone_idx)
-	var gun_fwd: Vector3 = -gun_pose.basis.y.normalized()
-
-	# Pitch en el plano YZ local: ignora el yaw (T03), ignora el roll.
-	var a := Vector3(0.0, gun_fwd.y, gun_fwd.z)
-	var b := Vector3(0.0, aim_local.y, aim_local.z)
-	if a.length() < 0.001 or b.length() < 0.001:
-		return
-	a = a.normalized()
-	b = b.normalized()
-	var sin_t: float = (a.cross(b)).x
-	var cos_t: float = a.dot(b)
-	var pitch_delta: float = atan2(sin_t, cos_t) * _current_influence
+	var pitch_delta: float = 0.0
+	if _is_aiming():
+		pitch_delta = _aiming_pitch_delta(state)
+	else:
+		pitch_delta = _armed_pitch_delta(state)
 	if absf(pitch_delta) < 0.0001:
 		return
 
@@ -146,6 +147,50 @@ func _write_spine_pose() -> void:
 	var to_local: Quaternion = (spine_pose.basis.get_rotation_quaternion() * local_q.inverse()).inverse()
 	var rotated: Quaternion = to_local * Quaternion(Vector3.RIGHT, pitch_delta) * to_local.inverse() * local_q
 	_skeleton.set_bone_pose_rotation(_spine02_idx, rotated)
+
+## Sensor de APUNTADO: la boca del arma contra la direccion de apuntado. Pitch
+## en el plano YZ local: ignora el yaw (T03), ignora el roll.
+func _aiming_pitch_delta(state: AimState) -> float:
+	var aim_local: Vector3 = (_skeleton.global_transform.basis.inverse() * state.aim_direction).normalized()
+	if aim_local.is_zero_approx():
+		return 0.0
+
+	var gun_pose: Transform3D = _skeleton.get_bone_global_pose(_gun_bone_idx)
+	var gun_fwd: Vector3 = -gun_pose.basis.y.normalized()
+	var a := Vector3(0.0, gun_fwd.y, gun_fwd.z)
+	var b := Vector3(0.0, aim_local.y, aim_local.z)
+	if a.length() < 0.001 or b.length() < 0.001:
+		return 0.0
+	a = a.normalized()
+	b = b.normalized()
+	var sin_t: float = (a.cross(b)).x
+	var cos_t: float = a.dot(b)
+	return atan2(sin_t, cos_t) * _current_influence
+
+## Sensor de ARMADO: cuanto esta el eje de spine_02 levantado o bajada, contra
+## cuanto esta levantada o bajada la camara. La pose que se lee aqui es la que
+## acaba de dejar el mezclador: el escritor escribe despues, asi que la lectura
+## no incluye su propia correccion. Por eso la magnitud medida SI depende de la
+## columna, que es lo que un servo necesita para poder converger.
+func _armed_pitch_delta(state: AimState) -> float:
+	var aim_world: Vector3 = state.aim_direction.normalized()
+	if aim_world.is_zero_approx():
+		return 0.0
+
+	var spine_pose: Transform3D = _skeleton.get_bone_global_pose(_spine02_idx)
+	var spine_fwd: Vector3 = -(_skeleton.global_transform.basis * spine_pose.basis).z.normalized()
+
+	# Solo el canal de pitch, como en el sensor de apuntado: se ignoran el yaw
+	# y el roll (alcance T02/T03) y con ellos la diferencia de 180 grados que hay
+	# entre el eje del hueso y la direccion de apuntado en el mismo eje de yaw.
+	# Medido en este esqueleto: el eje del hueso mira hacia atras en espacio
+	# global, asi que el angulo entre los dos vectores da ~176 grados y no dice
+	# nada. Lo que si dice es cuanto esta el eje levantado o bajado, y eso es
+	# lo que hay que igualar a la camara. El signo esta medido: con esta
+	# formula la columna sube cuando la camara sube.
+	var aim_pitch: float = asin(clampf(aim_world.y, -1.0, 1.0))
+	var spine_pitch: float = asin(clampf(spine_fwd.y, -1.0, 1.0))
+	return (aim_pitch - spine_pitch) * _current_influence
 
 func _process_modification_with_delta(_delta: float) -> void:
 	if _skeleton == null or _spine01_idx == -1 or _spine02_idx == -1:
@@ -270,6 +315,13 @@ func _compute_target_influence() -> float:
 	if _character_controller.is_effectively_aiming():
 		return INFLUENCE_AIMING
 	return INFLUENCE_ARMED
+
+## Estado de apuntado real, no la influencia mezclada: decide que sensor se
+## usa. Durante el traspaso manda el estado al que se va, no al que se venia.
+func _is_aiming() -> bool:
+	if _character_controller == null:
+		return false
+	return _character_controller.is_effectively_aiming()
 
 func _blend_influence(delta: float, target: float) -> void:
 	if delta <= 0.0:
