@@ -53,6 +53,12 @@ crash_log.txt
 /PrototypeTextures/
 
 # ------------------------------
+# Python bytecode (third-party agent tooling)
+# ------------------------------
+__pycache__/
+*.pyc
+
+# ------------------------------
 # Obsidian vault config
 # ------------------------------
 .obsidian/
@@ -65,6 +71,11 @@ crash_log.txt
 # exactamente el fallo que el ADR pretendia cerrar. Corregido 2026-10-15.
 /plans/
 /.opencode/plans/
+
+# Notas de trabajo del agente. El mismo argumento que ADR-0003: .scratch/ es
+# trabajo en curso, y las decisiones que sobreviven ya estan en los commits y
+# en project-docs/ADRs/. Corregido 2026-10-15.
+/.scratch/
 
 # ------------------------------
 # graphify knowledge graph (regenerable build artifact)
