@@ -65,7 +65,6 @@ var _label_pool: Array[Label3D] = []
 var _label_pool_index: int = 0
 
 var _inv_global_full: Transform3D
-var _inv_global_basis: Basis
 
 func _ready() -> void:
 	_resolve_dependencies()
@@ -179,7 +178,6 @@ func _process(_delta: float) -> void:
 		return
 
 	_inv_global_full = global_transform.affine_inverse()
-	_inv_global_basis = global_transform.basis.transposed()
 
 	_immediate_mesh.clear_surfaces()
 	_release_all_labels()
