@@ -28,6 +28,19 @@ var _still_samples: Array[float] = []
 func _initialize() -> void:
 	_player = (load(PLAYER_SCENE) as PackedScene).instantiate() as Node3D
 	root.add_child(_player)
+	# Suelo: hoy este test no lo necesita porque mide solo angulos
+	# (invariantes a la traslacion), pero es la misma trampa latente que
+	# rompia spine_visual_rays: sin suelo el cuerpo cae y cualquier medicion
+	# de posicion pasaria a fallar al azar.
+	var floor_body := StaticBody3D.new()
+	floor_body.name = "AcceptanceFloor"
+	root.add_child(floor_body)
+	var col := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(10, 0.5, 10)
+	col.shape = shape
+	col.position = Vector3(0, -0.25, 0)
+	floor_body.add_child(col)
 
 func _process(_delta: float) -> bool:
 	_t += _delta

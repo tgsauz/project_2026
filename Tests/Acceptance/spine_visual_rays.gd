@@ -29,6 +29,18 @@ var _stage: int = 0
 func _initialize() -> void:
 	_player = (load(PLAYER_SCENE) as PackedScene).instantiate() as Node3D
 	root.add_child(_player)
+	# Suelo: sin el, el cuerpo cae en caida libre. Este test compara el origen
+	# cacheado del rayo contra el origen global de su fuente, asi que la caida
+	# se cuela como error de posicion (mismo motivo que en weapon_coupling_acceptance).
+	var floor_body := StaticBody3D.new()
+	floor_body.name = "AcceptanceFloor"
+	root.add_child(floor_body)
+	var col := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(10, 0.5, 10)
+	col.shape = shape
+	col.position = Vector3(0, -0.25, 0)
+	floor_body.add_child(col)
 
 func _process(_delta: float) -> bool:
 	_t += _delta
