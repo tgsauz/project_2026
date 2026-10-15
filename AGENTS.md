@@ -161,6 +161,13 @@ At the start of every conversation, output:
 
 This project has a graphify knowledge graph at graphify-out/.
 
+**Sobre los documentos con fecha.** Cualquier archivo cuyo nombre incluya una
+fecha, o que viva bajo `project-docs/Docs/` con nombre de fecha o de "cambio",
+es un **registro de lo que se decidio ese dia**, no arquitectura vigente. Antes
+de tratarlo como fuente de verdad, comprueba la fecha y busca las notas de
+correccion que esos mismos documentos llevan anadidas cuando el codigo cambio
+despues. La arquitectura vigente vive en `project-docs/ADRs/` y en el codigo.
+
 Rules:
 - Before answering architecture or codebase questions, read graphify-out/GRAPH_REPORT.md for god nodes and community structure
 - If graphify-out/wiki/index.md exists, navigate it instead of reading raw files

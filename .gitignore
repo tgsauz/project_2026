@@ -60,7 +60,11 @@ crash_log.txt
 # ------------------------------
 # Planning documents (superseded by project-docs/)
 # ------------------------------
+# ADR-0003 decidio que los planes no se versionan. La regla original solo
+# cubria /plans/ de la raiz, por lo que .opencode/plans/ seguia versionado:
+# exactamente el fallo que el ADR pretendia cerrar. Corregido 2026-10-15.
 /plans/
+/.opencode/plans/
 
 # ------------------------------
 # graphify knowledge graph (regenerable build artifact)
