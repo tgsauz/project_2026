@@ -161,6 +161,15 @@ At the start of every conversation, output:
 
 This project has a graphify knowledge graph at graphify-out/.
 
+**Medir el torso con signo (ADR-0011).** La elevación de un hueso
+(`asin(v.y)`) **no distingue inclinarse adelante de inclinarse atrás** cerca de
+la vertical. Usa el ángulo con signo contra el frente del personaje:
+`atan2(v.forward, v.up)`. Comprobado dos veces en este repo: dio "torso recto" y
+"signo correcto" cuando era justo al revés. Si una cifra sale rara, el primer
+sospechoso es la métrica, no el código. Y ningún test puede medir la premisa que
+el código asume: `spine_pitch_response.gd` comparaba el hueso contra el apuntado,
+que es lo que el escritor optimiza.
+
 **Sobre los documentos con fecha.** Cualquier archivo cuyo nombre incluya una
 fecha, o que viva bajo `project-docs/Docs/` con nombre de fecha o de "cambio",
 es un **registro de lo que se decidio ese dia**, no arquitectura vigente. Antes
