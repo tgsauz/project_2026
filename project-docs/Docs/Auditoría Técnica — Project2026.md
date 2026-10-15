@@ -156,6 +156,29 @@ Input → AimController → AimState → (consumido, nunca escrito por los consu
 >
 > El resto de la auditoría (superficie, nulos, acoplamiento) sigue vigente.
 
+> **Corrección 2026-10-14 (T12, sin reescritura del original).** El bloque 4.5
+> describe en su mayor parte código que ya no está en disco. A partir de T12
+> (commit `83d5c86`) se borraron `FullBodyIKController.gd` entero, el
+> `HeadCCDIK` y su `AimIKTarget`, medidos inertes. En consecuencia:
+>
+> - **`SpineLookAtController` es hoy el único `SkeletonModifier3D` del
+>   esqueleto.** Ya no es «uno de dos»: `CharacterRigAssembly` crea únicamente
+>   `LookAtTarget` y `SpineLookAtController`, y nada más.
+> - **Las tablas de riesgos que citan `FullBodyIKController` como causa están
+>   cerradas**: B1 (null-ref en `_compute_weight_targets`), B2 (rutas de
+>   `AimController` desde el nodo), R3 (avisos de resolución en el Tuner) y el
+>   grafo `GripTarget → FullBodyIKController` de §5. El nodo y los errores que
+>   producía ya no se ejecutan; no hay nada que arreglar ahí.
+> - **El riesgo de «múltiples escritores» (§13) queda reducido a dos**:
+>   `AnimationTree` y la columna. La hipótesis que lo justificaba —que la
+>   propiedad de los huesos no estaba impuesta por código— sigue siendo cierta,
+>   pero ya no hay tres escritores compitiendo por ella.
+> - **Lo único que este bloque acertó y que se mantiene** es el hallazgo de
+>   fondo: en esta versión del motor **ningún `SkeletonModifier3D` escribe
+>   huesos**. Se midió en ADR-0008, se confirmó al borrar el IK de brazos (T10)
+>   y de nuevo al borrar el sector de cabeza (T12). Esa es la razón de todas las
+>   bajas y el criterio para decidir si algo futuro vuelve.
+
 ### 4.6 VisualsComponent (`731`)
 - **Responsable** de instanciar visuales equipados (`BoneAttachment3D` por slot + ContentRoot), cachear markers (LGRIP/RGRIP/SIGHT_BACK/SIGHT_FRONT/MUZZLE), visibilidad de cabeza en FPS, y API para el Tuner.
 - **`FACT`**: se cablea por `bind_inventory` a `inventory_updated` y `equipment_visuals_changed` (`:295-304`).
@@ -577,3 +600,14 @@ ERROR: Dependency smoke tests failed with 4 issue(s).
 *Fin del informe de auditoría. Documento generado como línea base de diagnóstico; no representa cambios aplicados al proyecto.*
 
 > **Correccion 2026-10-14 (T10).** Este documento es un registro con fecha; se conserva tal cual. A partir de T10 el IK de brazos, `GripTarget` y los objetivos de mano **se borraron por inertes** (medido: 0.000000 m de respuesta). Todo lo que aqui los describe como vivos describe un estado que ya no existe.
+
+> **Corrección 2026-10-14 (T12).** Sigue vigente el criterio del documento, y
+> se le añade la segunda baja del mismo tipo: el sector de IK de cabeza
+> (`HeadCCDIK`, `AimIKTarget` y `FullBodyIKController.gd`) **también se borró
+> por inerte**. Sumado a T10 y a la retirada previa de
+> `WeaponOffsetCache`/`WeaponPositionController`, el único escritor vivo sobre
+> el esqueleto es `SpineLookAtController`, desde `_process` (ADR-0008).
+> Todo lo que este informe describe como pipeline de IK de siete sistemas
+> —§4.5, §5, §6, §7, §9, §12 y las filas de riesgos B1, B2, B8, R3, AR1 y
+> AR6— describe una topología que no está en disco. Se conserva sin reescribir
+> porque es la línea base del diagnóstico.

@@ -26,6 +26,17 @@ coordina con los otros:
 - **Cabeza** (`FullBodyIKController`, `HeadCCDIK`): influence por tabla de
   estado (0 / 0.25 / 0.35), y además se atenúa con `ads_weight`.
 
+> **Corrección 2026-10-14 (T12).** El sector de cabeza **se borró entero**:
+> `HeadCCDIK` (un `CCDIK3D`), `AimIKTarget` (su único objetivo) y
+> `FullBodyIKController.gd` (305 líneas que ya no tenían ninguna función viva)
+> se retiraron tras medirse inertes, por la misma razón de motor que el resto
+> (ADR-0008): ningún `SkeletonModifier3D` escribe huesos en esta versión.
+> La tabla de influencia de cabeza ya no describe ningún mecanismo.
+>
+> Lo que sobrevive de este ADR es el reparto de dos actores: **el cuerpo lleva
+> el yaw, la columna lleva el pitch**. No hay un tercer competidor por el reparto
+> de la mirada, y no lo habrá mientras no exista un modelo de cabeza.
+
 ## Decisión
 
 Reparto por estado, con una sola autoridad por eje:
@@ -74,11 +85,37 @@ hueso** o proyectarlo explícitamente, no escribir mundo en un nodo del rig.
 - El torso pasa a ser el único consumidor de mirada aparte del cuerpo, lo que
   elimina la ambigüedad de "quién lleva el pitch".
 
+> **Corrección 2026-10-14 (T12).** La primera consecuencia ya no se sostiene, por
+> dos razones que conviene separar porque tienen fecha distinta:
+>
+> 1. **«Influence 0 siempre» era falso antes de T12.** No era un hecho medido
+>    sino una decisión declarada que el código no cumplía: la tabla del propio
+>    ADR da **0.25 en armado** y 0.35 en apuntado, y `WEIGHTS_ARMED` en el
+>    código asignaba 0.25 al nodo. El sector de cabeza estaba mezclándose con
+>    la mirada, solo que sobre un solver que no escribía huesos.
+> 2. **Ahora es irrelevante.** Desde T12 el nodo `HeadCCDIK` no existe, así que
+>    no hay influence que_valor. La afirmación ya no es falsa: es vacía.
+>
+> La segunda consecuencia (`ads_weight` se va, ver ADR-0007) no cambió de
+> resultado, pero su causa también era inexacta: el consumidor desaparecía, no
+> porque la influencia llegara a cero, sino porque lo que se atenúa era un
+> solver inerte. La tercera sigue vigente: el torso es el único consumidor de
+> mirada aparte del cuerpo.
+
 ## Estado transitorio
 
 Durante el incremento del torso, la cabeza se deja en influence 0 **de forma
 deliberada** para aislar el efecto de la columna. No es un descuido: es lo que
 permite atribuir cualquier cambio visible a una sola causa.
+
+> **Corrección 2026-10-14 (T12).** Esta sección se apoya en una premisa que
+> **ya era falsa**: la cabeza no estaba en influence 0 «de forma deliberada»,
+> sino que la tabla le daba 0.25 en armado y 0.35 en apuntado. Lo deliberado era
+> la decisión escrita, no el comportamiento medido.
+> Desde T12, además, no hay cabeza que aislar: el sector se borró por inerte.
+> El método —atribuir cada cambio visible a una sola causa— sigue siendo válido
+> y se ha seguido aplicando; lo que se queda sin sujeto es este incremento en
+> concreto.
 
 ## Evidencia
 

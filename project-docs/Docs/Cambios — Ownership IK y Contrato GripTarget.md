@@ -90,3 +90,18 @@ tags:
 *Registro de la implementación. Refleja el filesystem actual y la evidencia de runtime del 2026-10-01.*
 
 > **Correccion 2026-10-14 (T10).** Este documento es un registro con fecha; se conserva tal cual. A partir de T10 el IK de brazos, `GripTarget` y los objetivos de mano **se borraron por inertes** (medido: 0.000000 m de respuesta). Todo lo que aqui los describe como vivos describe un estado que ya no existe.
+
+> **Corrección 2026-10-14 (T12).** Caso máximo de esa regla: **los dos ficheros
+> de los que trata este documento están borrados**. `GripTarget.gd` en T10 y
+> `FullBodyIKController.gd` en T12, este último con 305 líneas que ya no tenían
+> ninguna función viva.
+>
+> Se conserva porque su valor es histórico, no operativo: deja por escrito que el
+> contrato de agarre llegó a definirse con validez por mano, ponderación por
+> brazo y un centinela eliminado. Ese trabajo no se perdió, pero **no tiene a qué
+> aplicarse hoy**. Si el IK de agarre vuelve a intentarse, la vía no es este
+> documento: es la escritura procedural desde `_process` que describe ADR-0008.
+>
+> Estado real a 2026-10-14: el esqueleto lleva **un solo escritor**,
+> `SpineLookAtController`. No hay `GripTarget`, no hay objetivos de mano, y no
+> hay pesos de IK que ponderar.

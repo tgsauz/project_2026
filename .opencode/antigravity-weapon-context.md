@@ -1,5 +1,48 @@
 # Antigravity Weapon System — Diagnostic Context
 
+> # ⚠️ LEER ESTO ANTES QUE EL RESTO DEL ARCHIVO
+>
+> **Fecha del contenido:** 2026-07-22. **Estado real del código:** 2026-10-14.
+> Este archivo lo leía un agente **antes** que el código, porque parecía
+> arquitectura vigente. Ya no lo es. Se conserva sin reescribir porque es un
+> registro de diagnóstico de su momento.
+>
+> ## Qué de este archivo ya no existe
+>
+> | Sistema mencionado aquí | Estado real a 2026-10-14 |
+> |---|---|
+> | `FullBodyIKController` | ❌ borrado — T12, commit `83d5c86` |
+> | `HeadCCDIK`, `AimIKTarget` | ❌ borrados — T12, commit `83d5c86` |
+> | `GripTarget` | ❌ borrado — T10, commit `7961fd3` |
+> | `RightArmIK`, `LeftArmIK` | ❌ borrados — T10, commit `7961fd3` |
+> | `WeaponOffsetCache`, `WeaponPositionController` | ❌ borrados — commit `abae6cc` |
+> | `WeaponActionController` | ❌ borrado — T08, commit `dadb987` |
+> | `WeaponADSProfile` | ❌ no aparece en el historial de este repositorio |
+> | `SpineController` | ⚠️ no existe con ese nombre; el nodo vivo es `SpineLookAtController`, y escribe desde `_process`, no como `SkeletonModifier3D` (ADR-0008) |
+> | `SpineLookAtController` | ✅ **único escritor vivo** sobre el esqueleto, aparte de `AnimationTree` |
+>
+> **Motivo de las bajas:** en esta versión del motor **ningún
+> `SkeletonModifier3D` escribe huesos** —ni `CCDIK3D`, ni `TwoBoneIK3D`, ni
+> `LookAtModifier3D`—. Es medido, no supuesto (ADR-0008, confirmado en T10 y
+> T12). La animación escribe huesos con normalidad: solo el camino
+> modificador→hueso está inerte.
+>
+> **Secciones de este archivo que ya no describen nada real:** §6 (cadena
+> `_build_grip_target → fullbody_ik.apply_grip_target`), §7 (pipeline de IK y
+> tabla de 8 nodos, líneas ~230-238 y ~282-297), §8 (máquina de pesos de IK,
+> líneas ~301-330), las filas de `FullBodyIKController` en §12 (líneas ~497-498),
+> y la tabla de acciones de depuración de §10 (líneas ~443-455): de las diez
+> acciones que lista, **solo `debug_ik` sigue existiendo** en `project.godot`.
+>
+> **La afirmación que sí sobrevive intacta** es la del §7 sobre el doble camino
+> de posicionamiento del arma, y solo en su versión actual: el camino vivo es la
+> pila de capas → `WeaponRoot.global_transform`; el camino legacy que se
+> describe como «deshabilitado y conservado para revertir» **ya no está en
+> disco**, no es que esté apagado.
+>
+> **Fuente vigente, en este orden:** `project-docs/GLOSSARY.md` →
+> `project-docs/ADRs/` → el código.
+
 > **Scope:** Read-only diagnostic reference. Use this to analyze weapon, aiming, and IK code
 > for bugs, convention violations, and architectural issues. Do NOT implement fixes from this file.
 > 
@@ -244,6 +287,12 @@ return current.interpolate_with(target, weight)
    - Disabled via `_disabled = true; set_process(false)` since Step 8.5.4
 
 ### AimState (`AimState.gd`)
+
+> ⚠️ **Parcialmente caducado.** Dos campos de esta lista **ya no existen**:
+> `ads_weight` (retirado por ADR-0007) y `aim_orientation_weight` (retirado en
+> T09, `cf67b0c`, al medirse sin consumidores). Y «consumido por 7+ sistemas» ya
+> no es cierto: los consumidores vivos son la cámara, la columna y el arma.
+
 Immutable data struct, produced once per frame, consumed by 7+ systems:
 ```gdscript
 var look_pitch: float         # camera pitch (radians)
@@ -263,6 +312,11 @@ var is_valid: bool            # false if dependencies missing
 ```
 
 ### GripTarget (`GripTarget.gd`)
+
+> ⚠️ **Caducado.** `GripTarget.gd` se borró en T10 (commit `7961fd3`) y su
+> productor y su consumidor (`WeaponController._build_grip_target()` y
+> `FullBodyIKController.apply_grip_target()`) ya no existen. Bloque histórico.
+
 ```gdscript
 var right_hand_position: Vector3
 var right_hand_rotation: Quaternion
@@ -276,6 +330,13 @@ var is_valid: bool
 ---
 
 ## 7. IK Modifier Pipeline (Execution Order)
+
+> ⚠️ **Caducado.** La tabla de 8 nodos de abajo ya no corresponde al rig: de
+> esos 8, **solo existe `SpineLookAtController`**, y escribe `spine_02` desde
+> `_process` (no como `SkeletonModifier3D`; ADR-0008). Los otros 7 se borraron
+> por medidos inertes. Los 3 objetivos de IK que se listan después tampoco
+> existen: `AimIKTarget` (T12), `RightHandIKTarget` y `LeftHandIKTarget` (T10).
+> Bloque histórico; ver la nota de cabecera.
 
 Skeleton3D children execute in tree order. `CharacterRigAssembly.gd` creates them in this exact sequence:
 
@@ -299,6 +360,12 @@ Skeleton3D children execute in tree order. `CharacterRigAssembly.gd` creates the
 ---
 
 ## 8. IK Weight State Machine
+
+> ⚠️ **Caducado.** `FullBodyIKController.gd` se borró entero en T12 (commit
+> `83d5c86`). Las tablas de pesos y la lógica de selección de abajo **no existen
+>**. Dato histórico útil, porque contradice a ADR-0005: `WEIGHTS_ARMED` daba
+> `0.25` a `HeadCCDIK`, de modo que la afirmación de que «la cabeza está en
+> influencia 0 siempre» era falsa antes de T12, no después.
 
 ### Weight Tables (`FullBodyIKController.gd:62-86`)
 ```gdscript
@@ -379,6 +446,17 @@ Every weapon equipped scene must have these Node3D markers:
 ## 10. Debug Tools
 
 ### Runtime Debug Actions (Input Map)
+
+> ⚠️ **Caducado en su mayor parte.** De las acciones de esta tabla, en el
+> proyecto hoy solo existen cuatro, todas en `project.godot`:
+> `debug_ik` (F4, `CharacterController` — el visualizador),
+> `debug_spine_track` y `debug_spine_weapon_align` (`SpineLookAtController`),
+> y `toggle_debug`. **No existen** `debug_weapon_authority`, `debug_bone_rest`,
+> `debug_force_holster`, `debug_ik_reach`, `debug_weapon_pose`,
+> `debug_sight_detail`, `debug_sight_screen` ni `debug_free_cam`. La tabla
+> original procede de la rama `weapon_system` y no se ha mantenido al pie de la
+> letra.
+
 | Action | Key | Script | Purpose |
 |--------|-----|--------|---------|
 | `debug_ik` | F4 | `CharacterController` | Toggle `DebugIKVisualizer` |
@@ -492,6 +570,11 @@ Every weapon equipped scene must have these Node3D markers:
 | `Player/Scripts/ADSBlendState.gd` | `ADSBlendState` | 41 | Shared presentation interpolation state |
 
 ### IK / Bone Manipulation Files
+
+> ⚠️ **Caducado.** `Player/Scripts/FullBodyIKController.gd` y
+> `Player/Scripts/GripTarget.gd` ya no existen (T12 y T10). De esta tabla solo
+> sobrevive `SpineLookAtController.gd`, y su «Role» ha cambiado: ya no conduce un
+> `CCDIK3D`, escribe `spine_02` desde `_process` (ADR-0008).
 | File | Class | Lines | Role |
 |------|-------|-------|------|
 | `Player/Scripts/FullBodyIKController.gd` | `FullBodyIKController` | 463 | Manages modifier weights and grip targets |

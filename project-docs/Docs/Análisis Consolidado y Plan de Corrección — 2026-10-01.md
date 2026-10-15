@@ -136,3 +136,24 @@ Al arrancar `testing_world.tscn` la vista FPS muestra cielo, una banda oscura de
 *Documento de análisis. Refleja el filesystem actual y la evidencia de runtime del 2026-10-01.*
 
 > **Correccion 2026-10-14 (T10).** Este documento es un registro con fecha; se conserva tal cual. A partir de T10 el IK de brazos, `GripTarget` y los objetivos de mano **se borraron por inertes** (medido: 0.000000 m de respuesta). Todo lo que aqui los describe como vivos describe un estado que ya no existe.
+
+> **Corrección 2026-10-14 (T12).** Cierra el ciclo de este plan: **sus dos
+> objetos principales están borrados**. `FullBodyIKController.gd` en T12, y con
+> él se van `GripTarget`, los objetivos de mano, el sector de cabeza y el riesgo
+> `R3` que este documento relacionaba. Con eso:
+>
+> - **B1** (null-ref en `_compute_weight_targets`) — cerrado por eliminación: el
+>   código con el que fallaba ya no se ejecuta.
+> - **R3** (avisos de resolución en el Tuner) — cerrado por lo mismo.
+> - **B8** (`GripTarget.is_valid` con posiciones cero) — sin objeto: no hay
+>   `GripTarget`.
+> - **B8-parcial** (validez por mano) — la ampliación propuesta nunca hizo falta;
+>   el contrato entero desapareció.
+> - **AR1** (dos generaciones de posicionamiento de arma) — este sí se resolvió
+>   como el documento ya decía, y no por eliminación selectiva sino total:
+>   `WeaponOffsetCache` y `WeaponPositionController` **no están en disco**.
+> - **F6** (contrato de marcador a objetivo) — sin objeto por la misma razón que
+>   B8.
+>
+> El resto del plan (cosas que no tocaban IK) sigue en pie. Se conserva sin
+> reescribir porque es la línea base que explica por qué se ordenó el trabajo.

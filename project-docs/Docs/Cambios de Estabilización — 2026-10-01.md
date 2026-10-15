@@ -162,3 +162,25 @@ Los sidecars `.gd.uid` fueron limpiados automáticamente por el editor (no queda
 *Documento generado como registro de la primera pasada de estabilización. No representa funcionalidad nueva; son correcciones P0, sincronización de un test obsoleto, ajustes de datos y limpieza de código muerto confirmado.*
 
 > **Correccion 2026-10-14 (T10).** Este documento es un registro con fecha; se conserva tal cual. A partir de T10 el IK de brazos, `GripTarget` y los objetivos de mano **se borraron por inertes** (medido: 0.000000 m de respuesta). Todo lo que aqui los describe como vivos describe un estado que ya no existe.
+
+> **Corrección 2026-10-14 (T12).** T12 amplía la anterior y **deja sin objeto la
+> mayor parte de este documento**. Concretamente:
+>
+> - `Player/Scripts/FullBodyIKController.gd` **borrado**. Con ello caen las
+>   correcciones A-1, B-3 y el flag `_initialized` que este documento describe.
+> - El **test** que aquí se dice haber sincronizado ya no verifica lo que dice
+>   verificar. La aserción que exigía que `FullBodyIKController` se ejecutara
+>   antes que `RightArmIK` **ya no tiene sentido**: con un solo escritor no hay
+>   orden que afirmar. La versión vigente comprueba que el esqueleto lleva
+>   exactamente un `SkeletonModifier3D`, y que es `SpineLookAtController`.
+> - Los **targets `AimIKTarget` / `RightHandIKTarget` / `LeftHandIKTarget`** que
+>   este documento sitúa bajo `Rig` no existen: los dos últimos en T10, el primero
+>   en T12.
+> - El orden de modificadores que aquí se documenta
+>   (`[CCDIK, FullBodyIKController, RightArmIK, LeftArmIK, HeadCCDIK, SpineLookAtController]`)
+>   queda reducido a `[SpineLookAtController]`, y el invariante de «orden
+>   load-bearing» desaparece con el.
+>
+> Se conserva íntegro porque su valor es histórico: documenta cómo se pasó de un
+> test atado a la implementación a uno atado al comportamiento, que es el criterio
+> que sigue aplicándose.

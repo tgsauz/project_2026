@@ -231,3 +231,15 @@ explícitamente que no se había establecido causa raíz única. Este documento 
 establece para la parte del posicionamiento.
 
 > **Correccion 2026-10-14 (T10).** Este documento es un registro con fecha; se conserva tal cual. A partir de T10 el IK de brazos, `GripTarget` y los objetivos de mano **se borraron por inertes** (medido: 0.000000 m de respuesta). Todo lo que aqui los describe como vivos describe un estado que ya no existe.
+
+> **Corrección 2026-10-14 (T12).** Con T12 desaparece el último de los mecanismos
+> que este diagnóstico menciona: el sector de cabeza (`HeadCCDIK` y su
+> `AimIKTarget`), además de `FullBodyIKController.gd`. El ciclo
+> `WeaponRoot → GripTarget → arm IK → ik_hand_gun → WeaponRoot` que se refuta en
+> la línea ~69 **dejó de existir por completo** en T10; ya no queda ningún brazo
+> que lo forme.
+>
+> Lo que queda del tema de IK en este documento, a 2026-10-14, es exactamente
+> una cosa: el esqueleto tiene **un solo escritor**, `SpineLookAtController`, y
+> escribe `spine_02` desde `_process`. El resto del diagnóstico —la posición del
+> arma la fija el hueso de soporte, no una capa de pose— sigue vigente (ADR-0001).

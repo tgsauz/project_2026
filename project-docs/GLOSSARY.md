@@ -25,6 +25,11 @@ _Evitar_: eje Z, forward local, -Z.
 Rotación de 180° en Y aplicada a `VisualsComponent/Rig`. Es una rotación rígida válida (determinante +1), no una reflexión. Obliga a componer cualquier pose de hueso al espacio mundo mediante la transformación global del esqueleto, y prohíbe aplicar correcciones de eje separadas en el jugador, el esqueleto, la cámara o el arma.
 _Evitar_: rig volteado, espejo del rig.
 
+**Escritor del esqueleto**:
+Nodo que escribe rotaciones de hueso en runtime por encima de la animación. El rig tiene **uno solo**: `SpineLookAtController`, que escribe `spine_02` de forma procedural desde `_process` (ADR-0008). Los huesos del esqueleto tienen dos autores vivos: la animación y ese controlador.
+*Estado 2026-10-14 (T10, T12):* los otros candidatos se retiraron **medidos inertes**, no por decisión de diseño: el IK de brazos (`RightArmIK`, `LeftArmIK`, `GripTarget`) en T10, y el sector de cabeza (`FullBodyIKController`, `HeadCCDIK`, `AimIKTarget`) en T12. La causa es la misma en todos los casos: en esta versión del motor **ningún `SkeletonModifier3D` escribe huesos**. El escritor que sobrevive sobrevive precisamente porque escribe desde `_process` y no desde su callback de modificador.
+_Evitar_: pipeline de IK, cadena de IK, modificador de IK, pila de IK.
+
 ## Marcadores del asset del arma
 
 **Marcador de agarre**:
@@ -62,14 +67,16 @@ _Evitar_: ranura de mano, hueco.
 
 **Estado de apuntado** (`AimState`):
 Datos de intención de apuntado de un fotograma: origen, dirección, pitches, pesos y FOV objetivo. Lo produce el controlador de apuntado y lo consumen cámara, columna, brazo y arma. Nadie lo escribe salvo su productor.
+*Estado 2026-10-14 (T09, T10, T12):* sus consumidores vivos son la cámara, la columna y el arma. Ya no el brazo, porque el IK de brazos se borró por inerte (T10). Los dos campos continuos que este mismo documento definía abajo (`ads_weight` y `aim_orientation_weight`) ya no existen: se retiraron por ADR-0007 y T09, respectivamente, ambos medidos sin consumidores útiles.
 _Evitar_: datos de apuntado, estado de cámara.
 
 **Peso de orientación de apuntado**:
-Mezcla continua entre la pose del hueso de soporte del arma (0) y la pose derivada de la cámara (1).
+*Retirado 2026-10-14 (T09).* Era la mezcla continua entre la pose del hueso de soporte del arma (0) y la pose derivada de la cámara (1). El campo `aim_orientation_weight` se eliminó al medirse que ningún sistema lo leía. La pose del arma la decide hoy el hueso de soporte, sin mezcla con la cámara.
 _Evitar_: peso de ADS, peso de apuntado.
 
 **Peso ADS**:
-Mezcla continua de 0 a 1 que indica cuánto está el personaje en postura de apuntado. Alimenta FOV y las capas de animation.
+*Retirado 2026-10-14 (ADR-0007).* Era la mezcla continua de 0 a 1 que indicaba cuánto estaba el personaje en postura de apuntado, y que alimentaba FOV y capas de animación. El campo `ads_weight` no existe. El estado de apuntado es **discreto** (`Unarmed`, `Armed`, `Aiming`) y la continuidad la aporta la amortiguación de cada sistema que reacciona al cambio, no un peso compartido.
+No confundir con la **influencia discreta de la columna**, que sí existe y vive en `SpineLookAtController`.
 _Evitar_: peso de orientación de apuntado, stance.
 
 **Stance del personaje**:
@@ -79,10 +86,7 @@ _Evitar_: pose, estado de apuntado, postura de apuntado.
 ## Contratos entre sistemas
 
 **Nodo objetivo de IK**:
-Nodo de escena (`AimIKTarget`) al que se escribe un objetivo. Es un nodo de presentación, no un contrato.
-*Estado 2026-10-14 (T10):* `RightHandIKTarget` y `LeftHandIKTarget` se borraron
-con la cadena de agarre. Queda solo `AimIKTarget`, que alimenta un `HeadCCDIK`
-que a su vez está inerte.
+*Retirado 2026-10-14 (T10, T12).* Era un nodo de escena al que se escribía un objetivo para que lo consumiera un modificador de IK; era un nodo de presentación, no un contrato. **Ya no queda ninguno**: `RightHandIKTarget` y `LeftHandIKTarget` se borraron con la cadena de agarre (T10), y `AimIKTarget` con el sector de cabeza (T12). El único punto de mira que sobrevive es `LookAtTarget`, y lo usa solo el visualizador de depuración — no es un nodo objetivo de IK.
 _Evitar_: objetivo de agarre, GripTarget.
 
 **Capa de arma** (`WeaponLayer`):

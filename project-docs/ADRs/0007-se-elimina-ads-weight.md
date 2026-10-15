@@ -25,6 +25,23 @@ _weight_targets["HeadCCDIK"] = lerpf(WEIGHTS_AIMING["HeadCCDIK"], 0.0, _aim_cont
 
 Y ese consumidor desaparece con ADR-0005 (la cabeza queda en influence 0).
 
+> **Corrección 2026-10-14 (T12).** La cita y la premisa de este párrafo están
+> desfasadas, y conviene distinguir por qué:
+>
+> - **`FullBodyIKController.gd` no existe.** Se borró entero en T12 (commit
+>   `83d5c86`), medido inerte. El archivo y el número de línea citado pertenecen
+>   a un estado anterior del código.
+> - **«la cabeza queda en influence 0» era inexacto antes de T12.** El nodo
+>   recibía 0.25 en armado y 0.35 en apuntado (ver la tabla del propio ADR-0005).
+>   El consumidor de `ads_weight` desaparecía igualmente, pero **no por tener
+>   influencia cero**: lo que se atenuaba era un solver que no escribía huesos.
+>   La justificación de este ADR era incorrecta aunque la conclusión fuese
+>   correcta.
+>
+> **La decisión de este ADR no cambia.** `ads_weight` no existe en el estado de
+> apuntado y el estado de apuntado es discreto. Lo único que se retira aquí es
+> la explicación de por qué se fue, no el hecho de que se fuera.
+
 Los otros consumidores potenciales ya no existen: `CameraController` lo dejó de
 usar cuando se retiró el desplazamiento de cámara en ADS, y `WeaponController`
 lo dejó de usar al reescribirse el posicionamiento.

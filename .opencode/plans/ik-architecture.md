@@ -1,6 +1,46 @@
 # IK Architecture (2026-06-04)
 
+> # ⚠️ DOCUMENTO HISTÓRICO — LEER ANTES DE NADA
+>
+> **Fecha del contenido:** 2026-06-04. **Estado real del código:** 2026-10-14.
+> Este archivo se escribía como arquitectura vigente y un agente lo leía
+> **antes** que el código. Ya no lo es: describe un estado anterior. Se conserva
+> sin reescribir porque es el registro de por qué se decidió así.
+>
+> ## De los 7 sistemas listados abajo, solo sobrevive UNO
+>
+> | # | Sistema de la lista | Estado real a 2026-10-14 |
+> |---|---|---|
+> | 1 | `WeaponOffsetCache` | ❌ borrado — commit `abae6cc` |
+> | 2 | `SpineController` | ⚠️ **no existe con ese nombre**; el nodo vivo es `SpineLookAtController`, y escribe desde `_process`, no como `SkeletonModifier3D` (ADR-0008) |
+> | 3 | `WeaponPositionController` | ❌ borrado — commit `abae6cc` |
+> | 4 | `FullBodyIKController` | ❌ borrado — T12, commit `83d5c86` |
+> | 5 | `RightArmIK` | ❌ borrado — T10, commit `7961fd3` |
+> | 6 | `LeftArmIK` | ❌ borrado — T10, commit `7961fd3` |
+> | 7 | `HeadLook` (el sector de cabeza, sobre `AimIKTarget`) | ❌ borrado — T12, commit `83d5c86` |
+>
+> **Motivo de las bajas, medido y no supuesto:** en esta versión del motor
+> **ningún `SkeletonModifier3D` escribe huesos** —ni `CCDIK3D`, ni `TwoBoneIK3D`,
+> ni `LookAtModifier3D`—, por la misma razón que hace que `AnimationTree` sí
+> escriba con normalidad. ADR-0008 lo midió; T10 y T12 lo confirmó antes de borrar.
+>
+> **Sobrevive exactamente un escritor sobre el esqueleto:** `SpineLookAtController`,
+> y solo porque escribe desde `_process`. El orden de modificadores que describe
+> este documento ya **no importa**: con un único escritor no hay orden que
+> afirmar.
+>
+> ## Cómo usar este archivo
+>
+> Sirve como **registro histórico** y como explicación del diseño original. No
+> lo trates como especificación. Para el estado vigente, lee en este orden:
+> `project-docs/GLOSSARY.md` → `project-docs/ADRs/` → el código.
+
 ## Modifier Execution Order
+
+> ⚠️ **Caducado.** Esta lista de 7 modificadores ya no describe nada que exista;
+> ver la nota de cabecera. Hoy queda un solo escritor, `SpineLookAtController`,
+> y el orden entre modificadores es irrelevante.
+
 1. `WeaponOffsetCache` — captures spine_02 + ik_hand_gun + arm_r animation poses
 2. `SpineController` — spine IK bend for aiming pitch/twist/tilt
 3. `WeaponPositionController` — chest-corrected weapon pose (no independent rotation)
