@@ -2,7 +2,6 @@ extends Node
 class_name VisualsComponent
 
 signal equipped_visual_attached(slot_name: String, item_id: String, visual: Node3D, entry: Dictionary)
-signal equipped_visual_detached(slot_name: String, item_id: String)
 
 @export_category("Helpers")
 @export var attachment_content_scale_compensation: float = 1.0
@@ -232,13 +231,10 @@ func clear_runtime_visual(slot_name: String) -> void:
 			
 	for visual_key in keys_to_remove:
 		var visual = equipped_visuals[visual_key]
-		var removed_entry: Dictionary = equipped_visual_entries.get(visual_key, {}) as Dictionary
-		var removed_item_id: String = str(removed_entry.get("item_id", ""))
 		if is_instance_valid(visual):
 			visual.queue_free()
 		equipped_visuals.erase(visual_key)
 		equipped_visual_entries.erase(visual_key)
-		emit_signal("equipped_visual_detached", slot_name, removed_item_id)
 		_remove_slot_interactable(slot_name)
 
 func get_active_visual(slot_name: String, item_id: String = "") -> Node3D:
@@ -321,15 +317,11 @@ func _on_equipment_visuals_changed(visible_items: Array) -> void:
 			
 	for visual_key in keys_to_remove:
 		var visual := equipped_visuals[visual_key] as Node3D
-		var removed_entry: Dictionary = equipped_visual_entries.get(visual_key, {}) as Dictionary
-		var removed_slot_name: String = str(removed_entry.get("slot_name", ""))
-		var removed_item_id: String = str(removed_entry.get("item_id", ""))
 		if is_instance_valid(visual):
 			print_debug("[VisualsComponent] Removing visual for key: %s" % visual_key)
 			visual.queue_free()
 		equipped_visuals.erase(visual_key)
 		equipped_visual_entries.erase(visual_key)
-		emit_signal("equipped_visual_detached", removed_slot_name, removed_item_id)
 
 	# Clean up interactables that are no longer active (using same logic)
 	var interactable_keys_to_remove = []
