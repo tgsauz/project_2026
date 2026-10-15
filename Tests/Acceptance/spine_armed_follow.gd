@@ -10,11 +10,23 @@ extends SceneTree
 # magnitud ademas no depende de la columna, asi que el servo no podia converger.
 # La camara es DESTINO, nunca medida.
 #
-# Afirma tres cosas, en este orden:
+# Afirma cuatro cosas, en este orden:
 #   1. En la neutra el escritor no escribe nada. Esta es la asercion que
 #      captura la causa raiz: es el error constante que el servo se inventa.
 #   2. La boca se mueve en el mismo sentido que la camara.
-#   3. La columna responde de forma monotona al pitch de camara.
+#   3. La columna responde en un solo sentido a lo largo del barrido, sin
+#      escalones ni vaiven. No afirma el sentido: ese lo afirma la 4.
+#   4. La inclinacion del torso va CON SIGNO: en ARMED y en AIMING, mirar al
+#      suelo tiene que inclinar mas adelante que mirar al cielo.
+#
+# La asercion 4 es la que faltaba (issue 13). Las tres primeras no detectan una
+# inversion: una inclinacion al reves tambien es monotona. Y la elevacion
+# asin(componente Y) es ciega al signo cerca de la vertical, porque no
+# distingue inclinarse adelante de inclinarse atras. Por eso la asercion 4
+# mide la inclinacion con la metrica con signo y la asercion 3 no la suple.
+#
+# La asercion 4 se repite en AIMING, donde ya se cumple. Esa es la red que
+# demuestra que el metodo de referencia no se toco al arreglar ARMED.
 #
 # Todo se mide en espacio global. El nodo Rig lleva 180 grados sobre Y
 # (ADR-0002, legitimo, no se toca): comparar en espacio local del esqueleto
@@ -23,7 +35,9 @@ extends SceneTree
 # El eje de un hueso se lee de get_bone_global_pose(idx).basis, nunca del
 # segmento entre el origen del hueso y el de su padre: ese segmento lo deciden
 # las cabezas de los huesos, no su orientacion, asi que es invariante a la
-# rotacion y no puede observar lo que se le pide observar.
+# rotacion y no puede observar lo que se le pide observar. El segmento
+# spine_02 -> cuello si vale, porque el cuello es descendiente de spine_02:
+# ahi lo que se mueve es el final del segmento, no sus dos cabezas.
 
 const PLAYER_SCENE := "res://Player/PlayerCharacter.tscn"
 const TEST_WEAPON := "res://World/Items/TestWeaponItem.tres"
@@ -54,15 +68,41 @@ const MAX_NEUTRAL_WRITER_OFFSET_DEG := 1.0
 ## por encima del ruido de la pose.
 const MIN_MOUTH_FOLLOW_DEG := 0.10
 
-## Asercion 3. Red de seguridad, no deteccion. Tolera un paso llano de 1 grado
-## antes de darlo por no monotonico.
+## Asercion 3. Red de seguridad, no deteccion. Es el hueco de paso por debajo
+## del cual un cambio no cuenta: un barrido limpio no tiene por que tener
+## ningun paso por encima de este umbral, solo pasos llanos.
 const FLAT_STEP_TOLERANCE_DEG := 1.0
+
+## Asercion 4. Los dos extremos del barrido, en grados de camara.
+const LEAN_LOW_PITCH_DEG := -30.0
+const LEAN_HIGH_PITCH_DEG := 30.0
+
+## Asercion 4. Margen minimo de la diferencia a favor de mirar al suelo. Medido
+## en ARMED: la diferencia antes del arreglo era de -9.02 (torso al reves) y
+## despues de +9.02. El margen de 0.5 esta a la mitad de la senal esperada, de
+## modo que un ruido de medicion no lo hunda y una inversion de verdad
+## tampoco lo compense. No es un umbral de forma: es el ancho minimo del
+## defecto que se quiere ver.
+##
+## Lo que afirma es la DIRECCION, no el espejo exacto de los valores. El
+## recorrido medido se mantiene en 8.98 grados y solo cambia de lado: el
+## punto de equilibrio del lazo lo fija la postura del clip, no la camara, y
+## con INFLUENCE_ARMED = 0.15 el escritor no puede mover ese punto. Afirmar
+## el espejo seria exigirle al servo algo que su unica palanca no alcanza.
+const MIN_LEAN_DIRECTION_MARGIN_DEG := 0.5
+
+## Huesos del eje de la columna. El cuello es el extremo distal de spine_02:
+## el segmento entre ambos gira con la rotacion de la columna, que es
+## justamente lo que el escritor escribe.
+const SPINE_BONE := "spine_02"
+const NECK_BONE := "neck"
 
 var _player: Node3D
 var _skeleton: Skeleton3D
 var _writer: SkeletonModifier3D
 var _failures: Array[String] = []
 var _rows: Array[Dictionary] = []
+var _aiming_rows: Array[Dictionary] = []
 var _neutral_offset_deg: float = 0.0
 var _t: float = 0.0
 var _stage: int = 0
@@ -147,8 +187,37 @@ func _process(_delta: float) -> bool:
 			"pitch": pitch,
 			"spine": _spine_pitch(),
 			"mouth": _mouth_pitch(),
+			"lean": _torso_lean_deg(),
 		})
-		print("  cam %+6.1f | columna %+7.2f | boca %+7.2f" % [pitch, _rows[-1]["spine"], _rows[-1]["mouth"]])
+		print("  ARMED  cam %+6.1f | columna %+7.2f | boca %+7.2f | inclinacion %+7.2f"
+				% [pitch, _rows[-1]["spine"], _rows[-1]["mouth"], _rows[-1]["lean"]])
+		if _queue.is_empty():
+			# Segunda pasada con la misma asercion en AIMING, donde ya se
+			# cumple. Es la red que demuestra que el metodo de referencia no se
+			# toco al arreglar ARMED, asi que se mide con el mismo codigo y en
+			# la misma corrida.
+			_player.is_aiming = true
+			_queue = PITCH_SWEEP_DEG.duplicate()
+			_stage = 5
+			_t = 0.0
+			return false
+		_player.get_node("CAMERARIG").fps_pitch = deg_to_rad(_queue.pop_front())
+		_t = 0.0
+
+	# Espera a que la influencia llegue a INFLUENCE_AIMING antes de medir: si
+	# no, el primer punto del barrido se lee con la mezcla a medias.
+	elif _stage == 5 and _t > 2.5:
+		_player.get_node("CAMERARIG").fps_pitch = deg_to_rad(_queue.pop_front())
+		_stage = 6
+		_t = 0.0
+
+	elif _stage == 6 and _t > 1.2:
+		var pitch: float = _camera_pitch()
+		_aiming_rows.append({
+			"pitch": pitch,
+			"lean": _torso_lean_deg(),
+		})
+		print("  AIMING cam %+6.1f | inclinacion %+7.2f" % [pitch, _aiming_rows[-1]["lean"]])
 		if _queue.is_empty():
 			_evaluate()
 			return _report()
@@ -176,14 +245,41 @@ func _evaluate() -> void:
 		_fail("La boca no sigue a la camara: recorre %.2f deg en un barrido de 60 (min %.2f)."
 				% [mouth_travel, MIN_MOUTH_FOLLOW_DEG])
 
-	# Asercion 3: la columna crece de forma monotona con el pitch de camara.
+	# Asercion 3: la columna responde al pitch de camara en UN solo sentido, sin
+# escalones ni vaiven. No afirma cual es ese sentido: antes afirmaba que la
+# columna subia con la camara, y eso era exactamente el regimen invertido del
+# issue 13. La asercion 4 es la que afirma el sentido, con signo y con la
+# metrica correcta. Aqui solo se afirma que la respuesta es limpia.
 	for i in range(1, _rows.size()):
 		var prev: float = _rows[i - 1]["spine"]
 		var cur: float = _rows[i]["spine"]
-		if cur < prev - FLAT_STEP_TOLERANCE_DEG:
-			_fail("La columna no es monotona en el paso %d: %.2f -> %.2f (la camara subio y la columna bajo)."
-					% [i, prev, cur])
+		var up: bool = cur > prev + FLAT_STEP_TOLERANCE_DEG
+		var down: bool = cur < prev - FLAT_STEP_TOLERANCE_DEG
+		if up and down:
+			_fail("La columna vaivena en el paso %d: %.2f -> %.2f, mezcla subidas y bajadas de mas de %.2f deg en el mismo barrido."
+					% [i, prev, cur, FLAT_STEP_TOLERANCE_DEG])
 			break
+
+	# Asercion 4: la inclinacion del torso va con signo. La elevacion no
+	# puede decir esto; el angulo contra el frente del personaje si.
+	_assert_lean_direction("ARMED", _lean_at(_rows, LEAN_LOW_PITCH_DEG), _lean_at(_rows, LEAN_HIGH_PITCH_DEG))
+	_assert_lean_direction("AIMING", _lean_at(_aiming_rows, LEAN_LOW_PITCH_DEG), _lean_at(_aiming_rows, LEAN_HIGH_PITCH_DEG))
+
+func _assert_lean_direction(state: String, lean_low: float, lean_high: float) -> void:
+	# Mirar al suelo (camara abajo) tiene que inclinar MAS adelante que mirar
+	# al cielo. Al reves es el sintoma del issue 13: el usuario lo vio jugando
+	# antes de que se midiera.
+	var margin: float = lean_low - lean_high
+	if margin < MIN_LEAN_DIRECTION_MARGIN_DEG:
+		_fail("En %s la inclinacion va al reves: mirando al suelo el torso queda a %+.2f deg y mirando al cielo a %+.2f deg (margen %+.2f, min %+.2f). Mirar al suelo tiene que inclinar mas adelante."
+				% [state, lean_low, lean_high, margin, MIN_LEAN_DIRECTION_MARGIN_DEG])
+
+func _lean_at(rows: Array[Dictionary], pitch: float) -> float:
+	for row in rows:
+		var row_pitch: float = row["pitch"]
+		if absf(row_pitch - pitch) < 0.5:
+			return row["lean"]
+	return 0.0
 
 func _mouth_low() -> float:
 	var values: Array[float] = []
@@ -220,6 +316,32 @@ func _mouth_pitch() -> float:
 		return 0.0
 	return _pitch_of(-muzzle.global_transform.basis.z)
 
+## Inclinacion del torso CON SIGNO, en grados. Positivo = inclinado adelante,
+## negativo = inclinado atras.
+##
+## Es la metrica que la elevacion no puede dar: asin(componente Y) de un
+## vector casi vertical vale lo mismo inclinado adelante que inclinado
+## atras, asi que un regimen invertido pasa por verde. Aqui el vector
+## spine_02 -> cuello se mide contra el frente del personaje
+## (-player.global_basis.z), y atan2 separa los dos casos.
+##
+## El segmento spine_02 -> cuello si depende de la rotacion de la columna: el
+## cuello es descendiente de spine_02, asi que el extremo del segmento se
+## mueve cuando spine_02 gira. El segmento spine_02 -> padre, en cambio, es
+## invariante (lo deciden las cabezas de los huesos) y por eso no sirve.
+func _torso_lean_deg() -> float:
+	var spine_idx: int = _skeleton.find_bone(SPINE_BONE)
+	var neck_idx: int = _skeleton.find_bone(NECK_BONE)
+	if spine_idx == -1 or neck_idx == -1:
+		return 0.0
+	var spine_origin: Vector3 = _skeleton.global_transform * _skeleton.get_bone_global_pose(spine_idx).origin
+	var neck_origin: Vector3 = _skeleton.global_transform * _skeleton.get_bone_global_pose(neck_idx).origin
+	var axis: Vector3 = (neck_origin - spine_origin).normalized()
+	if axis.is_zero_approx():
+		return 0.0
+	var forward: Vector3 = -_player.global_basis.z.normalized()
+	return rad_to_deg(atan2(axis.dot(forward), axis.dot(Vector3.UP)))
+
 func _find_muzzle() -> Node3D:
 	var wc: Node = _player.get_node_or_null("WeaponRoot/WeaponController")
 	if wc == null or not wc.has_method("get_weapon_visual"):
@@ -247,7 +369,13 @@ func _report() -> bool:
 			% [_neutral_offset_deg, MAX_NEUTRAL_WRITER_OFFSET_DEG])
 	print("  asercion 2: recorrido de la boca en 60 deg de barrido  %.2f deg (min %.2f)"
 			% [_mouth_high() - _mouth_low(), MIN_MOUTH_FOLLOW_DEG])
-	print("  asercion 3: monotonia de la columna con el pitch")
+	print("  asercion 3: respuesta en un solo sentido a lo largo del barrido")
+	print("  asercion 4: ARMED  cam %+.0f -> %+.2f | cam %+.0f -> %+.2f"
+			% [LEAN_LOW_PITCH_DEG, _lean_at(_rows, LEAN_LOW_PITCH_DEG),
+			LEAN_HIGH_PITCH_DEG, _lean_at(_rows, LEAN_HIGH_PITCH_DEG)])
+	print("  asercion 4: AIMING cam %+.0f -> %+.2f | cam %+.0f -> %+.2f"
+			% [LEAN_LOW_PITCH_DEG, _lean_at(_aiming_rows, LEAN_LOW_PITCH_DEG),
+			LEAN_HIGH_PITCH_DEG, _lean_at(_aiming_rows, LEAN_HIGH_PITCH_DEG)])
 	print("----------------------------------------------------------------")
 	print("  fallos: %d" % _failures.size())
 	if _failures.is_empty():

@@ -185,12 +185,28 @@ func _armed_pitch_delta(state: AimState) -> float:
 	# entre el eje del hueso y la direccion de apuntado en el mismo eje de yaw.
 	# Medido en este esqueleto: el eje del hueso mira hacia atras en espacio
 	# global, asi que el angulo entre los dos vectores da ~176 grados y no dice
-	# nada. Lo que si dice es cuanto esta el eje levantado o bajado, y eso es
-	# lo que hay que igualar a la camara. El signo esta medido: con esta
-	# formula la columna sube cuando la camara sube.
+	# nada. Lo que si dice es cuanto esta el eje levantado o bajado.
 	var aim_pitch: float = asin(clampf(aim_world.y, -1.0, 1.0))
 	var spine_pitch: float = asin(clampf(spine_fwd.y, -1.0, 1.0))
-	return (aim_pitch - spine_pitch) * _current_influence
+
+	# POR QUE EL SIGNO ES LA SUMA Y NO LA RESTA (issue 13).
+	#
+	# spine_fwd es el -Z del hueso, y ese eje MIRA HACIA ATRAS: su elevacion
+	# es la negativa de la elevacion del frente real de la columna. Escribir
+	# (aim_pitch - spine_pitch) comparaba la camara con un vector invertido y
+	# por eso la correccion salia al reves: con la camara abajo el torso se
+	# inclinaba atras. Medido con la metrica con signo (angulo del vector
+	# spine_02 -> cuello contra el frente del personaje, positivo = inclinado
+	# adelante), el regimen invertido daba -7.52 deg mirando al suelo y +1.50
+	# mirando al cielo, y el el usuario lo vio jugando antes de esa medicion.
+	#
+	# La suma corrige lo mismo y deja el porque explicito: si E es la
+	# elevacion del frente real de la columna, entonces spine_pitch = -E, y
+	# el residuo E - aim_pitch que hay que anular es exactamente
+	# -(aim_pitch + spine_pitch). No es un signo suelto: lo que esconde el
+	# error es justamente el -Z que mira atras, y por eso queda escrito.
+	var lean_residual: float = -(aim_pitch + spine_pitch)
+	return lean_residual * _current_influence
 
 func _process_modification_with_delta(_delta: float) -> void:
 	if _skeleton == null or _spine01_idx == -1 or _spine02_idx == -1:
